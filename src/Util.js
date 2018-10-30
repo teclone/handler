@@ -209,4 +209,44 @@ export default {
         }
         return false;
     },
+
+    /**
+     * creates a range of value
+     *@param {number|string} from - number to start from or alphabet to start with
+     *@param {number|string} to - number to end at or alphabet to end at
+     *@param {number} [step=1] - step count to apply
+     *@returns {Array}
+    */
+    range(from, to, step) {
+
+        from = from.toString();
+        to = to.toString();
+
+        step = this.isNumeric(step)? (parseFloat(step) || 1) : 1;
+
+        const result = [],
+            letters = 'abcdefghijklmnopqrstuvwxyz',
+            lowerCaseFrom = from.toLowerCase();
+
+        if (this.isNumeric(from)) {
+
+            from = parseFloat(from);
+            to = parseFloat(to);
+
+            for(from; from <= to; from += step)
+                result.push(from);
+        }
+        else if (from.length === 1 && letters.indexOf(lowerCaseFrom) > -1) {
+            let start = letters.indexOf(lowerCaseFrom),
+                end = letters.indexOf(to.toLowerCase());
+
+            if (end < 0)
+                end = 25;
+
+            let target = (from === lowerCaseFrom? letters : letters.toUpperCase()).split('');
+            for(start; start <= end; start += step)
+                result.push(target[start]);
+        }
+        return result;
+    }
 };

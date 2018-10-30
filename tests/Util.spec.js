@@ -229,4 +229,29 @@ describe('Util Module', function() {
             expect(Util.keyNotSetorTrue('eatPizza', null)).toBeFalsy();
         });
     });
+
+    describe('.range(from, to, step=1)', function() {
+        it(`should create and return an array containing a range of number values starting from the
+            first argument, incrementing according to the step argument, and stoping at the
+            second argument`, function() {
+            expect(Util.range(0, 10)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+            expect(Util.range(0, 10, 2)).toEqual([0, 2, 4, 6, 8, 10]);
+
+            expect(Util.range(0, 10, 0)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        });
+
+        it(`should create and return an array containing a range of alphabets starting from the
+            first argument, incrementing according to the step argument, and stoping at the
+            second argument`, function() {
+            expect(Util.range('a', 'd')).toEqual(['a', 'b', 'c', 'd']);
+            expect(Util.range('A', 'D')).toEqual(['A', 'B', 'C', 'D']);
+
+            expect(Util.range('X', ',')).toEqual(['X', 'Y', 'Z']);
+        });
+
+        it(`should return empty array if argument is not valid number or alphabets`, function() {
+            expect(Util.range(',', 'd')).toEqual([]);
+        });
+    });
 });
