@@ -127,4 +127,69 @@ describe('Util Module', function() {
             expect(Util.makeArray(undefined)).toEqual([]);
         });
     });
+
+    describe('.value(keys, object, defaultValue=undefined)', function() {
+        let object = null;
+        beforeEach(function() {
+            object = {name: 'Harrison', age: 22};
+        });
+
+        it(`should return the value for the first key that exists in the object`, function() {
+            expect(Util.value(['firstName', 'name'], object)).toEqual('Harrison');
+        });
+
+        it(`should return the default value if none of the keys exists
+            in the object or if argument two is not an object`, function() {
+            expect(Util.value('height', object)).toBe.undefined;
+            expect(Util.value('height', object, '5ft')).toEqual('5ft');
+            expect(Util.value('height', null, '5ft')).toEqual('5ft');
+        });
+    });
+
+    describe('.objectValue(keys, object, defaultValue={})', function() {
+        let object = null;
+        beforeEach(function() {
+            object = {name: 'Harrison', age: 22, academics: {
+                school: 'Federal University of Technology Owerri',
+                dept: 'Petroleum Engineering'
+            }};
+        });
+
+        it(`should return the value for the first key that exists in the object whose value
+            is in turn an object`, function() {
+            expect(Util.objectValue(['name', 'academics'], object))
+                .toHaveProperty('dept', 'Petroleum Engineering');
+        });
+
+        it(`should return the default value if none of the keys exists
+            or contains an object value or if argument two is not an object`, function() {
+            expect(Util.objectValue('height', object)).toEqual({});
+            expect(Util.objectValue('height', null, {value: '5ft'}))
+                .toHaveProperty('value', '5ft');
+        });
+    });
+
+    describe('.arrayValue(keys, object, defaultValue=[])', function() {
+        let object = null;
+        beforeEach(function() {
+            object = {name: 'Harrison', age: 22, favoriteNumbers: [
+                4, 6, 9, 10
+            ]};
+        });
+
+        it(`should return the value for the first key that exists in the object whose value
+            is an array`, function() {
+            expect(Util.arrayValue('favoriteNumbers', object))
+                .toContain(10);
+            expect(Util.arrayValue(['name', 'favoriteNumbers'], object))
+                .toContain(4);
+        });
+
+        it(`should return the default value if none of the keys exists
+            or contains an array value or if argument two is not an object`, function() {
+            expect(Util.arrayValue('height', object)).toEqual([]);
+            expect(Util.arrayValue('heights', null, ['5ft']))
+                .toEqual(['5ft']);
+        });
+    });
 });
