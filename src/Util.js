@@ -105,4 +105,80 @@ export default {
             return arg;
         return this.isValidParameter(arg, excludeNulls)? [arg] : [];
     },
+
+    /**
+     * returns the value for the first key in the keys array that exists in the object
+     * otherwise, return the default value
+     *
+     *@param {string[]|string} keys - array of keys or a single string key
+     *@param {Object} object - the object
+     *@param {mixed} [defaultValue=undefined] - the default value to return if otherwise.
+     * defaults to undefined
+     *@return mixed
+    */
+    value(keys, object, defaultValue) {
+        keys = this.makeArray(keys);
+
+        if (this.isPlainObject(object)) {
+            for (let key of keys) {
+                if (this.isString(key) && typeof object[key] !== 'undefined')
+                    return object[key];
+            }
+        }
+        return defaultValue;
+    },
+
+    /**
+     * returns the first object value for a key in the keys array that exists in the object
+     * otherwise, return the default value
+     *
+     *@param {string[]|string} keys - array of keys or a single string key
+     *@param {Object} object - the object
+     *@param {mixed} [defaultValue={}] - the default value to return if otherwise.
+     * defaults to empty object
+     *@return mixed
+    */
+    objectValue(keys, object, defaultValue) {
+
+        keys = this.makeArray(keys);
+        defaultValue = this.isPlainObject(defaultValue)? defaultValue : {};
+
+        if (this.isPlainObject(object)) {
+            for (let key of keys) {
+                if (this.isString(key) && typeof object[key] !== 'undefined') {
+                    let value = object[key];
+                    if (this.isPlainObject(value))
+                        return value;
+                }
+            }
+        }
+        return defaultValue;
+    },
+
+    /**
+     * returns the first array value for a key in the keys array that exists in the object
+     * otherwise, return the default value
+     *
+     *@param {string[]|string} keys - array of keys or a single string key
+     *@param {Object} object - the object
+     *@param {mixed} [defaultValue=[]] - the default value to return if otherwise.
+     * defaults to empty array
+     *@return mixed
+    */
+    arrayValue(keys, object, defaultValue) {
+
+        keys = this.makeArray(keys);
+        defaultValue = this.isArray(defaultValue)? defaultValue : [];
+
+        if (this.isPlainObject(object)) {
+            for (let key of keys) {
+                if (this.isString(key) && typeof object[key] !== 'undefined') {
+                    let value = object[key];
+                    if (this.isArray(value))
+                        return value;
+                }
+            }
+        }
+        return defaultValue;
+    },
 };
