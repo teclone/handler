@@ -1,3 +1,6 @@
+/**
+ * generic Exception base class
+*/
 export default class Exception {
 
     /**
