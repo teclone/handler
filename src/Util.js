@@ -181,4 +181,32 @@ export default {
         }
         return defaultValue;
     },
+
+    /**
+     * deletes the given keys from the object if they exists
+     *@param {string[]|string} keys - array of keys or a single string key
+     *@param {Object} object - the object
+    */
+    deleteFromObject(keys, object) {
+        keys = this.makeArray(keys);
+        if (this.isPlainObject(object)) {
+            keys.forEach((key) => {
+                object[key] = null;
+                delete object[key];
+            });
+        }
+    },
+
+    /**
+     * returns true if the key is not defined in the object, or if it is defined and truthy
+     * it returns false if argument two is not an object
+     *@param {string} key - string key
+     *@param {Object} object - the object
+    */
+    keyNotSetorTrue(key, object) {
+        if (this.isPlainObject(object)) {
+            return typeof object[key] === 'undefined' || !!(object[key]);
+        }
+        return false;
+    },
 };

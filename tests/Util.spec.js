@@ -192,4 +192,41 @@ describe('Util Module', function() {
                 .toEqual(['5ft']);
         });
     });
+
+    describe('.deleteFromObject(keys, object)', function() {
+        it(`should delete all the given keys from the given object if they exists`, function() {
+            let object = {name: 'some names', 'detail': 'some details'};
+
+            Util.deleteFromObject('name', object);
+            expect(object.name).not.toBeDefined();
+        });
+
+        it(`should do nothing if argument is not an object`, function() {
+            expect(function() {
+                Util.deleteFromObject('name', []);
+            }).not.toThrow();
+        });
+    });
+
+    describe('.keyNotSetOrTrue(key, object)', function() {
+        let object = null;
+        beforeEach(function() {
+            object = {eatPizza: true, flyToGermany: 0};
+        });
+
+        it(`should return true if the given key is not defined in the object or if it is
+            defined and it is truthy`, function() {
+            expect(Util.keyNotSetorTrue('eatPizza', object)).toBeTruthy();
+            expect(Util.keyNotSetorTrue('eatCake', object)).toBeTruthy();
+        });
+
+        it(`should return false if the given key is defined in the object and it is
+            falsy`, function() {
+            expect(Util.keyNotSetorTrue('flyToGermany', object)).toBeFalsy();
+        });
+
+        it(`should return false if argument two is not an object`, function() {
+            expect(Util.keyNotSetorTrue('eatPizza', null)).toBeFalsy();
+        });
+    });
 });
