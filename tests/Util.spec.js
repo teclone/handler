@@ -112,4 +112,19 @@ describe('Util Module', function() {
             expect(Util.isValidParameter(null, true)).toBeFalsy();
         });
     });
+
+    describe('.makeArray(arg, excludeNulls?)', function() {
+        it('should create and return an array using the supplied argument', function() {
+            expect(Util.makeArray(2)).toEqual([2]);
+        });
+
+        it('should return the argument if it is already an array', function() {
+            let arg = [];
+            expect(Util.makeArray(arg)).toStrictEqual(arg);
+        });
+
+        it('should return empty array if argument is not a valid parameter. i.e, if argument is undefined', function() {
+            expect(Util.makeArray(undefined)).toEqual([]);
+        });
+    });
 });
