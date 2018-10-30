@@ -4,14 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "",
+    "test": "BABEL_ENV=test jest --config ./jest.config.json",
+    "watch-test": "npm run test -- --watchAll",
     "commit": "git-cz"
   },
   "author": "Harrison Ifeanyichukwu <harrisonifeanyichukwu@gmail.com> (https://github.com/harrison-ifeanyichukwu)",
   "license": "MIT",
   "devDependencies": {
+    "@babel/core": "7.1.2",
+    "@babel/preset-env": "7.1.0",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-jest": "23.6.0",
     "commitizen": "3.0.4",
-    "cz-conventional-changelog": "2.1.0"
+    "cz-conventional-changelog": "2.1.0",
+    "jest": "23.6.0",
+    "regenerator-runtime": "0.12.1"
   },
   "config": {
     "commitizen": {
