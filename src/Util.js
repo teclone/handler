@@ -92,4 +92,17 @@ export default {
             return false;
         return typeof variable !== 'undefined';
     },
+
+    /**
+     * returns the argument if it is already an array, or makes an array using the argument
+     *@param {*} arg - the argument
+     *@param {boolean} excludeNulls - boolean value indicating if null argument should default
+     * to empty array just like undefined argument
+     *@returns {Array}
+    */
+    makeArray(arg, excludeNulls) {
+        if (this.isArray(arg))
+            return arg;
+        return this.isValidParameter(arg, excludeNulls)? [arg] : [];
+    },
 };
