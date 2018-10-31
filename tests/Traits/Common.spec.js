@@ -79,7 +79,7 @@ describe('Common Traits module', function() {
 
             instance.reset('fav-number', {});
             instance.setError('{this} is not a valid field number', 22);
-            expect(instance.getError('fav-number')).toEqual('"22" is not a valid field number');
+            expect(instance.getError('fav-number')).toEqual('22 is not a valid field number');
         });
 
         it(`should resolve and replace {_this} placeholder if it exist on the
