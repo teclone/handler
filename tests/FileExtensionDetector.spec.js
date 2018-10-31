@@ -9,7 +9,7 @@ describe('FileExtensionDetector module', function() {
 
     beforeEach(function() {
         detector = new FileExtensionDetector();
-        basePath = path.join(__dirname, '../tests/Helpers/');
+        basePath = path.join(__dirname, 'Helpers/Files/');
     });
 
     describe('#detect(fileName)', function() {
