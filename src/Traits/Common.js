@@ -64,7 +64,7 @@ export default class {
      *@returns {boolean} returns false
     */
     setError(err, value) {
-        if(Util.isNumeric(value))
+        if(!Util.isNumeric(value))
             value = `"${value}"`;
 
         this._errorBag[this._field] = Regex.replaceCallback(
