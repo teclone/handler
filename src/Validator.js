@@ -64,6 +64,28 @@ import InvalidDateException from './Exceptions/InvalidDateException';
 export default class extends Common
 {
     /**
+     * returns support schemes for uri validation
+     *@returns {Array}
+    */
+    getURISchemes() {
+        return [
+            'http',
+            'https',
+            'ssh',
+            'ftp',
+            'smtp',
+            'telnet',
+            'imap',
+            'ip',
+            'ssl',
+            'pop3',
+            'sip',
+            'ws',
+            'wss'
+        ];
+    }
+
+    /**
      * validate matchWith or matchAgainst rule option
      *@protected
      *@returns {boolean}
@@ -729,6 +751,49 @@ export default class extends Common
                         //in the personal info, there cant be two or more adjacent dots
                         {test: /\.{2,}.*@/, err},
                     ]
+                };
+
+            if (this.checkRegexRules(value, rules) && this.checkRegexRules(value, options)) {
+                const len = value.length;
+                this.checkLimitingRules(value, len, 'characters');
+            }
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates url
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateURL(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            const err = Util.value('err', options, '{this} is not a valid url'),
+                rules = {
+                    /*
+                     * domain consists of optional scheme, and consists of labels that are each
+                     * 63 characters max, each label cannot start or end with highen
+                    */
+                    regex: {
+                        test: new RegExp(
+                            '^(?:(?:' + this.getURISchemes().join('|') + ')://)?' //match optional scheme
+                            +
+                            '[a-z0-9](?:[-a-z0-9]*[a-z0-9])?' //match first label
+                            +
+                            '(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*' // followed by one or more labels
+                            +
+                            '(\\.[a-z]{2,4})' //then must have a top level domain
+                            +
+                            '(?:\\:\\d{1,4})?' //match optional port number
+                            +
+                            '(?:[#/?][-\\w()/#~:.?+=&%@]*)?$' //match optional part, hash, query
+                            ,
+                            'i'
+                        ),
+                        err
+                    },
                 };
 
             if (this.checkRegexRules(value, rules) && this.checkRegexRules(value, options)) {
