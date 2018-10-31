@@ -958,4 +958,94 @@ export default class extends Common
         }
         return this.postValidate(value, options);
     }
+
+    /**
+     * validates image file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateImage(required, field, value, options, index) {
+        options['mimes'] = Util.arrayValue(
+            'mimes',
+            options,
+            this._fileExtensionDetector.getImageMimes()
+        );
+        return this.validateFile(required, field, value, options, index);
+    }
+
+    /**
+     * validates audio file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateAudio(required, field, value, options, index) {
+        options['mimes'] = Util.arrayValue(
+            'mimes',
+            options,
+            this._fileExtensionDetector.getAudioMimes()
+        );
+        return this.validateFile(required, field, value, options, index);
+    }
+
+    /**
+     * validates video file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateVideo(required, field, value, options, index) {
+        options['mimes'] = Util.arrayValue(
+            'mimes',
+            options,
+            this._fileExtensionDetector.getVideoMimes()
+        );
+        return this.validateFile(required, field, value, options, index);
+    }
+
+    /**
+     * validates media file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateMedia(required, field, value, options, index) {
+        options['mimes'] = Util.arrayValue(
+            'mimes',
+            options,
+            this._fileExtensionDetector.getMediaMimes()
+        );
+        return this.validateFile(required, field, value, options, index);
+    }
+
+    /**
+     * validates document file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateDocument(required, field, value, options, index) {
+        options['mimes'] = Util.arrayValue(
+            'mimes',
+            options,
+            this._fileExtensionDetector.getDocumentMimes()
+        );
+        return this.validateFile(required, field, value, options, index);
+    }
+
+    /**
+     * validates archive file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateArchive(required, field, value, options, index) {
+        options['mimes'] = Util.arrayValue(
+            'mimes',
+            options,
+            this._fileExtensionDetector.getArchiveMimes()
+        );
+        return this.validateFile(required, field, value, options, index);
+    }
 }
