@@ -837,4 +837,39 @@ export default class extends Common
         options.choices = Util.range(from, to, Math.abs(step));
         return this.validateChoice(required, field, value, options, index);
     }
+
+    /**
+     * validate password
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validatePassword(required, field, value, options, index) {
+        options['min'] = Util.value('min', options, 8);
+        options['max'] = Util.value('max', options, 28);
+
+        options['regexAll'] = Util.arrayValue('regexAll', options, [
+            //password should contain at least two alphabets
+            {
+                'test': /[a-z].*[a-z]/i,
+                'err': 'Password must contain at least two letter alphabets'
+            },
+            //password should contain at least two non letter alphabets
+            {
+                'test': /[^a-z].*[^a-z]/i,
+                'err': 'Password must contain at least two non letter alphabets'
+            }
+        ]);
+
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+
+            //validate the limiting rules
+            this.checkLimitingRules(value, value.length, 'characters', null, 'Password');
+
+            //check for regex rules
+            this.checkRegexRules(value, options);
+        }
+
+        return this.postValidate(value, options, 'Passwords');
+    }
 }
