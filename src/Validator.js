@@ -61,6 +61,346 @@ import Util from './Util';
 
 export default class extends Common
 {
+    /**
+     * validate matchWith or matchAgainst rule option
+     *@protected
+     *@returns {boolean}
+    */
+    matchWith(value, options, prefix) {
+        prefix = Util.isString(prefix)? prefix : '{_this}';
+
+        const matchWith = Util.objectValue(['matchWith', 'matchAgainst'], options),
+            _value = Util.value('value', matchWith);
+
+        if (_value !== undefined && value != _value)
+            this.setError(
+                Util.value('err', matchWith, prefix + ' did not match'),
+                value
+            );
+
+        return this.succeeds();
+    }
+
+    /**
+     * runs post validation
+     *@protected
+     *@param {string} value - current value under validation
+     *@param {Object} options - validation rule options
+     *@param {string} [prefix] - the prefix string to use
+     *@returns {boolean}
+    */
+    postValidate(value, options, prefix) {
+        if (this.succeeds())
+            this.matchWith(value, options, prefix);
+
+        return this.succeeds();
+    }
+
+    /**
+     * checks the regexNone rule
+     *@protected
+     *@param {mixed} value - the value
+     *@param {Array} regexes - array of regex test expression objects
+     *@returns {boolean}
+    */
+    regexCheckNone(value, regexes) {
+        if (regexes.length === 0)
+            return true;
+
+        for (let regex of regexes) {
+            if (Util.isPlainObject(regex)) {
+                const test = Util.value('test', regex);
+                if (Util.isRegex(test) && test.test(value)) {
+                    return this.setError(
+                        Util.value('err', regex, '{this} format not acceptable or contains some unwanted characters'),
+                        value
+                    );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * checks the regexAny rule
+     *@protected
+     *@param {mixed} value - the value
+     *@param {Object} regex - object containing the regex tests array
+     *@param {Array} regex.tests - array containing regex test instances
+     *@param {string} regex.err - error message to set if none of regex tests succeeds
+     *@returns {boolean}
+    */
+    regexCheckAny(value, regex) {
+        const tests = Util.arrayValue('tests', regex);
+        if (tests.length === 0)
+            return true;
+
+        const succeeds = tests.some(test => {
+            return Util.isRegex(test) && test.test(value);
+        });
+
+        if (!succeeds)
+            return this.setError(
+                Util.value('err', regex, '{this} did not meet any of the expected formats'),
+                value
+            );
+
+        return true;
+    }
+
+    /**
+     * checks the regexAll rule
+     *@protected
+     *@param {mixed} value - the value
+     *@param {Array} regexes - array of regex test expression objects
+     *@returns {boolean}
+    */
+    regexCheckAll(value, regexes) {
+        if (regexes.length === 0)
+            return true;
+
+        for (let regex of regexes) {
+            if (Util.isPlainObject(regex)) {
+                const test = Util.value('test', regex);
+                if (Util.isRegex(test) && !test.test(value)) {
+                    return this.setError(
+                        Util.value('err', regex, '{this} did not meet all expected formats'),
+                        value
+                    );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * checks the regex rule
+     *@protected
+     *@param {mixed} value - the value
+     *@param {Object} regex - regex test expression object
+     *@param {RegExp} [regex.test] - the regex pattern,
+     *@param {string} [regex.err] - the error message to set if test fails
+     *@returns {boolean}
+    */
+    regexCheck(value, regex) {
+        const test = Util.value('test', regex);
+        if (Util.isRegex(test) && !test.test(value)) {
+
+            return this.setError(
+                Util.value('err', regex, '{this} is not a valid value'),
+                value
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * runs regex rule checks
+     *@protected
+     *@param {string} value - the field value
+     *@param {Array} options - field rule options
+    */
+    checkRegexRules(value, options) {
+        //check for regex rule
+        if (this.succeeds())
+            this.regexCheck(value, Util.objectValue('regex', options));
+
+        //check for regexAll rule
+        if (this.succeeds())
+            this.regexCheckAll(value, Util.arrayValue('regexAll', options));
+
+        //check for regexAny rule
+        if (this.succeeds())
+            this.regexCheckAny(value, Util.objectValue('regexAny', options));
+
+        //check for regexNone rule
+        if (this.succeeds())
+            this.regexCheckNone(value, Util.arrayValue('regexNone', options));
+
+        return this.succeeds();
+    }
+
+    /**
+     * construct limiting rule error
+     *@protected
+     *@returns {string}
+    */
+    constructLimitingRuleErr(prefix, err, value, unit) {
+        prefix += ' ';
+        let formatter = new Intl.NumberFormat(),
+            constructedErr = '',
+            actualUnit = '';
+
+        switch(unit)
+        {
+            case 'characters':
+                constructedErr = prefix + err + ' ' + formatter.format(value) +
+                    ' characters';
+                break;
+            case 'numeric':
+                constructedErr = prefix + err + ' ' + formatter.format(value);
+                break;
+            case 'date':
+                constructedErr = prefix + err + ' ' + value;
+                break;
+            case 'file':
+                formatter = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
+                for (let [unit, size] of Object.entries(this._fileUnitSizes)) {
+                    if (value >= size) {
+                        actualUnit = unit;
+                        value = value / size;
+                        break;
+                    }
+                }
+                constructedErr = prefix + err + ' ' + formatter.format(value) + actualUnit;
+                break;
+        }
+
+        return constructedErr;
+    }
+
+    /**
+     * runs the callback method on the given value
+     *@protected
+     *@param {mixed} value - the value
+     *@param {Callable} callback - the callback method
+     *@return {mixed}
+    */
+    runCallback(value, callback) {
+        if (Util.isCallable(callback))
+            return callback(value);
+
+        return value;
+    }
+
+    /**
+     * resolve limiting value. string values will be converted accurately
+     *@param {string} key - the rule key
+     *@param {Object} options - the rule options object
+     *@return {mixed}
+    */
+    resolveLimitingRuleValue(key, options) {
+        const value = Util.value(key, options);
+        if (Util.isString(value)) {
+            const units = Object.keys(this._fileUnitSizes),
+                regex = new RegExp(
+                    '^(\\.[0-9]+|[0-9]+[.]?[0-9]*)(' + units.join('|') + ')$'
+                );
+
+            if (regex.exec(value)) {
+                const number = parseFloat(RegExp.$1);
+                return number * this._fileUnitSizes[RegExp.$2.toLowerCase()];
+            }
+        }
+        return value;
+    }
+
+    /**
+     * checks the limiting rules such as min, max, lt, gt
+     *@protected
+     *@param {string} value - the value
+     *@param {number|Date} actual - the actual value
+     *@param {Object} options - the field rules
+     *@param {string} unit - the unit of measurement to use
+     *@param {Callable}} [callback=null] - a callback method
+     *@param {string} [prefix] - a string prefix to use
+     *@return {boolean}
+    */
+    checkLimitingRules(value, actual, unit, callback, prefix) {
+        prefix = Util.isString(prefix)? prefix : '{_this}';
+        const options = this._options;
+
+        let err = '';
+
+        //check the min limit
+        let min = this.resolveLimitingRuleValue('min', options);
+        if (min !== undefined) {
+            min = this.runCallback(min, callback);
+            if(actual < min) {
+                err = this.constructLimitingRuleErr(
+                    prefix,
+                    'should not be less than',
+                    min,
+                    unit
+                );
+                return this.setError(Util.value('minErr', options, err), value);
+            }
+        }
+
+        //check the max limit
+        let max = this.resolveLimitingRuleValue('max', options);
+        if (max !== undefined) {
+            max = this.runCallback(max, callback);
+            if(actual > max) {
+                err = this.constructLimitingRuleErr(
+                    prefix,
+                    'should not be greater than',
+                    max,
+                    unit
+                );
+                return this.setError(Util.value('maxErr', options, err), value);
+            }
+        }
+
+        //check the gt limit
+        let gt = this.resolveLimitingRuleValue('gt', options);
+        if (gt !== undefined) {
+            gt = this.runCallback(gt, callback);
+            if(actual <= gt) {
+                err = this.constructLimitingRuleErr(
+                    prefix,
+                    'should be greater than',
+                    gt,
+                    unit
+                );
+                return this.setError(Util.value('gtErr', options, err), value);
+            }
+        }
+
+        //check the lt limit
+        let lt = this.resolveLimitingRuleValue('lt', options);
+        if (lt !== undefined) {
+            lt = this.runCallback(lt, callback);
+            if(actual >= lt) {
+                err = this.constructLimitingRuleErr(
+                    prefix,
+                    'should be less than',
+                    lt,
+                    unit
+                );
+                return this.setError(Util.value('ltErr', options, err), value);
+            }
+        }
+        return this.succeeds();
+    }
+
+    /**
+     * resets the validator, and checks if the validation should proceed
+     *
+     *@protected
+     *@return {boolean}
+    */
+    setup(required, field, value, options, index) {
+        this.reset(field, options, index);
+        this._fileName = '';
+        this._fileMagicByte = '';
+
+        if (!required && (value === '' || value === null || value === undefined)) {
+            this.shouldProceed(false);
+        }
+        else if (value === null || value === '' || value === undefined) {
+            this.shouldProceed(false);
+            this.setError('{_this} is required', value);
+        }
+        else {
+            this.shouldProceed(true);
+        }
+
+        return this.shouldProceed();
+    }
 
     /**
      *@param array [$error_bag] - the error bag, passed by reference
@@ -142,5 +482,25 @@ export default class extends Common
     */
     getFileMagicByte() {
         return this._fileMagicByte;
+    }
+
+    /**
+     * validates text
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@return {boolean}
+    */
+    validateText(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+
+            const len = value.length;
+            this.checkLimitingRules(value, len, 'characters');
+
+            //check for formatting rules
+            this.checkRegexRules(value, options);
+        }
+
+        return this.postValidate(value, options);
     }
 }
