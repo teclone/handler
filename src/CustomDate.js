@@ -1,9 +1,11 @@
+import Util from './Util';
+
 /**
  * extend the Date module and export
 */
 
 Date.prototype.toString = function() {
-    return '' + this.getFullYear() + '-' + this.getMonth() + '-' + this.getDay();
+    return `${this.getFullYear()}-${Util.padZeros(this.getMonth() + 1)}-${Util.padZeros(this.getDate())}`;
 };
 
 /**
