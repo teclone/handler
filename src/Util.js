@@ -219,7 +219,10 @@ export default {
     */
     range(from, to, step) {
 
-        from = from.toString();
+        if (from === null || from === undefined || to === null || to === undefined)
+            return [];
+
+        from =  from.toString();
         to = to.toString();
 
         step = this.isNumeric(step)? (parseFloat(step) || 1) : 1;
@@ -248,5 +251,27 @@ export default {
                 result.push(target[start]);
         }
         return result;
+    },
+
+    /**
+     * pads zeros to the left of the argument until it meets the required length
+     *@param {string|number} value - the value to be padded
+     *@param {number} [finalLength=2] - expected final length of value
+     *@return {string}
+    */
+    padZeros(value, finalLength) {
+        if (!this.isString(value) && typeof value !== 'number')
+            return '';
+
+        value = value.toString();
+        const len = value.length;
+
+        finalLength = this.isInt(finalLength)? Math.abs(finalLength) : 2;
+        let diff = finalLength - len;
+
+        while (--diff >= 0)
+            value = '0' + value;
+
+        return value;
     }
 };
