@@ -252,6 +252,18 @@ describe('Util Module', function() {
 
         it(`should return empty array if argument is not valid number or alphabets`, function() {
             expect(Util.range(',', 'd')).toEqual([]);
+            expect(Util.range()).toEqual([]);
+        });
+    });
+
+    describe('.padZeros(value, finalLength=2)', function() {
+        it(`should left pad the given string or number value with zeros until its length
+            equals the finalLength`, function() {
+            expect(Util.padZeros(3, 3)).toEqual('003');
+        });
+
+        it(`should return empty string if argument is neither a string nor a number`, function() {
+            expect(Util.padZeros({})).toEqual('');
         });
     });
 });
