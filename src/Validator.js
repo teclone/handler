@@ -1,6 +1,8 @@
 import Common from './Traits/Common';
 import FileExtensionDetector from './FileExtensionDetector';
 import Util from './Util';
+import CustomDate from './CustomDate';
+import InvalidDateException from './Exceptions/InvalidDateException';
 
 /**
  * the validator module
@@ -378,6 +380,31 @@ export default class extends Common
     }
 
     /**
+     * returns date format regex
+     *@protected
+     *@return {RegExp}
+    */
+    getDateFormat() {
+        return /^([0-9]{4})([-._:|/\s])?([0-9]{1,2})\2?([0-9]{1,2})$/;
+    }
+
+    /**
+     * resolves the date parameter
+     *@return {CustomDate|null}
+    */
+    resolveDate(value) {
+        if (Util.isString(value) && this.getDateFormat().test(value)) {
+            const year = parseInt(RegExp.$1),
+                month = parseInt(RegExp.$3) - 1,
+                day = parseInt(RegExp.$4);
+
+            if(CustomDate.isValid(year, month, day))
+                return new CustomDate(year, month, day);
+        }
+        return null;
+    }
+
+    /**
      * resets the validator, and checks if the validation should proceed
      *
      *@protected
@@ -501,6 +528,42 @@ export default class extends Common
             this.checkRegexRules(value, options);
         }
 
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates date
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateDate(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+
+            //if date is not in good format, return immediately
+            if (!this.getDateFormat().test(value))
+                return this.setError(
+                    Util.value('formatErr', options, '{this} is not a valid date format'),
+                    value
+                );
+
+            //if date is not valid, return immediately
+            let date = this.resolveDate(value);
+            if (date === null)
+                return this.setError(
+                    Util.value('err', options, '{this} is not a valid date'),
+                    value
+                );
+
+            //validate the limiting rules
+            this.checkLimitingRules(value, date, 'date', (value) => {
+                let date = this.resolveDate(value);
+                if (date === null)
+                    throw new InvalidDateException(value + ' is not a valid date');
+
+                return date;
+            });
+        }
         return this.postValidate(value, options);
     }
 }
