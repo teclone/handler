@@ -566,4 +566,125 @@ export default class extends Common
         }
         return this.postValidate(value, options);
     }
+
+    /**
+     * validates integers
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateInteger(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+
+            if (/^[-+]?\d+$/.test(value))
+                this.checkLimitingRules(value, parseInt(value), 'numeric');
+            else
+                this.setError(
+                    Util.value('err', options, '{this} is not a valid integer'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates positive integers
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validatePInteger(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            if (/^[+]?\d+$/.test(value))
+                this.checkLimitingRules(value, parseInt(value), 'numeric'); //check limiting rules
+            else
+                this.setError(
+                    Util.value('err', options, '{this} is not a valid positive integer'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates negative integers
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateNInteger(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            if (/^-\d+$/.test(value))
+                this.checkLimitingRules(value, parseInt(value), 'numeric'); //check limiting rules
+            else
+                this.setError(
+                    Util.value('err', options, '{this} is not a valid negative integer'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates floats
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateFloat(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            if (/^(?:[-+]?\d+(\.\d+)?|\.\d+)$/.test(value))
+                this.checkLimitingRules(value, parseFloat(value), 'numeric'); //check limiting rules
+            else
+                this.setError(
+                    Util.value('err', options, '{this} is not a valid number'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates positive floats
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validatePFloat(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            if (/^(?:\+?\d+(\.\d+)?|\.\d+)$/.test(value))
+                this.checkLimitingRules(value, parseFloat(value), 'numeric'); //check limiting rules
+            else
+                this.setError(
+                    Util.value('err', options, '{this} is not a valid positive number'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates negative floats
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateNFloat(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            if (/^[-]\d+(\.\d+)?$/.test(value))
+                this.checkLimitingRules(value, parseFloat(value), 'numeric'); //check limiting rules
+            else
+                this.setError(
+                    Util.value('err', options, '{this} is not a valid negative number'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
 }
