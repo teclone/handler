@@ -2,6 +2,12 @@ import Common from './Traits/Common';
 import FileExtensionDetector from './FileExtensionDetector';
 import Util from './Util';
 import CustomDate from './CustomDate';
+import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
+import Regex from './Regex';
+import fs from 'fs';
+import crypto from 'crypto';
+import DirectoryNotFoundException from './Exceptions/DirectoryNotFoundException';
+import FileMoveException from './Exceptions/FileMoveException';
 import InvalidDateException from './Exceptions/InvalidDateException';
 
 /**
@@ -871,5 +877,85 @@ export default class extends Common
         }
 
         return this.postValidate(value, options, 'Passwords');
+    }
+
+    /**
+     * validates file upload
+     *
+     *@throws {DirectoryNotFoundException}
+     *@throws {FileMoveException}
+    */
+    validateFile(required, field, value, options, index) {
+        if (this._files === null)
+            throw new FilesSourceNotSetException('no file source set');
+
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+
+            const files = this._files[field];
+            Object.keys(files).forEach(key => {
+                files[key] = Util.makeArray(files[key]);
+            });
+
+            index = this._index;
+
+            //validate limiting rules
+            if (!this.checkLimitingRules(value, files.size[index], 'file'))
+                return this.postValidate(value, options);
+
+            //test file extension
+            let ext = '';
+
+            const tempFileLocation = files.path[index],
+                exts = this._fileExtensionDetector.detect(tempFileLocation);
+
+            this._fileMagicByte = this._fileExtensionDetector.getMagicByte();
+            if (exts.includes('txt')) {
+                ext = 'txt';
+            }
+            else if (/\.(\w+)$/.test(value)) {
+                ext = this._fileExtensionDetector.resolveExtension(RegExp.$1);
+                if (!exts.includes(ext))
+                    return this.setError('File extension spoofing detected', value);
+            }
+            else {
+                ext = exts[0];
+            }
+
+            //validate mimes
+            const mimes = this._fileExtensionDetector.resolveExtensions(
+                Util.arrayValue('mimes', options)
+            );
+            if (mimes.length > 0 && !mimes.includes(ext))
+                return this.setError(
+                    Util.value('mimeErr', options, `".${ext}" file extension not accepted`)
+                );
+
+            // override file extension mime if given
+            ext = Util.value('overrideMime', options, ext);
+
+            //move file to some other location if moveTo option is set
+            let moveTo = Util.value('moveTo', options, '');
+            if (moveTo !== '') {
+                moveTo = Regex.replace(/\/+$/, '', moveTo) + '/';
+
+                if(!fs.existsSync(moveTo))
+                    throw new DirectoryNotFoundException(moveTo + ' does not exist');
+
+                const fileName = crypto.randomBytes(16).toString('hex') + '.' + ext;
+                moveTo += fileName;
+
+                try {
+                    fs.renameSync(tempFileLocation, moveTo);
+                    this._fileName = fileName;
+                }
+                catch(ex) {
+                    throw new FileMoveException(
+                        Util.value('moveErr', options, 'Error occured while moving uploaded file')
+                    );
+                }
+            }
+        }
+        return this.postValidate(value, options);
     }
 }
