@@ -803,4 +803,38 @@ export default class extends Common
         }
         return this.postValidate(value, options);
     }
+
+    /**
+     * validates choice
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateChoice(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            const choices = Util.arrayValue('choices', options);
+
+            if (!choices.some(_value => _value == value))
+                this.setError(
+                    Util.value('err', options, '{this} is not an acceptable choice'),
+                    value
+                );
+        }
+        return this.postValidate(value, options);
+    }
+
+    /**
+     * validates range of options, either numbers or alphabets with optional step increment
+     *@param {boolean} required - boolean indicating if field is required
+     *@returns {boolean}
+    */
+    validateRange(required, field, value, options, index) {
+        const from = Util.value('from', options),
+            to = Util.value('to', options),
+            step = Util.value('step', options, 1); //default step of 1
+
+        options.choices = Util.range(from, to, Math.abs(step));
+        return this.validateChoice(required, field, value, options, index);
+    }
 }
