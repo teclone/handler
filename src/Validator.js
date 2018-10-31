@@ -687,4 +687,55 @@ export default class extends Common
         }
         return this.postValidate(value, options);
     }
+
+    /**
+     * validates email
+     *
+     *@returns {boolean}
+    */
+    validateEmail(required, field, value, options, index) {
+        if (this.setup(required, field, value, options, index)) {
+            value = value.toString();
+            /*
+             * email validation https://www.w3resource.com/javascript/form/email-validation.php
+             * https://en.wikipedia.org/wiki/Domain_Name_System#Domain_name_syntax
+            */
+            const err = Util.value('err', options, '{this} is not a valid email address'),
+                rules = {
+                    regexAll: [
+                        //email contains two parts, personal info and domain
+                        {test: /^[-\w!#$%&'*+/=?^`{|}~.]{1,64}@[-a-z0-9.]{1,253}$/i, err},
+
+                        //personal info must start with a word character
+                        {test: /^\w/, err},
+                        /*
+                         * domain consists of labels that are each 63 characters max, each label
+                         * cannot start or end with highen
+                        */
+                        {
+                            test: new RegExp(
+                                '@[a-z0-9](?:[-a-z0-9]*[a-z0-9])?' //match first label
+                                +
+                                '(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*' // followed by one or more labels
+                                +
+                                '(\\.[a-z]{2,4})$' //then must have a top level domain
+                                ,
+                                'i'
+                            ),
+                            err
+                        }
+                    ],
+                    regexNone: [
+                        //in the personal info, there cant be two or more adjacent dots
+                        {test: /\.{2,}.*@/, err},
+                    ]
+                };
+
+            if (this.checkRegexRules(value, rules) && this.checkRegexRules(value, options)) {
+                const len = value.length;
+                this.checkLimitingRules(value, len, 'characters');
+            }
+        }
+        return this.postValidate(value, options);
+    }
 }
