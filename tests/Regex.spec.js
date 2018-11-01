@@ -21,6 +21,16 @@ describe('Regex Module', function() {
                 [/is/, 'man'], 'wow', 'Obi is a man'
             )).toEqual('Obi wow a man');
         });
+
+        it(`should do return the given string argument as it is if is undefined or null`, function() {
+            expect(Regex.replace(
+                [/is/, 'man'], 'wow'
+            )).toBeUndefined();
+
+            expect(Regex.replace(
+                [/is/, 'man'], 'wow', null
+            )).toBeNull();
+        });
     });
 
     describe('.replaceCallback(patterns, callback, string, replaceCount?)', function() {
@@ -83,6 +93,16 @@ describe('Regex Module', function() {
             expect(Regex.replaceCallback(/[A-Z]/, function(matches) {
                 return matches[0].toLowerCase();
             }, 'aAaA')).toEqual('aaaa');
+        });
+
+        it(`should do return the given string argument as it is if is undefined or null`, function() {
+            expect(Regex.replaceCallback(
+                [/is/, 'man'], function() {}
+            )).toBeUndefined();
+
+            expect(Regex.replace(
+                [/is/, 'man'], function() {}, null
+            )).toBeNull();
         });
     });
 });
