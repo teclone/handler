@@ -1,0 +1,11 @@
+{
+    "sourcemap": false,
+    "externalModules": [
+        "fs",
+        "path",
+        "crypto"
+    ],
+    "distConfig": {
+        "disabled": true
+    }
+}
