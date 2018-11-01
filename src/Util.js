@@ -203,9 +203,21 @@ export default {
      *@param {string} key - string key
      *@param {Object} object - the object
     */
-    keyNotSetorTrue(key, object) {
+    keyNotSetOrTrue(key, object) {
         if (this.isPlainObject(object)) {
             return typeof object[key] === 'undefined' || !!(object[key]);
+        }
+        return false;
+    },
+
+    /**
+     * returns true if the given key is defined in the object and its value is truthy
+     *@param {string} key - string key
+     *@param {Object} object - the object
+    */
+    keySetAndTrue(key, object) {
+        if(this.isPlainObject(object) && !!object[key]) {
+            return true;
         }
         return false;
     },
