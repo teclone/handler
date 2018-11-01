@@ -397,6 +397,12 @@ export default class {
             return option;
         }
 
+        if (Util.isArray(option)) {
+            return option.map((value) => {
+                this.resolveOption(field, value);
+            });
+        }
+
         return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, (matches) => {
             const capture = matches[1];
             switch(capture.toLowerCase()) {
