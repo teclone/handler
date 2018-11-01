@@ -399,7 +399,7 @@ export default class {
 
         if (Util.isArray(option)) {
             return option.map((value) => {
-                this.resolveOption(field, value);
+                return this.resolveOption(field, value);
             });
         }
 
