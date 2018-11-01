@@ -109,7 +109,6 @@ export default class {
      *
      * it returns undefined if there are no errors or if there is no error for the given key.
      *@param {string} [field] - the field to return its error message
-     *@param {string} [defaultValue=undefined] - default value to return. defaults to undefined
      *@returns {string|undefined}
     */
     getError(field) {
