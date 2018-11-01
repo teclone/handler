@@ -7,8 +7,73 @@ import RulesNotSetException from './Exceptions/RulesNotSetException';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import StateException from './Exceptions/StateException';
 import KeyNotFoundException from './Exceptions/KeyNotFoundException';
+import InvalidParameterException from './Exceptions/InvalidParameterException';
 
 export default class {
+
+    /**
+     * returns rule type to validation method map
+     *
+     *@return {Object}
+    */
+    getRuleTypesMethodMap()
+    {
+        return {
+            //text validator
+            'text': 'validateText',
+
+            // date validator
+            'date': 'validateDate',
+
+            //integer validation methods
+            'int': 'validateInteger',
+            'pint': 'validatePInteger',
+            'nint': 'validateNInteger',
+
+            //number validation methods
+            'float': 'validateFloat',
+            'pfloat': 'validatePFloat',
+            'nfloat': 'validateNFloat',
+
+            //boolean validation
+            'bool': '',
+
+            //email validation
+            'email': 'validateEmail',
+
+            //url validation
+            'url': 'validateURL',
+
+            //choice validation
+            'choice': 'validateChoice',
+
+            //range validation
+            'range': 'validateRange',
+
+            //file validation
+            'file': 'validateFile',
+
+            //image file validation
+            'image': 'validateImage',
+
+            //audio file validation
+            'audio': 'validateAudio',
+
+            //video file validation
+            'video': 'validateVideo',
+
+            //media file validation
+            'media': 'validateMedia',
+
+            //document file validation
+            'document': 'validateDocument',
+
+            'archive': 'validateArchive',
+
+            //password validation
+            'password': 'validatePassword'
+        };
+    }
 
     /**
      * sets error message for a given field
@@ -44,6 +109,57 @@ export default class {
     */
     valueIsFalsy(value) {
         return value === '' || /(false|off|0|nil|null|no|undefined)/i.test(value);
+    }
+
+    /**
+     * runs validation on the given field whose value is the given value
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field to validate
+     *@param {mixed} value - field value
+     *@param {Array} options - the rule options
+     *@param {number} index - the value index position
+     *@return {boolean}
+    */
+    runValidation(required, field, value, options, index)
+    {
+        const validator = this._validator,
+            type = options.type,
+            method = Util.value(type, this.getRuleTypesMethodMap(), 'null');
+
+        if(method === 'null') {
+            throw new InvalidParameterException(type + ' is not a recognised rule type');
+        }
+
+        if (method !== '') {
+            validator[method](required, field, value, options, index);
+            if(this.isFileField(field)) {
+                const newFileName = validator.getFileName();
+                if (Util.isArray(this._data[field]))
+                    this._data[field].push(newFileName);
+                else
+                    this._data[field] = newFileName;
+            }
+        }
+
+        return validator.succeeds();
+    }
+
+    /**
+     * validate the fields
+     *
+     *@param {array} fields - the array of fields to validate
+     *@param {boolean} required - boolean value indicating if field is required
+    */
+    validateFields(fields, required) {
+        fields.forEach(field => {
+            const rules = this._ruleOptions[field],
+                values = Util.makeArray(this._data[field]);
+
+            let len = values.length,
+                i = -1;
+            while(++i < len && this.runValidation(required, field, values[i], rules, i));
+        });
     }
 
     /**
@@ -644,8 +760,9 @@ export default class {
                 this.resolveOptions(this._ruleOptions);
                 this.resolveOptions(this._dbChecks);
 
-                // this.validateFields(this._requiredFields, true);
-                // this.validateFields(this._optionalFields, false);
+                this._validator.setFiles(this._files);
+                this.validateFields(this._requiredFields, true);
+                this.validateFields(this._optionalFields, false);
 
                 // if (this.succeeds())
                 // {
