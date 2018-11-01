@@ -109,6 +109,9 @@ export default {
      *@returns {string}
     */
     replace(patterns, replacements, string, replaceCount) {
+        if (string === null || string === undefined)
+            return string;
+
         string = string.toString();
 
         patterns = Util.makeArray(patterns);
@@ -141,6 +144,9 @@ export default {
 
         if (!Util.isCallable(callback))
             throw new InvalidParameterException('argument two is not a callback function');
+
+        if (string === null || string === undefined)
+            return string;
 
         string = string.toString();
         replaceCount = resolveReplaceCount(replaceCount);
