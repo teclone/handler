@@ -397,7 +397,7 @@ export default class {
             return option;
         }
 
-        return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, function(matches) {
+        return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, (matches) => {
             const capture = matches[1];
             switch(capture.toLowerCase()) {
                 case '_this':
