@@ -646,7 +646,7 @@ export default class {
         this._modelSkipFields = [];
 
         /* object of field new names to use when mapping field data to model */
-        this._modelRenameField = {};
+        this._modelRenameFields = {};
 
         /* boolean value indicating if model field names should be camelized */
         this.modelCamelizeFields = false;
@@ -828,5 +828,23 @@ export default class {
             return this._data[key];
 
         throw new KeyNotFoundException('the given key: ' + key + ' is not set');
+    }
+
+    /**
+     * maps data to the given model object
+     *@param {Object} model - the model object
+     *@return {Object}
+    */
+    mapDataToModel(model) {
+        model = Util.isObject(model)? model : {};
+
+        for(let [key, value] of Object.entries(this._data)) {
+            if (this._modelSkipFields.includes(key))
+                continue; //skip field it is should be skipped
+
+            key = Util.value(key, this._modelRenameFields, key);
+            model = Util.composeIntoObject(model, key, value);
+        }
+        return model;
     }
 }
