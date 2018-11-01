@@ -216,17 +216,39 @@ describe('Util Module', function() {
 
         it(`should return true if the given key is not defined in the object or if it is
             defined and it is truthy`, function() {
-            expect(Util.keyNotSetorTrue('eatPizza', object)).toBeTruthy();
-            expect(Util.keyNotSetorTrue('eatCake', object)).toBeTruthy();
+            expect(Util.keyNotSetOrTrue('eatPizza', object)).toBeTruthy();
+            expect(Util.keyNotSetOrTrue('eatCake', object)).toBeTruthy();
         });
 
         it(`should return false if the given key is defined in the object and it is
             falsy`, function() {
-            expect(Util.keyNotSetorTrue('flyToGermany', object)).toBeFalsy();
+            expect(Util.keyNotSetOrTrue('flyToGermany', object)).toBeFalsy();
         });
 
         it(`should return false if argument two is not an object`, function() {
-            expect(Util.keyNotSetorTrue('eatPizza', null)).toBeFalsy();
+            expect(Util.keyNotSetOrTrue('eatPizza', null)).toBeFalsy();
+        });
+    });
+
+    describe('.keySetAndTrue(key, object)', function() {
+        let object = null;
+        beforeEach(function() {
+            object = {eatPizza: true, flyToGermany: 0, speakGerman: 1};
+        });
+
+        it(`should return true if the given key is defined in the object
+            and it is truthy`, function() {
+            expect(Util.keySetAndTrue('eatPizza', object)).toBeTruthy();
+            expect(Util.keySetAndTrue('speakGerman', object)).toBeTruthy();
+        });
+
+        it(`should return false if the given key is not defined in the object or its value is
+            falsy`, function() {
+            expect(Util.keySetAndTrue('flyToGermany', object)).toBeFalsy();
+        });
+
+        it(`should return false if argument two is not an object`, function() {
+            expect(Util.keySetAndTrue('eatPizza', null)).toBeFalsy();
         });
     });
 
