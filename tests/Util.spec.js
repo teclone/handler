@@ -288,4 +288,37 @@ describe('Util Module', function() {
             expect(Util.padZeros({})).toEqual('');
         });
     });
+
+    describe('.composeIntoObject(object, keys, value)', function() {
+        it(`should compose and assign the value for the given key into the object`, function() {
+            expect(Util.composeIntoObject(null, 'details.address.lga', 'udenu')).toEqual({
+                details: {
+                    address: {
+                        lga: 'udenu'
+                    }
+                }
+            });
+        });
+
+        it(`should compose and assign the value for the given key into the object without
+            destroying data`, function() {
+            let data = {
+                details: {
+                    address: {
+                        lga: 'udenu'
+                    }
+                }
+            };
+            expect(Util.composeIntoObject(data, 'details.info.name', 'Harrison')).toEqual({
+                details: {
+                    address: {
+                        lga: 'udenu'
+                    },
+                    info: {
+                        name: 'Harrison'
+                    }
+                }
+            });
+        });
+    });
 });

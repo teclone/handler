@@ -285,5 +285,29 @@ export default {
             value = '0' + value;
 
         return value;
+    },
+
+    /**
+     *@param {Object} object - the object
+     *@param {string} keys - string keys
+     *@param {mixed} value - the final value
+     *@returns {Object}
+    */
+    composeIntoObject(object, keys, value) {
+
+        object = this.isObject(object)? object : {};
+        keys = keys.split('.');
+
+        const lastKey = keys.pop(),
+            lastObject = keys.reduce((current, key) => {
+
+                if (!this.isObject(current[key]))
+                    current[key] = {};
+                return current[key];
+
+            }, object);
+
+        lastObject[lastKey] = value;
+        return object;
     }
 };
