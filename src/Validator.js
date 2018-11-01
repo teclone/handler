@@ -891,6 +891,7 @@ export default class extends Common
 
         if (this.setup(required, field, value, options, index)) {
             value = value.toString();
+            this._fileName = value;
 
             const files = this._files[field];
             Object.keys(files).forEach(key => {
