@@ -821,7 +821,11 @@ export default class extends Common
             value = value.toString();
             const choices = Util.arrayValue('choices', options);
 
-            if (!choices.some(_value => _value == value))
+            const exists = choices.some(_value => {
+                return _value == value;
+            });
+
+            if (!exists)
                 this.setError(
                     Util.value('err', options, '{this} is not an acceptable choice'),
                     value
