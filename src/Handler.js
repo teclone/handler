@@ -823,6 +823,14 @@ export default class {
     }
 
     /**
+     * returns all errors as an object
+     *@returns {Object}
+    */
+    getErrors() {
+        return {...this._errors};
+    }
+
+    /**
      * returns the data for the given key if it exists, or null
      *
      *@param {string} key - the field key
@@ -834,6 +842,68 @@ export default class {
             return this._data[key];
 
         throw new KeyNotFoundException('the given key: ' + key + ' is not set');
+    }
+
+    /**
+     * returns all data as an object
+     *@returns {Object}
+    */
+    getAllData() {
+        return {...this._data};
+    }
+
+    /**
+     * defines a field that should be skipped while mapping to a model
+     *@param {string} field
+     *@return {this}
+    */
+    modelSkipField(field) {
+        if (typeof field === 'string' && !this._modelSkipFields.includes(field))
+            this._modelSkipFields.push(field);
+
+        return this;
+    }
+
+    /**
+     * defines array of fields that should be skipped while mapping to a model
+     *
+     *@param {string[]} fields - array of fields
+     *@return {this}
+    */
+    modelSkipFields(fields) {
+        if (Util.isArray(fields)) {
+            fields.forEach(this.modelSkipField);
+        }
+        return this;
+    }
+
+    /**
+     * defines the new name to use when mapping field data to a model
+     *@param {string} field
+     *@param {string} newName
+     *@return {this}
+    */
+    modelRenameField(field, newName) {
+        if (typeof newName === 'string' && typeof field === 'string')
+            this._modelRenameFields[field] = newName;
+
+        return this;
+    }
+
+    /**
+     * defines the new names to use when mapping field data to a model
+     *@param {Object} newNames - object of oldName: newName entries
+     *@return {this}
+    */
+    modelRenameFields(newNames)
+    {
+        if (Util.isPlainObject(newNames)) {
+            for (let [field, newName] of Object.entries(newNames)) {
+                this.modelRenameField(field, newName);
+            }
+        }
+
+        return this;
     }
 
     /**
