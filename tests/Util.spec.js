@@ -321,4 +321,46 @@ describe('Util Module', function() {
             });
         });
     });
+
+    describe('.assign(target, ...objects)', function() {
+        it(`should clone the object of data into a new object`, function() {
+            let obj1 = {
+                name: 'test',
+                countries: ['Nigeria', 'Ukraine', 'Gambia', 'Zambia', 'Jebba'],
+                address: {
+                    city: 'Obadiah'
+                }
+            };
+
+            let obj2 = {
+                age: 22,
+                countries: ['Nigeria', 'Ghana'],
+                address: {
+                    state: 'Enugu',
+                    lga: 'Udenu'
+                }
+            };
+            expect(Util.assign({}, obj1, obj2)).toEqual({
+                name: 'test',
+                age: 22,
+                countries: ['Nigeria', 'Ghana', 'Gambia', 'Zambia', 'Jebba'],
+                address: {
+                    city: 'Obadiah',
+                    state: 'Enugu',
+                    lga: 'Udenu'
+                }
+            });
+
+            expect(Util.assign(null, obj2, obj1)).toEqual({
+                name: 'test',
+                age: 22,
+                countries: ['Nigeria', 'Ukraine', 'Gambia', 'Zambia', 'Jebba'],
+                address: {
+                    city: 'Obadiah',
+                    state: 'Enugu',
+                    lga: 'Udenu'
+                }
+            });
+        });
+    });
 });
