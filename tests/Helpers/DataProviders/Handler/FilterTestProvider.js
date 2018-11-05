@@ -6,17 +6,23 @@ export default function() {
         'first set': [
             //data
             {
+                'last-name': '        Harrison        ',
+                'middle-name': '        Ifeanyichukwu        ',
+
                 'ages': ['22yrs', '22.5years'],
-                'last-name': '',
-                'remember-me': 'off',
-                'terms-and-conditions': 'on',
                 'fav-numbers': ['4', '7', '10', '11'],
-                'height': '5.4ft',
+
+                //'remember-me': 'off', not supplied is the same as false for boolean fields
+                'terms-and-conditions': 'on',
+
                 'email': '(Harrisonifeanyichukwu@gmail.com)',
                 'website': 'http://www.fjsfoundations.com',
+
                 'alpha-one': 'a',
                 'alpha-two': 'Z',
-                'money': '500',
+
+                'money': 'not-money',
+                'cool-money': '500$'
             },
 
             //files
@@ -24,33 +30,49 @@ export default function() {
 
             //rules
             {
+                //test do not trim and trim field filters
+                'last-name': {
+                    'filters': {
+                        'trim': false
+                    }
+                },
+                'middle-name':  {
+                    filters: {
+                        trim: true
+                    }
+                },
+
+                //test float and interger cast filter
                 'ages': {
                     type: 'positiveFloat',
                 },
-                'last-name': {
-                    'required': false,
+                'fav-numbers': {
+                    type: 'int'
                 },
+
+                //boolean field cast
                 'remember-me': {
                     type: 'boolean'
                 },
                 'terms-and-conditions': {
                     type: 'boolean'
                 },
-                'fav-numbers': {
-                    type: 'int'
-                },
-                'height': {
-                    type: 'float'
-                },
+
+                //test email filter
                 'email': {
                     type: 'email'
                 },
+
+                //test url filter
                 'website': {
                     type: 'url'
                 },
+
+                //lower case and upper case filter
                 'alpha-one': {
                     filters: {
-                        'toUpper': true
+                        'toUpper': true,
+                        'decode': false
                     },
                 },
                 'alpha-two': {
@@ -58,7 +80,14 @@ export default function() {
                         'toLower': true
                     },
                 },
+
+                //valid numeric and non valid numeric field cast.
                 'money': {
+                    filters: {
+                        'numeric': true,
+                    },
+                },
+                'cool-money': {
                     filters: {
                         'numeric': true,
                     },
@@ -70,17 +99,81 @@ export default function() {
 
             //expected
             {
-                'ages': [22, 22.5],
-                'last-name': null,
+                'last-name': '        Harrison        ',
+                'middle-name': 'Ifeanyichukwu',
+
+                'ages': [22, 22.5, ],
+                'fav-numbers': [4, 7, 10, 11],
+
                 'remember-me': false,
                 'terms-and-conditions': true,
-                'fav-numbers': [4, 7, 10, 11],
-                'height': 5.4,
+
                 'email': 'Harrisonifeanyichukwu@gmail.com',
+
                 'website': 'http://www.fjsfoundations.com',
+
                 'alpha-one': 'A',
                 'alpha-two': 'z',
-                'money': 500
+
+                'money': 0,
+                'cool-money': 500
+            }
+        ],
+
+        'strip tags test set': [
+            //data
+            {
+                description: `
+                    <section>
+                        <header>
+                            <h1>Hello World</h1>
+                        </header>
+                        <div>
+                            <p style="font-size: 12px">My name is harrison ifeanyichukwu<p>
+                        </div>
+                    </section>
+                `,
+                location: `<br>No.10 <b onClick="(event) => {console.log('clicked')}">VI Lagos<b>`,
+
+                action: '<button type="submit" value="" autofocus>Submit',
+
+                comment: '<p>nothing to comment</p>'
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                description: {
+                    filters: {
+                        compact: true,
+                        stripTagsIgnore: ['<div>', '<p>']
+                    }
+                },
+                location: {
+                    filters: {
+                        stripTagsIgnore: '<br>'
+                    }
+                },
+                action: 'text',
+                comment: {
+                    filters: {
+                        compact: true,
+                        stripTags: false
+                    }
+                }
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+                description: `Hello World<div><p style="font-size: 12px">My name is harrison ifeanyichukwu<p></div>`,
+                location: '<br>No.10 VI Lagos',
+                action: 'Submit',
+                comment: '<p>nothing to comment</p>'
             }
         ],
     };
