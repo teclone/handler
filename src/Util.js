@@ -309,5 +309,56 @@ export default {
 
         lastObject[lastKey] = value;
         return object;
+    },
+
+    /**
+     * assigns the objects to the target object. this better than object.assign as it performs
+     * deep copy
+     *@param {Object} target - the target object
+     *@param {...Objects} objects - comma separated list of objects
+     *@returns {Object}
+    */
+    assign(target, ...objects) {
+
+        const copyObject = function(dest, object) {
+            dest = this.isObject(dest)? dest : {};
+            for (let [key, value] of Object.entries(object)) {
+                dest[key] = cordinate.call(this, dest[key], value);
+            }
+
+            return dest;
+        };
+
+        const copyArray = function(dest, values) {
+            dest = this.isArray(dest)? dest : [];
+
+            values.forEach((current, index) => {
+                dest[index] = cordinate.call(this, null, current);
+            });
+
+            return dest;
+        };
+
+        //cordinates the calls
+        const cordinate = function(dest, value) {
+            if (this.isArray(value)) {
+                return copyArray.call(this, dest, value);
+            }
+            else if (this.isObject(value)) {
+                return copyObject.call(this, dest, value);
+            }
+            else {
+                return value;
+            }
+        };
+
+        target = this.isPlainObject(target)? target : {};
+
+        for (const object of objects) {
+            for (const [key, value] of Object.entries(object)) {
+                target[key] = cordinate.call(this, target[key], value);
+            }
+        }
+        return target;
     }
 };
