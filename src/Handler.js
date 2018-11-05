@@ -8,8 +8,26 @@ import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException'
 import StateException from './Exceptions/StateException';
 import KeyNotFoundException from './Exceptions/KeyNotFoundException';
 import InvalidParameterException from './Exceptions/InvalidParameterException';
+import DBCheckerNotFoundException from './Exceptions/DBCheckerNotFoundException';
+import MissingParameterException from './Exceptions/MissingParameterException';
+import DBCheckerAbstract from './Abstracts/DBCheckerAbstract';
+import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
 
 export default class {
+
+    /**
+     * returns db checks rule to method map
+     *@returns {Array}
+    */
+    getDBChecksMethodMap() {
+        return {
+            //check if exist method map
+            'exist': 'checkIfExists',
+
+            //check if not exists method map
+            'notexist': 'checkIfNotExists',
+        };
+    }
 
     /**
      * returns rule type to validation method map
@@ -102,13 +120,113 @@ export default class {
     }
 
     /**
+     * calls the setData method on each data field in the object
+     *
+     *@protected
+     *@param {Object} data - object of field: value data
+     *@returns {this}
+    */
+    setDatas(data) {
+        if (Util.isPlainObject(data)) {
+            Object.keys(data).forEach(key => this.setData(key, data[key]));
+        }
+        return this;
+    }
+
+    /**
      * tests if a value is falsy
      *
      *@param $value - the value to test
      *@returns {boolean}
     */
     valueIsFalsy(value) {
-        return value === '' || /(false|off|0|nil|null|no|undefined)/i.test(value);
+        return value === '' || value === undefined || value === null ||
+            /(false|off|0|nil|null|no|undefined)/i.test(value);
+    }
+
+    /**
+     * resolves database model field name to either camelCase like or snake case
+     *@param {string} field - the field to resolve
+     *@return {string}
+    */
+    resolveModelFieldName(field) {
+        if(this._dbModelCaseStyle === DB_MODEL_CASE_STYLES.CAMEL_CASE) {
+            return field.split(/[-_]/).map((part, index) => {
+                if (index === 0)
+                    return part;
+
+                return part.charAt(0).toUpperCase() + part.substring(1);
+            }).join('');
+        }
+
+        return field.replace(/[-]/, '_');
+    }
+
+    /**
+     * runs the database checks
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field being checked
+     *@param {mixed} value - field value
+     *@param {Object} dbChecks - the database check items
+     *@param {number} index - the value index position
+     *@return {Promise}
+    */
+    async runDBChecks(required, field, value, dbChecks, index) {
+        const dbChecker = this._dbChecker;
+        if (dbChecker === null) {
+            throw new DBCheckerNotFoundException('No db checker instance found');
+        }
+
+        for (const dbCheck of dbChecks) {
+            if(typeof dbCheck['if'] !== 'string')
+                throw new MissingParameterException(`db check "if" parameter expected for ${field} rule`);
+
+            if(typeof dbCheck['entity'] !== 'string')
+                throw new MissingParameterException(`db check "entity" parameter expected for ${field} rule`);
+
+            //if there is no query, set the field key and the params array
+            if(typeof dbCheck['query'] === 'undefined') {
+                if (typeof dbCheck['field'] === 'undefined') {
+                    dbCheck['field'] = this._dbModel === DB_MODELS.RELATIONAL
+                        && Util.isInt(value)? 'id' : this.resolveModelFieldName(field);
+                }
+                dbCheck['params'] = Util.arrayValue('params', dbCheck, [value]);
+            }
+
+            //if there is no params array, assign empty array
+            dbCheck['params'] = Util.arrayValue('params', dbCheck);
+
+            const checkIf = dbCheck['if'],
+                method = Util.value(checkIf, this.getDBChecksMethodMap(), 'null');
+
+            if (method === null)
+                throw new InvalidParameterException(checkIf + ' is not a db check rule');
+
+            // clone db check options to avoid any side effect
+            await dbChecker[method](required, field, value, dbCheck, index);
+            if (dbChecker.fails())
+                break;
+
+        }
+        return this.succeeds();
+    }
+
+    /**
+     * runs database checks on the fields
+     *
+     *@param {array} fields - the array of fields to validate
+     *@param {boolean} required - boolean value indicating if field is required
+    */
+    async validateDBChecks(fields, required) {
+        for (let field of fields) {
+            const dbChecks = this._dbChecks[field],
+                values = Util.makeArray(this._data[field]);
+
+            let len = values.length,
+                i = -1;
+            while(++i < len && await this.runDBChecks(required, field, values[i], dbChecks, i));
+        }
     }
 
     /**
@@ -121,22 +239,22 @@ export default class {
      *@param {number} index - the value index position
      *@return {boolean}
     */
-    runValidation(required, field, value, options, index)
-    {
+    runValidation(required, field, value, options, index) {
         const validator = this._validator,
             type = options.type,
             method = Util.value(type, this.getRuleTypesMethodMap(), 'null');
 
-        if(method === 'null') {
-            throw new InvalidParameterException(type + ' is not a recognised rule type');
-        }
+        if(method === 'null')
+            throw new InvalidParameterException(type + ' is not a recognised validation rule');
 
         if (method !== '') {
+            // clone options to avoid any side effect
             validator[method](required, field, value, options, index);
             if(this.isFileField(field)) {
                 const newFileName = validator.getFileName();
+
                 if (Util.isArray(this._data[field]))
-                    this._data[field].push(newFileName);
+                    this._data[field].splice(index, 1, newFileName);
                 else
                     this._data[field] = newFileName;
             }
@@ -166,15 +284,29 @@ export default class {
      * strips html tags out of the text value
      *@protected
      *@param {string} value - value to remove html tags from
+     *@param {string|string[]} stripTagsIgnore - string containing xml tags to ignore or array
+     * of such strings
      *@param {}
     */
     stripTags(value, stripTagsIgnore) {
-        stripTagsIgnore = Util.isString(stripTagsIgnore)? stripTagsIgnore.toLowerCase() : '';
-
-        return Regex.replaceCallback(/<\s*\/?([_a-z][-\w]*)\s*>/, (matches) => {
-            let capture = '<' + matches[1] + '>';
-            if (stripTagsIgnore.indexOf(capture.toLowerCase()))
-                return capture;
+        stripTagsIgnore = Util.isArray(stripTagsIgnore)?
+            stripTagsIgnore.join('').toLowerCase() : stripTagsIgnore.toLowerCase();
+        const matchName = '[_a-z][-\\w]*',
+            regex = new RegExp(
+                //capture tagName
+                '<\\s*\\/?(' + matchName + ')'
+                +
+                //followed by zero or more attributes, with the attribute value optional
+                '(?:\\s+' + matchName + '(?:=(?:"[^"]*"|\'[^\']*\'))?)*'
+                +
+                //then ends with zero or more spaces followed by the right angle bracket
+                '\\s*>',
+                'i'
+            );
+        return Regex.replaceCallback(regex, (matches) => {
+            let test = '<' + matches[1].toLowerCase() + '>';
+            if (stripTagsIgnore.indexOf(test) > -1)
+                return matches[0];
 
             return '';
         }, value);
@@ -189,27 +321,41 @@ export default class {
      *@returns {mixed}
     */
     filterValue(value, filters) {
+
         if (Util.isArray(value)) {
             return value.map(_value => {
                 return this.filterValue(_value, filters);
             });
         }
 
+        if (filters.type === 'bool')
+            return !this.valueIsFalsy(value);
+
         if (value === null || value === undefined)
-            return value;
+            return null;
 
         value = value.toString();
+
         if (Util.keyNotSetOrTrue('decode', filters))
             value = decodeURIComponent(value);
 
-        if (Util.keyNotSetOrTrue('trim', filters))
-            value = value.trim();
-
+        //strip tags before doing any trim operations
         if (Util.keyNotSetOrTrue('stripTags', filters))
             value = this.stripTags(value, Util.value('stripTagsIgnore', filters, ''));
 
+        //this filter is great when processing computer propram data such as html, xml, json, etc
+        if (Util.value(['compact', 'minimize', 'minimise'], filters)) {
+            //minimise will trim lines, remove empty lines and compat the data
+            value = value.split('\n').map(value => value.trim())
+                .filter(value => !/^\s*$/.test(value)).join('');
+        }
+
+        //strip tags before trimming
+        if (Util.keyNotSetOrTrue('trim', filters))
+            value = value.trim();
+
         if (Util.keySetAndTrue('numeric', filters))
-            value = parseFloat(value);
+            value = Util.isNumeric(value)? parseFloat(value) : 0;
 
         if (Util.keySetAndTrue('toUpper', filters))
             value = value.toUpperCase();
@@ -240,14 +386,8 @@ export default class {
                 if (Util.isNumeric(value))
                     value = parseFloat(value);
                 break;
-
-            case 'bool':
-                if (this.valueIsFalsy(value))
-                    value = false;
-                else
-                    value = true;
-                break;
         }
+
         return value;
     }
 
@@ -338,7 +478,7 @@ export default class {
             let value = null;
 
             if (this.isFileField(field))
-                value = Util.value('name', this._files, null);
+                value = Util.value('name', this._files[field], null);
             else
                 value = this._source[field];
 
@@ -405,24 +545,27 @@ export default class {
 
         return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, (matches) => {
             const capture = matches[1];
+            let result = Util.value(capture, this._data, matches[0]);
+
+            //while resolving, leave out this and _index, as they are runtime values
             switch(capture.toLowerCase()) {
                 case '_this':
-                    return field;
+                    result = field;
+                    break;
 
-                case 'current_datetime':
                 case 'current_date':
-                    return '' + new CustomDate();
+                    result = '' + new CustomDate();
+                    break;
 
                 case 'current_year':
-                    return (new CustomDate()).getFullYear();
+                    result = (new CustomDate()).getFullYear();
+                    break;
 
-                case 'current_timestamp':
                 case 'current_time':
-                    return (new CustomDate()).getTime() * 1000;
-
-                default:
-                    return Util.value(capture, this._data, matches[0]);
+                    result = (new CustomDate()).getTime() * 1000;
+                    break;
             }
+            return result;
         }, option);
     }
 
@@ -441,6 +584,55 @@ export default class {
     }
 
     /**
+     * resolves require condition
+     *@param {Object} rule - the rule details
+     *@return {boolean}
+    */
+    resolveRequire(rule) {
+        //if it is not defined,
+        let result = typeof rule.required === 'undefined'? true : !!rule.required;
+
+        const details = Util.objectValue(['requiredIf', 'requireIf'], rule),
+            condition = Util.value(['if', 'condition'], details, '');
+
+        if (condition !== '') {
+            result = false;
+
+            const field = Util.value('field', details, ''),
+                value = Util.value('value', details, ''),
+                fieldValue = Util.value(field, this._source);
+
+            switch(condition.toLowerCase()) {
+
+                case 'checked':
+                    if (!this.valueIsFalsy(fieldValue))
+                        result = true;
+                    break;
+
+                case 'notchecked':
+                    if (this.valueIsFalsy(fieldValue))
+                        result = true;
+                    break;
+
+                case 'equals':
+                case 'equal':
+                    if (value == fieldValue)
+                        result = true;
+                    break;
+
+                case 'notequals':
+                case 'notequal':
+                    if (value != fieldValue)
+                        result = true;
+                    break;
+            }
+
+            Util.deleteFromObject(['requiredIf', 'requireIf'], rule);
+        }
+        return result;
+    }
+
+    /**
      * resolve db checks 'check' rule, replace all doesnot, doesnt with not, replace exists
      * with exist
      *
@@ -449,6 +641,8 @@ export default class {
      *@return {Object}
     */
     resolveDBChecks(dbCheck) {
+
+        //resolve if condition
         const condition = Util.value(['if', 'condition'], dbCheck);
         if (condition !== undefined) {
             dbCheck['if'] = Regex.replace(
@@ -462,7 +656,18 @@ export default class {
                 ],
                 condition.toLowerCase()
             );
+            Util.deleteFromObject('condition', dbCheck);
         }
+
+        //resolve entity field
+        const entityKeys = ['table', 'collection'],
+            entity = Util.value(['table', 'collection'], dbCheck);
+
+        if (entity !== undefined) {
+            dbCheck['entity'] = entity;
+            Util.deleteFromObject(entityKeys, dbCheck);
+        }
+
         return dbCheck;
     }
 
@@ -497,62 +702,32 @@ export default class {
     */
     processRules() {
         for (let [field, rule] of Object.entries(this._rules)) {
+
+            //this makes it easy to just define a field rule and map it to the rule type
+            rule = Util.isPlainObject(rule)? rule : {type: rule};
+
             const type = this.resolveType(Util.value('type', rule, 'text')),
                 dbChecks = Util.arrayValue('checks', rule);
 
             if (typeof rule.check !== 'undefined')
                 dbChecks.unshift(rule.check);
 
-            this._dbChecks[field] = dbChecks.map(this.resolveDBChecks);
+            this._dbChecks[field] = dbChecks.map(this.resolveDBChecks, this);
             this._filters[field] = Util.objectValue('filters', rule);
             this._ruleOptions[field] = Util.objectValue('options', rule);
 
             this._ruleOptions[field]['type'] = this._filters[field]['type'] = type;
 
-            let requireIf = Util.objectValue(['requiredIf', 'requireIf'], rule),
-                condition = Util.value(['if', 'condition'], requireIf, '');
+            //resolve require if condition
+            rule.required = this.resolveRequire(rule);
 
-            if (condition !== '') {
-                let required = false,
-                    _field = Util.value('field', requireIf, ''),
-                    _value = Util.value('value', requireIf, ''),
-                    _fieldValue = Util.value(_field, this._source);
-
-                switch(condition.toLowerCase()) {
-
-                    case 'checked':
-                        if (!this.valueIsFalsy(_fieldValue))
-                            required = true;
-                        break;
-
-                    case 'notchecked':
-                        if (this.valueIsFalsy(_fieldValue))
-                            required = true;
-                        break;
-
-                    case 'equals':
-                    case 'equal':
-                        if (_value == _fieldValue)
-                            required = true;
-                        break;
-
-                    case 'notequals':
-                    case 'notequal':
-                        if (_value != _fieldValue)
-                            required = true;
-                        break;
-                }
-                rule.required = required;
-            }
-            Util.deleteFromObject(['requiredIf', 'requireIf'], rule);
-
-            if(Util.keyNotSetOrTrue('required', rule) && type !== 'bool') {
-                this._requiredFields.push(field);
-                this._hints[field] = Util.value('hint', rule, `${field} is required`);
-            }
-            else {
+            if (!rule.required || type === 'bool') {
                 this._optionalFields.push(field);
                 this._defaultValues[field] = Util.value(['default', 'defaultValue'], rule, null);
+            }
+            else {
+                this._requiredFields.push(field);
+                this._hints[field] = Util.value('hint', rule, `${field} is required`);
             }
         }
     }
@@ -573,27 +748,27 @@ export default class {
      *@throws {RulesNotSetException}
     */
     shouldExecute() {
-        if (!this._executed) {
-            if (this._source === null)
-                throw new DataSourceNotSetException('no data source set');
+        if (this._executed)
+            throw new StateException('A Handler can only be executed once');
 
-            if (this._rules === null)
-                throw new RulesNotSetException('no validation rules set');
+        if (this._source === null)
+            throw new DataSourceNotSetException('no data source set');
 
-            //if there is a file field, and the user did not set the files object, throw
-            if (this._files === null) {
-                const someFileFieldsExists = Object.keys(this._rules).some(field => {
-                    const type = Util.value('type', this._rules[field], 'text').toLowerCase();
-                    return this.isFileType(type);
-                });
+        if (this._rules === null)
+            throw new RulesNotSetException('no validation rules set');
 
-                if (someFileFieldsExists)
-                    throw new FilesSourceNotSetException('no file source set');
-            }
+        //if there is a file field, and the user did not set the files object, throw
+        if (this._files === null) {
+            const someFileFieldsExists = Object.keys(this._rules).some(field => {
+                const type = Util.value('type', this._rules[field], 'text').toLowerCase();
+                return this.isFileType(type);
+            });
 
-            return true;
+            if (someFileFieldsExists)
+                throw new FilesSourceNotSetException('no file source set');
         }
-        return false;
+
+        return true;
     }
 
     /**
@@ -601,8 +776,9 @@ export default class {
      *@param {Object} [files] - the files source
      *@param {Object} [rules] - the data rules
      *@param {Validator} [validator] - the validator instance
+     *@param {DBChecker} [dbChecker] - the db checker instance
     */
-    constructor(source, files, rules, validator) {
+    constructor(source, files, rules, validator, dbChecker) {
         /* the raw data to be handled and processed */
         this._source = null;
 
@@ -617,6 +793,15 @@ export default class {
 
         /* the validator instance */
         this._validator = null;
+
+        /* the db checker instance */
+        this._dbChecker = null;
+
+        // database model in use
+        this._dbModel = null;
+
+        //database model case style in use
+        this._dbModelCaseStyle = null;
 
         /* boolean value indicating if the execute method has been called */
         this._executed = false;
@@ -660,7 +845,8 @@ export default class {
         if (!(validator instanceof Validator))
             validator = new Validator();
 
-        this.setSource(source).setFiles(files).setRules(rules).setValidator(validator);
+        this.setSource(source).setFiles(files).setRules(rules).setValidator(validator)
+            .setDBChecker(dbChecker).modelUseNoSql().modelUseCamelCase();
     }
 
     /**
@@ -717,6 +903,56 @@ export default class {
     }
 
     /**
+     * sets the db checker instance
+     *@param {DBChecker} dbChecker
+     *@return {this}
+    */
+    setDBChecker(dbChecker) {
+        if (dbChecker instanceof DBCheckerAbstract) {
+            dbChecker.setErrorBag(this._errors);
+            this._dbChecker = dbChecker;
+        }
+
+        return this;
+    }
+
+    /**
+     * turns the used db model to noSql
+     *@return {this}
+    */
+    modelUseNoSql() {
+        this._dbModel = DB_MODELS.NOSQL;
+        return this;
+    }
+
+    /**
+     * turns the used db model to relational
+     *@return {this}
+    */
+    modelUseRelational() {
+        this._dbModel = DB_MODELS.RELATIONAL;
+        return this;
+    }
+
+    /**
+     * turns the used db model case style to camel case
+     *@return {this}
+    */
+    modelUseCamelCase() {
+        this._dbModelCaseStyle = DB_MODEL_CASE_STYLES.CAMEL_CASE;
+        return this;
+    }
+
+    /**
+     * turns the used db model case to snake case
+     *@return {this}
+    */
+    modelUseSnakeCase() {
+        this._dbModelCaseStyle = DB_MODEL_CASE_STYLES.SNAKE_CASE;
+        return this;
+    }
+
+    /**
      * adds field to the existing source
      *
      *@param {string} fieldName - the field name
@@ -746,56 +982,108 @@ export default class {
     }
 
     /**
+     * defines a field that should be skipped while mapping to a model
+     *@param {string} field
+     *@return {this}
+    */
+    modelSkipField(field) {
+        if (typeof field === 'string' && !this._modelSkipFields.includes(field))
+            this._modelSkipFields.push(field);
+
+        return this;
+    }
+
+    /**
+     * defines array of fields that should be skipped while mapping to a model
+     *
+     *@param {string[]} fields - array of fields
+     *@return {this}
+    */
+    modelSkipFields(fields) {
+        if (Util.isArray(fields)) {
+            fields.forEach(this.modelSkipField, this);
+        }
+        return this;
+    }
+
+    /**
+     * defines the new name to use when mapping field data to a model
+     *@param {string} field
+     *@param {string} newName
+     *@return {this}
+    */
+    modelRenameField(field, newName) {
+        if (typeof newName === 'string' && typeof field === 'string')
+            this._modelRenameFields[field] = newName;
+
+        return this;
+    }
+
+    /**
+     * defines the new names to use when mapping field data to a model
+     *@param {Object} newNames - object of oldName: newName entries
+     *@return {this}
+    */
+    modelRenameFields(newNames) {
+        if (Util.isPlainObject(newNames)) {
+            for (let [field, newName] of Object.entries(newNames)) {
+                this.modelRenameField(field, newName);
+            }
+        }
+
+        return this;
+    }
+
+    /**
      * executes the handler
-     *@returns {boolean}
+     *@returns {Promise}
      *@throws {DataSourceNotSetException}
      *@throws {RulesNotSetException}
     */
-    execute() {
-        if (this.shouldExecute()) {
-            this._executed = true;
+    async execute() {
 
-            this.mergeSource();
-            this.processRules();
+        this.shouldExecute();
+        this._executed = true;
 
-            this.resolveOptions(this._hints);
-            if (this.checkMissingFields())
-            {
-                this.getFields();
+        this.mergeSource();
+        this.processRules();
 
-                this.resolveOptions(this._ruleOptions);
-                this.resolveOptions(this._dbChecks);
+        this.resolveOptions(this._hints);
 
-                this._validator.setFiles(this._files);
-                this.validateFields(this._requiredFields, true);
-                this.validateFields(this._optionalFields, false);
+        if (!this.checkMissingFields())
+            return this;
 
-                // if (this.succeeds())
-                // {
-                //     this.validateDBChecks(this._requiredFields, true);
-                //     this.validateDBChecks(this._optionalFields, false);
-                // }
-            }
+        this.getFields();
+
+        this.resolveOptions(this._ruleOptions);
+        this.resolveOptions(this._dbChecks);
+
+        this._validator.setFiles(this._files);
+        this.validateFields(this._requiredFields, true);
+        this.validateFields(this._optionalFields, false);
+
+        if (this.succeeds()) {
+            if (this._dbChecker)
+                this._dbChecker.setDBModel(this._dbModel);
+
+            await this.validateDBChecks(this._requiredFields, true);
+            //await this.validateDBChecks(this._optionalFields, false);
         }
-        return this.succeeds();
+
+        return this;
     }
 
     /**
      * returns boolean indicating if data validation and handling processes succeeded
      *@return {boolean}
-     *@throws {StateException} - throws error if the execute method has not been called
     */
     succeeds() {
-        if(!this._executed)
-            throw new StateException('Cant check state because execute method has not been called');
-
-        return Object.keys(this._errors).length === 0;
+        return this._executed && Object.keys(this._errors).length === 0;
     }
 
     /**
      * returns boolean indicating if data validation and handling processes failed
      *@return {boolean}
-     *@throws {StateException} - throws error if the execute method has not been called
     */
     fails() {
         return !this.succeeds();
@@ -853,60 +1141,6 @@ export default class {
     }
 
     /**
-     * defines a field that should be skipped while mapping to a model
-     *@param {string} field
-     *@return {this}
-    */
-    modelSkipField(field) {
-        if (typeof field === 'string' && !this._modelSkipFields.includes(field))
-            this._modelSkipFields.push(field);
-
-        return this;
-    }
-
-    /**
-     * defines array of fields that should be skipped while mapping to a model
-     *
-     *@param {string[]} fields - array of fields
-     *@return {this}
-    */
-    modelSkipFields(fields) {
-        if (Util.isArray(fields)) {
-            fields.forEach(this.modelSkipField);
-        }
-        return this;
-    }
-
-    /**
-     * defines the new name to use when mapping field data to a model
-     *@param {string} field
-     *@param {string} newName
-     *@return {this}
-    */
-    modelRenameField(field, newName) {
-        if (typeof newName === 'string' && typeof field === 'string')
-            this._modelRenameFields[field] = newName;
-
-        return this;
-    }
-
-    /**
-     * defines the new names to use when mapping field data to a model
-     *@param {Object} newNames - object of oldName: newName entries
-     *@return {this}
-    */
-    modelRenameFields(newNames)
-    {
-        if (Util.isPlainObject(newNames)) {
-            for (let [field, newName] of Object.entries(newNames)) {
-                this.modelRenameField(field, newName);
-            }
-        }
-
-        return this;
-    }
-
-    /**
      * maps data to the given model object
      *@param {Object} model - the model object
      *@return {Object}
@@ -916,7 +1150,7 @@ export default class {
 
         for(let [key, value] of Object.entries(this._data)) {
             if (this._modelSkipFields.includes(key))
-                continue; //skip field it is should be skipped
+                continue; //skip field
 
             key = Util.value(key, this._modelRenameFields, key);
             model = Util.composeIntoObject(model, key, value);
