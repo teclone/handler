@@ -1145,13 +1145,6 @@ export default class {
     }
 
     /**
-     *@type {Object} - all the data as one object
-    */
-    get data() {
-        return {...this._data};
-    }
-
-    /**
      * maps data to the given model object
      *@param {Object} model - the model object
      *@return {Object}
@@ -1167,5 +1160,19 @@ export default class {
             model = Util.composeIntoObject(model, key, value);
         }
         return model;
+    }
+
+    /**
+     *@type {Object} - all the data as one object
+    */
+    get data() {
+        return {...this._data};
+    }
+
+    /**
+     *@type {Object} - all the errors as one object
+    */
+    get errors() {
+        return {...this._errors};
     }
 }

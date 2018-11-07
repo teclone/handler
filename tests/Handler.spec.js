@@ -554,6 +554,17 @@ describe('Handler Module', function() {
         });
     });
 
+    describe('#errors', function() {
+        it(`a getter property that maps to a copy of the error object`, function() {
+            return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
+                .then(function() {
+                    expect(handler.errors).toEqual({
+                        name: 'name is required'
+                    });
+                });
+        });
+    });
+
     describe('#getData(key)', function() {
         it(`should return the processed data for the given key if it exists`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
@@ -620,6 +631,16 @@ describe('Handler Module', function() {
                 .then(function() {
                     expect(handler.getAllData()).toHaveProperty('first-name', 'Harrison');
                     expect(handler.getAllData()).toEqual(handler._data);
+                });
+        });
+    });
+
+    describe('#data', function() {
+        it(`a getter property that maps to a copy of the data object`, function() {
+            return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
+                .then(function() {
+                    expect(handler.data).toHaveProperty('first-name', 'Harrison');
+                    expect(handler.data).toEqual(handler._data);
                 });
         });
     });
