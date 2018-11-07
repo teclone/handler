@@ -1145,6 +1145,13 @@ export default class {
     }
 
     /**
+     *@type {Object} - all the data as one object
+    */
+    get data() {
+        return {...this._data};
+    }
+
+    /**
      * maps data to the given model object
      *@param {Object} model - the model object
      *@return {Object}
