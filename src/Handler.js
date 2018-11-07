@@ -173,10 +173,12 @@ export default class {
      *@return {Promise}
     */
     async runDBChecks(required, field, value, dbChecks, index) {
+        if (dbChecks.length === 0)
+            return;
+
         const dbChecker = this._dbChecker;
-        if (dbChecker === null) {
+        if (dbChecker === null)
             throw new DBCheckerNotFoundException('No db checker instance found');
-        }
 
         for (const dbCheck of dbChecks) {
             if(typeof dbCheck['if'] !== 'string')
