@@ -282,6 +282,7 @@ describe('Util Module', function() {
         it(`should left pad the given string or number value with zeros until its length
             equals the finalLength`, function() {
             expect(Util.padZeros(3, 3)).toEqual('003');
+            expect(Util.padZeros(3)).toEqual('03');
         });
 
         it(`should return empty string if argument is neither a string nor a number`, function() {

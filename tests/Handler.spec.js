@@ -15,6 +15,9 @@ import InvalidParameterException from '../src/Exceptions/InvalidParameterExcepti
 import { getTestFileDetails, getTestMultiFileDetails } from './Helpers/bootstrap';
 import GeneralFilterErrorTest from './Helpers/DataProviders/Handler/GeneralFilterErrorTest';
 import DBChecker from './Helpers/DBChecker';
+import DBCheckerNotFoundException from '../src/Exceptions/DBCheckerNotFoundException';
+import MissingParameterException from '../src/Exceptions/MissingParameterException';
+import { DB_MODELS, DB_MODEL_CASE_STYLES } from '../src/Constants';
 
 describe('Handler Module', function() {
     let handler = null;
@@ -257,6 +260,55 @@ describe('Handler Module', function() {
         });
     });
 
+    describe('#modelUseRelational()', function() {
+        it(`should set the db model type in use to relational`, function() {
+            expect(handler._dbModel).toEqual(DB_MODELS.NOSQL);
+            expect(handler.modelUseRelational()._dbModel).toEqual(DB_MODELS.RELATIONAL);
+        });
+    });
+
+    describe('#modelUseNoSql()', function() {
+        it(`should set the db model type in use to no sql`, function() {
+            expect(handler._dbModel).toEqual(DB_MODELS.NOSQL);
+            expect(handler.modelUseRelational()._dbModel).toEqual(DB_MODELS.RELATIONAL);
+
+            expect(handler.modelUseNoSql()._dbModel).toEqual(DB_MODELS.NOSQL);
+        });
+    });
+
+    describe('#modelUseSnakeCaseStyle()', function() {
+        it(`should set the db model case style type in use to snake case style`, function() {
+            expect(handler._dbModelCaseStyle).toEqual(DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            expect(handler.modelUseSnakeCaseStyle()._dbModelCaseStyle)
+                .toEqual(DB_MODEL_CASE_STYLES.SNAKE_CASE);
+        });
+    });
+
+    describe('#modelUseCamelCaseStyle()', function() {
+        it(`should set the db model case style type in use to camel case style`, function() {
+            expect(handler._dbModelCaseStyle).toEqual(DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            expect(handler.modelUseSnakeCaseStyle()._dbModelCaseStyle).toEqual(DB_MODEL_CASE_STYLES.SNAKE_CASE);
+
+            expect(handler.modelUseCamelCaseStyle()._dbModelCaseStyle).toEqual(DB_MODEL_CASE_STYLES.CAMEL_CASE);
+        });
+    });
+
+    describe('#modelResolveFieldName(fieldname)', function() {
+        it(`should resolve the given field name according the in use model case style`, function() {
+
+            // using the default camel case style
+            expect(handler.modelResolveFieldName('first-name')).toEqual('firstName');
+            expect(handler.modelResolveFieldName('first_name')).toEqual('firstName');
+
+            // change to snake case
+            handler.modelUseSnakeCaseStyle();
+
+            //
+            expect(handler.modelResolveFieldName('first-name')).toEqual('first_name');
+            expect(handler.modelResolveFieldName('first_name')).toEqual('first_name');
+        });
+    });
+
     describe('#execute()', function() {
         it(`should throw DataSourceNotSet Exception if there is no data source set for
             handling`, function() {
@@ -274,8 +326,110 @@ describe('Handler Module', function() {
 
         it(`should throw FilesSourceNotSet Exception if files source is not set and there are
             some file field types existing in our rules`, function() {
-            return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute().catch(function(err) {
+            const rules = {file: 'file'};
+            return handler.setSource({}).setRules(rules).execute().catch(function(err) {
                 expect(err).toBeInstanceOf((FilesSourceNotSetException));
+            });
+        });
+
+        it(`should throw DBCheckerNotFound Exception if there are db check rules but no
+            dbchecker implementation is set`, function() {
+            const rules = {
+                    email: {
+                        type:'email',
+                        check: {
+                            'if': 'exists',
+                            collection: 'User',
+                        }
+                    },
+                },
+                source = {
+                    email: 'Harrisonifeanyichukwu@gmail.com'
+                };
+
+            return new Handler().setSource(source).setRules(rules).execute().catch(ex => {
+                expect(ex).toBeInstanceOf(DBCheckerNotFoundException);
+            });
+        });
+
+        it(`should throw MissingParameter Exception if there is no if key in a
+            db check rule`, function() {
+            const rules = {
+                    email: {
+                        type:'email',
+                        check: {
+                            collection: 'User',
+                        }
+                    },
+                },
+                source = {
+                    email: 'Harrisonifeanyichukwu@gmail.com'
+                };
+
+            return handler.setSource(source).setRules(rules).execute().catch(ex => {
+                expect(ex).toBeInstanceOf(MissingParameterException);
+            });
+        });
+
+        it(`should throw MissingParameter Exception if there is no custom query defined in a
+            given db check rule and there is not entity or collection or table key defined as well`, function() {
+            const rules = {
+                    email: {
+                        type:'email',
+                        check: {
+                            condition: 'exists',
+                        }
+                    },
+                },
+                source = {
+                    email: 'Harrisonifeanyichukwu@gmail.com'
+                };
+
+            return handler.setSource(source).setRules(rules).execute().catch(ex => {
+                expect(ex).toBeInstanceOf(MissingParameterException);
+            });
+        });
+
+        it(`should not throw MissingParameter Exception if there is custom query defined in a
+            given db check rule but there is no entity or collection or table key defined`,
+        function(done) {
+            const rules = {
+                    email: {
+                        type:'email',
+                        check: {
+                            condition: 'exists',
+                            query: {
+                                email: '{this}'
+                            }
+                        }
+                    },
+                },
+                source = {
+                    email: 'Harrisonifeanyichukwu@gmail.com'
+                };
+
+            handler.setSource(source).setRules(rules).execute().then(() => {
+                done();
+            });
+        });
+
+        it(`should throw InvalidParameter Exception if the db check condition is not a
+            recognized rule`, function() {
+            const rules = {
+                    email: {
+                        type:'email',
+                        check: {
+                            condition: 'unknowCondition',
+                            table: 'Users'
+                        }
+                    },
+                },
+                source = {
+                    email: 'Harrisonifeanyichukwu@gmail.com'
+                };
+
+            return handler.setSource(source).setRules(rules).execute().catch(ex => {
+                expect(ex).toBeInstanceOf(InvalidParameterException);
             });
         });
 
@@ -284,17 +438,17 @@ describe('Handler Module', function() {
                 .toBeInstanceOf(Promise);
         });
 
-        it(`the returned promised must always resolve to the handler instance`, function() {
+        it(`the returned promised must always resolve to a boolean status`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
                 .then(function(result) {
-                    expect(handler).toStrictEqual(result);
+                    expect(typeof result).toEqual('boolean');
                 });
         });
 
         it(`should throw State Exception if handler is executed or called more than once`, function(done) {
 
             handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(handler => {
+                .then(() => {
                     handler.execute().catch(function(err) {
                         expect(err).toBeInstanceOf((StateException));
                         done();
@@ -320,14 +474,14 @@ describe('Handler Module', function() {
 
         it(`should return true if the handler executed with no errors found`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.succeeds()).toBeTruthy();
                 });
         });
 
         it(`should return false if the handler executed with one or more errors found`, function() {
             return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.succeeds()).toBeFalsy();
                 });
         });
@@ -340,14 +494,14 @@ describe('Handler Module', function() {
 
         it(`should return false if the handler executed with no errors found`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.fails()).not.toBeTruthy();
                 });
         });
 
         it(`should return true if the handler executed with one or more errors found`, function() {
             return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.fails()).not.toBeFalsy();
                 });
         });
@@ -356,7 +510,7 @@ describe('Handler Module', function() {
     describe('#getError(key)', function() {
         it(`should return the error message for the given field key if there is`, function() {
             return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.getError('name')).toEqual('name is required');
                 });
         });
@@ -366,7 +520,7 @@ describe('Handler Module', function() {
             return handler.setSource({}).setRules({
                 name: {type: 'text'}, age: {type: 'int'}
             }).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(['age is required', 'name is required'])
                         .toContain(handler.getError());
                 });
@@ -375,7 +529,7 @@ describe('Handler Module', function() {
         it(`should return undefined if there are no errors or if there is no error for the
             given key or if key is not a string`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.getError()).toBeUndefined();
                     expect(handler.getError('name')).toBeUndefined();
                 });
@@ -385,7 +539,7 @@ describe('Handler Module', function() {
     describe('#getErrors()', function() {
         it(`should return a copy of the error message bag when called`, function() {
             return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.getErrors()).toEqual({
                         name: 'name is required'
                     });
@@ -394,7 +548,7 @@ describe('Handler Module', function() {
 
         it(`should return the empty error bag object copy if there are no errors`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.getErrors()).toEqual({});
                 });
         });
@@ -403,14 +557,14 @@ describe('Handler Module', function() {
     describe('#getData(key)', function() {
         it(`should return the processed data for the given key if it exists`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.getData('first-name')).toEqual('Harrison');
                 });
         });
 
         it(`should throw KeyNotFound Exception if there is no data set for the given key`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(function() {
                         handler.getData('unknown-key');
                     }).toThrow(KeyNotFoundException);
@@ -463,7 +617,7 @@ describe('Handler Module', function() {
     describe('#getAllData(key)', function() {
         it(`should return a copy of all the processed data when called`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function(handler) {
+                .then(function() {
                     expect(handler.getAllData()).toHaveProperty('first-name', 'Harrison');
                     expect(handler.getAllData()).toEqual(handler._data);
                 });
@@ -513,7 +667,7 @@ describe('Handler Module', function() {
         it(`should map the processed data to the given model instance and return it while
             also resolving dot symbols`, function() {
 
-            return handler.setSource(source).setRules(rules).execute().then(function(handler) {
+            return handler.setSource(source).setRules(rules).execute().then(function() {
                 let mappedData = handler.mapDataToModel({existing: 'something'});
                 expect(mappedData).toEqual({
                     firstName: 'Harrison',
@@ -531,7 +685,7 @@ describe('Handler Module', function() {
 
         it(`should initialize model to an empty plain object if model is not an object`, function() {
 
-            return handler.setSource(source).setRules(rules).execute().then(function(handler) {
+            return handler.setSource(source).setRules(rules).execute().then(function() {
                 let mappedData = handler.mapDataToModel(null);
                 expect(mappedData).toEqual({
                     firstName: 'Harrison',
@@ -550,7 +704,7 @@ describe('Handler Module', function() {
             and modelSkipField method calls`, function() {
             handler.modelSkipFields(['email', 'address.country']);
 
-            return handler.setSource(source).setRules(rules).execute().then(function(handler) {
+            return handler.setSource(source).setRules(rules).execute().then(function() {
                 let mappedData = handler.mapDataToModel(null);
                 expect(mappedData).toEqual({
                     firstName: 'Harrison',
@@ -573,7 +727,7 @@ describe('Handler Module', function() {
                 'address.state': 'location.state'
             }).modelSkipField('address.country');
 
-            return handler.setSource(source).setRules(rules).execute().then(function(handler) {
+            return handler.setSource(source).setRules(rules).execute().then(function() {
                 let mappedData = handler.mapDataToModel(null);
                 expect(mappedData).toEqual({
                     firstName: 'Harrison',
@@ -626,7 +780,7 @@ describe('Handler Module', function() {
                 files = {picture: getTestFileDetails('file1.jpg', 'image/jpeg')};
 
             return handler.setSource({}).setRules(rules).setFiles(files).execute()
-                .then(handler => {
+                .then(() => {
                     expect(handler.getData('picture')).toEqual('file1.jpg');
                 });
         });
@@ -640,7 +794,7 @@ describe('Handler Module', function() {
                 rules = {files: 'file'};
 
             return handler.setSource({}).setRules(rules).setFiles(files).execute()
-                .then(handler => {
+                .then(() => {
                     expect(handler.getData('files')).toEqual(filenames);
                 });
         });

@@ -59,7 +59,7 @@ export default class DBCheckerAbstract extends Common {
     */
     buildQuery(options, value) {
         if (this._dbModel === DB_MODELS.NOSQL) {
-            let result = {};
+            const result = {};
             result[options.field] = value;
             return result;
         }

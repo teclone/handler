@@ -149,7 +149,7 @@ export default class {
      *@param {string} field - the field to resolve
      *@return {string}
     */
-    resolveModelFieldName(field) {
+    modelResolveFieldName(field) {
         if(this._dbModelCaseStyle === DB_MODEL_CASE_STYLES.CAMEL_CASE) {
             return field.split(/[-_]/).map((part, index) => {
                 if (index === 0)
@@ -182,14 +182,14 @@ export default class {
             if(typeof dbCheck['if'] !== 'string')
                 throw new MissingParameterException(`db check "if" parameter expected for ${field} rule`);
 
-            if(typeof dbCheck['entity'] !== 'string')
-                throw new MissingParameterException(`db check "entity" parameter expected for ${field} rule`);
-
             //if there is no query, set the field key and the params array
             if(typeof dbCheck['query'] === 'undefined') {
+                if(typeof dbCheck['entity'] !== 'string')
+                    throw new MissingParameterException(`db check "entity" parameter expected for ${field} rule`);
+
                 if (typeof dbCheck['field'] === 'undefined') {
                     dbCheck['field'] = this._dbModel === DB_MODELS.RELATIONAL
-                        && Util.isInt(value)? 'id' : this.resolveModelFieldName(field);
+                        && Util.isInt(value)? 'id' : this.modelResolveFieldName(field);
                 }
                 dbCheck['params'] = Util.arrayValue('params', dbCheck, [value]);
             }
@@ -200,7 +200,7 @@ export default class {
             const checkIf = dbCheck['if'],
                 method = Util.value(checkIf, this.getDBChecksMethodMap(), 'null');
 
-            if (method === null)
+            if (method === 'null')
                 throw new InvalidParameterException(checkIf + ' is not a db check rule');
 
             // clone db check options to avoid any side effect
@@ -703,9 +703,6 @@ export default class {
     processRules() {
         for (let [field, rule] of Object.entries(this._rules)) {
 
-            //this makes it easy to just define a field rule and map it to the rule type
-            rule = Util.isPlainObject(rule)? rule : {type: rule};
-
             const type = this.resolveType(Util.value('type', rule, 'text')),
                 dbChecks = Util.arrayValue('checks', rule);
 
@@ -757,8 +754,15 @@ export default class {
         if (this._rules === null)
             throw new RulesNotSetException('no validation rules set');
 
+        //resolve all rules to objects
+        for (let [field, rule] of Object.entries(this._rules)) {
+            if (!Util.isPlainObject(rule))
+                this._rules[field] = {type: rule};
+        }
+
         //if there is a file field, and the user did not set the files object, throw
         if (this._files === null) {
+
             const someFileFieldsExists = Object.keys(this._rules).some(field => {
                 const type = Util.value('type', this._rules[field], 'text').toLowerCase();
                 return this.isFileType(type);
@@ -846,7 +850,7 @@ export default class {
             validator = new Validator();
 
         this.setSource(source).setFiles(files).setRules(rules).setValidator(validator)
-            .setDBChecker(dbChecker).modelUseNoSql().modelUseCamelCase();
+            .setDBChecker(dbChecker).modelUseNoSql().modelUseCamelCaseStyle();
     }
 
     /**
@@ -938,7 +942,7 @@ export default class {
      * turns the used db model case style to camel case
      *@return {this}
     */
-    modelUseCamelCase() {
+    modelUseCamelCaseStyle() {
         this._dbModelCaseStyle = DB_MODEL_CASE_STYLES.CAMEL_CASE;
         return this;
     }
@@ -947,7 +951,7 @@ export default class {
      * turns the used db model case to snake case
      *@return {this}
     */
-    modelUseSnakeCase() {
+    modelUseSnakeCaseStyle() {
         this._dbModelCaseStyle = DB_MODEL_CASE_STYLES.SNAKE_CASE;
         return this;
     }
@@ -1051,7 +1055,7 @@ export default class {
         this.resolveOptions(this._hints);
 
         if (!this.checkMissingFields())
-            return this;
+            return false;
 
         this.getFields();
 
@@ -1067,10 +1071,10 @@ export default class {
                 this._dbChecker.setDBModel(this._dbModel);
 
             await this.validateDBChecks(this._requiredFields, true);
-            //await this.validateDBChecks(this._optionalFields, false);
+            await this.validateDBChecks(this._optionalFields, false);
         }
 
-        return this;
+        return this.succeeds();
     }
 
     /**
