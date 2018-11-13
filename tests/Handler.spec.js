@@ -69,6 +69,7 @@ describe('Handler Module', function() {
      *@param {Function} done - jest done callback
     */
     const executeDBCheckResolutionTest = async function(datasets, done) {
+
         for(let [, dataset] of Object.entries(datasets)) {
 
             let [source, rules, messages] = dataset;
@@ -352,7 +353,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should throw MissingParameter Exception if there is no if key in a
+        it(`should throw MissingParameter Exception if there is no if or condition parameter in the
             db check rule`, function() {
             const rules = {
                     email: {
@@ -371,8 +372,8 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should throw MissingParameter Exception if there is no custom query defined in a
-            given db check rule and there is not entity or collection or table key defined as well`, function() {
+        it(`should throw MissingParameter Exception if there is no entity or collection parameter
+            defined in the dbCheck rule when using the no sql model`, function() {
             const rules = {
                     email: {
                         type:'email',
@@ -390,36 +391,31 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should not throw MissingParameter Exception if there is custom query defined in a
-            given db check rule but there is no entity or collection or table key defined`,
-        function(done) {
+        it(`should throw MissingParameter Exception if there is no query and entity/table parameter
+            defined in the dbCheck rule when using the relational model`, function() {
             const rules = {
                     email: {
                         type:'email',
                         check: {
                             condition: 'exists',
-                            query: {
-                                email: '{this}'
-                            }
                         }
                     },
                 },
                 source = {
                     email: 'Harrisonifeanyichukwu@gmail.com'
                 };
-
-            handler.setSource(source).setRules(rules).execute().then(() => {
-                done();
+            return handler.modelUseRelational().setSource(source).setRules(rules).execute().catch(ex => {
+                expect(ex).toBeInstanceOf(MissingParameterException);
             });
         });
 
-        it(`should throw InvalidParameter Exception if the db check condition is not a
+        it(`should throw InvalidParameter Exception if the dbCheck if/condition is not a
             recognized rule`, function() {
             const rules = {
                     email: {
                         type:'email',
                         check: {
-                            condition: 'unknowCondition',
+                            if: 'unknowCondition',
                             table: 'Users'
                         }
                     },
