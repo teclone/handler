@@ -20,6 +20,7 @@
     "commitizen": "3.0.4",
     "cz-conventional-changelog": "2.1.0",
     "jest": "23.6.0",
+    "mongoose": "5.3.10",
     "regenerator-runtime": "0.12.1",
     "rimraf": "2.6.2",
     "rollup": "0.66.6",
