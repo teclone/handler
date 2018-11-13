@@ -10,7 +10,7 @@ import KeyNotFoundException from './Exceptions/KeyNotFoundException';
 import InvalidParameterException from './Exceptions/InvalidParameterException';
 import DBCheckerNotFoundException from './Exceptions/DBCheckerNotFoundException';
 import MissingParameterException from './Exceptions/MissingParameterException';
-import DBCheckerAbstract from './Abstracts/DBCheckerAbstract';
+import DBChecker from './DBChecker';
 import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
 
 export default class {
@@ -181,29 +181,36 @@ export default class {
             throw new DBCheckerNotFoundException('No db checker instance found');
 
         for (const dbCheck of dbChecks) {
+
             if(typeof dbCheck['if'] !== 'string')
-                throw new MissingParameterException(`db check "if" parameter expected for ${field} rule`);
+                throw new MissingParameterException(
+                    `missing if/condition parameter for ${field} dbCheck rule`
+                );
+
+            if (typeof dbCheck['entity'] !== 'string' &&
+                (this._dbModel === DB_MODELS.NOSQL || typeof dbCheck['query'] === 'undefined'))
+                throw new MissingParameterException(
+                    `missing entity/collection parameter for ${field} dbCheck rule`
+                );
+
+
+            //default the params to empty array if it is not given
+            dbCheck['params'] = Util.arrayValue('params', dbCheck);
 
             //if there is no query, set the field key and the params array
             if(typeof dbCheck['query'] === 'undefined') {
-                if(typeof dbCheck['entity'] !== 'string')
-                    throw new MissingParameterException(`db check "entity" parameter expected for ${field} rule`);
-
                 if (typeof dbCheck['field'] === 'undefined') {
                     dbCheck['field'] = this._dbModel === DB_MODELS.RELATIONAL
                         && Util.isInt(value)? 'id' : this.modelResolveFieldName(field);
                 }
-                dbCheck['params'] = Util.arrayValue('params', dbCheck, [value]);
+                dbCheck['params'] = [value];
             }
-
-            //if there is no params array, assign empty array
-            dbCheck['params'] = Util.arrayValue('params', dbCheck);
 
             const checkIf = dbCheck['if'],
                 method = Util.value(checkIf, this.getDBChecksMethodMap(), 'null');
 
             if (method === 'null')
-                throw new InvalidParameterException(checkIf + ' is not a db check rule');
+                throw new InvalidParameterException(checkIf + ' is not a dbCheck rule');
 
             // clone db check options to avoid any side effect
             await dbChecker[method](required, field, value, dbCheck, index);
@@ -663,7 +670,7 @@ export default class {
 
         //resolve entity field
         const entityKeys = ['table', 'collection'],
-            entity = Util.value(['table', 'collection'], dbCheck);
+            entity = Util.value(entityKeys, dbCheck);
 
         if (entity !== undefined) {
             dbCheck['entity'] = entity;
@@ -914,7 +921,7 @@ export default class {
      *@return {this}
     */
     setDBChecker(dbChecker) {
-        if (dbChecker instanceof DBCheckerAbstract) {
+        if (dbChecker instanceof DBChecker) {
             dbChecker.setErrorBag(this._errors);
             this._dbChecker = dbChecker;
         }

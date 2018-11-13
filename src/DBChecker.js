@@ -4,7 +4,7 @@
  *@property {string|Object} [query] - custom select query string for relationals or find object
  * for no sql.
  *@property {string} [entity] - a string denoting the table or collection to check on. This
- * option is required if there is no custom query defined
+ * option is required if there is no custom query defined or if db model is no sql
  *@property {string} [field] - defines the field to check on. This option is needed when there
  * is no custom query defined. it defaults to fieldName for noSql, and defaults to id or
  * fieldName for relational depending on if the field value is an integer or not
@@ -13,12 +13,12 @@
  * You should leave out this option if you did not define a custom query
 */
 
-import Common from '../Traits/Common';
-import Regex from '../Regex';
-import Util from '../Util';
-import { DB_MODELS } from '../Constants';
+import Common from './Traits/Common';
+import Regex from './Regex';
+import Util from './Util';
+import { DB_MODELS } from './Constants';
 
-export default class DBCheckerAbstract extends Common {
+export default class DBChecker extends Common {
 
     /**
      * the execute method carries out the execution. it should return an integer denoting
@@ -37,13 +37,6 @@ export default class DBCheckerAbstract extends Common {
     // }
 
     /**
-     * calls the execute method with the appropriate parameters
-    */
-    runExecution() {
-        return this.execute(this._query, this._options['params'], this._options);
-    }
-
-    /**
      * builds query from the given options. the options object contains
      * the following keys: params, entity (that is table or collection), field, and query
      *
@@ -56,6 +49,7 @@ export default class DBCheckerAbstract extends Common {
      * depending on if the field value is an integer or not
      *@param {DBCheckOptions} options - the database check options
      *@param {mixed} value - current field value under validation
+     *@param {string|Object}
     */
     buildQuery(options, value) {
         if (this._dbModel === DB_MODELS.NOSQL) {
@@ -80,6 +74,12 @@ export default class DBCheckerAbstract extends Common {
                 query[key] = this.resolveQuery(query[key], value);
             }
             return query;
+        }
+
+        if(Util.isArray(query)) {
+            return query.map((current) => {
+                return this.resolveQuery(current, value);
+            });
         }
 
         return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, matches => {
@@ -175,7 +175,7 @@ export default class DBCheckerAbstract extends Common {
     */
     async checkIfExists(required, field, value, options, index) {
         if (this.setup(required, field, value, options, index)) {
-            let count = await this.execute(options.query, options.params, options);
+            const count = await this.execute(options.query, options.params, options);
             if (count > 0) {
                 this.setError(
                     Util.value('err', options, '{_this}:{this} already exists'),
@@ -193,7 +193,7 @@ export default class DBCheckerAbstract extends Common {
         if (this.setup(required, field, value, options, index))
         {
             if (this.setup(required, field, value, options, index)) {
-                let count = await this.execute(options.query, options.params, options);
+                const count = await this.execute(options.query, options.params, options);
                 if (count === 0) {
                     this.setError(
                         Util.value('err', options, '{_this}:{this} does not exist'),
