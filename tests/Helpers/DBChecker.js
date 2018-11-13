@@ -1,11 +1,18 @@
-import DBCheckerAbstract from '../../src/Abstracts/DBCheckerAbstract';
+import DBChecker from '../../src/DBChecker';
+import {mongoose} from './connection';
 
-export default class extends DBCheckerAbstract {
+const schema = new mongoose.Schema();
+
+export default class extends DBChecker {
     constructor(errorBag, dbModel) {
         super(errorBag, dbModel);
     }
 
-    async execute() {
-
+    /**
+     * execute the select query
+    */
+    execute(query, params, options) {
+        const model = mongoose.model(options.entity, schema);
+        return model.countDocuments(query).exec();
     }
 }
