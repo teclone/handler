@@ -1,5 +1,5 @@
 import DBChecker from '../../src/DBChecker';
-import {mongoose} from './connection';
+import mongoose from './connection';
 
 const schema = new mongoose.Schema();
 
@@ -12,7 +12,12 @@ export default class extends DBChecker {
      * execute the select query
     */
     execute(query, params, options) {
-        const model = mongoose.model(options.entity, schema);
-        return model.countDocuments(query).exec();
+        if(options.model) {
+            return options.model.countDocuments(query).exec();
+        }
+        else {
+            const model = mongoose.model(options.entity, schema);
+            return model.countDocuments(query).exec();
+        }
     }
 }

@@ -1,4 +1,4 @@
 import mongoose from 'mongoose';
 
 mongoose.connect('mongodb://localhost/test');
-export {mongoose};
+export default mongoose;
