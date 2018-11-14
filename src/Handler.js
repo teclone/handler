@@ -187,23 +187,31 @@ export default class {
                     `missing if/condition parameter for ${field} dbCheck rule`
                 );
 
-            if (typeof dbCheck['entity'] !== 'string' &&
-                (this._dbModel === DB_MODELS.NOSQL || typeof dbCheck['query'] === 'undefined'))
+            if (this._dbModel === DB_MODELS.NOSQL && !Util.isString(dbCheck.entity)
+                && typeof dbCheck.model === 'undefined') {
                 throw new MissingParameterException(
-                    `missing entity/collection parameter for ${field} dbCheck rule`
+                    `missing entity/collection or model no sql parameter for ${field} dbCheck rule`
                 );
-
+            }
+            else if (this._dbModel === DB_MODELS.RELATIONAL && !Util.isString(dbCheck.entity)
+                && !Util.isString(dbCheck.query)) {
+                throw new MissingParameterException(
+                    `missing entity/table or query sql parameter for ${field} dbCheck rule`
+                );
+            }
 
             //default the params to empty array if it is not given
-            dbCheck['params'] = Util.arrayValue('params', dbCheck);
+            dbCheck.params = Util.arrayValue('params', dbCheck);
 
             //if there is no query, set the field key and the params array
-            if(typeof dbCheck['query'] === 'undefined') {
-                if (typeof dbCheck['field'] === 'undefined') {
-                    dbCheck['field'] = this._dbModel === DB_MODELS.RELATIONAL
-                        && Util.isInt(value)? 'id' : this.modelResolveFieldName(field);
+            if(typeof dbCheck.query === 'undefined') {
+                if (typeof dbCheck.field === 'undefined') {
+                    if (this._dbModel === DB_MODELS.RELATIONAL && Util.isInt(value))
+                        dbCheck.field = 'id';
+                    else
+                        dbCheck.field = this.modelResolveFieldName(field);
                 }
-                dbCheck['params'] = [value];
+                dbCheck.params = [value];
             }
 
             const checkIf = dbCheck['if'],
@@ -216,7 +224,6 @@ export default class {
             await dbChecker[method](required, field, value, dbCheck, index);
             if (dbChecker.fails())
                 break;
-
         }
         return this.succeeds();
     }
@@ -552,30 +559,34 @@ export default class {
             });
         }
 
-        return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, (matches) => {
-            const capture = matches[1];
-            let result = Util.value(capture, this._data, matches[0]);
+        if (Util.isString(option) || Util.isNumber(option)) {
+            return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, (matches) => {
+                const capture = matches[1];
+                let result = Util.value(capture, this._data, matches[0]);
 
-            //while resolving, leave out this and _index, as they are runtime values
-            switch(capture.toLowerCase()) {
-                case '_this':
-                    result = field;
-                    break;
+                //while resolving, leave out this and _index, as they are runtime values
+                switch(capture.toLowerCase()) {
+                    case '_this':
+                        result = field;
+                        break;
 
-                case 'current_date':
-                    result = '' + new CustomDate();
-                    break;
+                    case 'current_date':
+                        result = '' + new CustomDate();
+                        break;
 
-                case 'current_year':
-                    result = (new CustomDate()).getFullYear();
-                    break;
+                    case 'current_year':
+                        result = (new CustomDate()).getFullYear();
+                        break;
 
-                case 'current_time':
-                    result = (new CustomDate()).getTime() * 1000;
-                    break;
-            }
-            return result;
-        }, option);
+                    case 'current_time':
+                        result = (new CustomDate()).getTime() * 1000;
+                        break;
+                }
+                return result;
+            }, option);
+        }
+
+        return option;
     }
 
     /**
@@ -652,7 +663,7 @@ export default class {
     resolveDBChecks(dbCheck) {
 
         //resolve if condition
-        const condition = Util.value(['if', 'condition'], dbCheck);
+        const condition = Util.value(['$if', 'if', 'condition'], dbCheck);
         if (condition !== undefined) {
             dbCheck['if'] = Regex.replace(
                 [
@@ -665,7 +676,7 @@ export default class {
                 ],
                 condition.toLowerCase()
             );
-            Util.deleteFromObject('condition', dbCheck);
+            Util.deleteFromObject(['$if', 'condition'], dbCheck);
         }
 
         //resolve entity field
@@ -729,7 +740,7 @@ export default class {
 
             if (!rule.required || type === 'bool') {
                 this._optionalFields.push(field);
-                this._defaultValues[field] = Util.value(['default', 'defaultValue'], rule, null);
+                this._defaultValues[field] = Util.value(['$default', 'default', 'defaultValue'], rule, null);
             }
             else {
                 this._requiredFields.push(field);
