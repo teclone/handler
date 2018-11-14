@@ -5,7 +5,8 @@ export default function() {
             //data
             {
                 'id': '2',
-                'email': 'harrisonifeanyichukwu@gmail.com'
+                'email': 'harrisonifeanyichukwu@gmail.com',
+                'name': 'Harrison'
             },
 
             //rules
@@ -41,6 +42,19 @@ export default function() {
                         'params': ['{this}'],
                     },
                 },
+                'name': {
+                    required: true,
+                    check: {
+                        if: 'exists',
+                        collection: 'Users',
+                        query: {
+                            $or: [
+                                {firstName: '{this}'},
+                                {lastName: '{this}'}
+                            ]
+                        }
+                    }
+                }
             },
 
             //expected resolutions

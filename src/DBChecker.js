@@ -76,6 +76,12 @@ export default class DBChecker extends Common {
             return query;
         }
 
+        if (Util.isArray(query)) {
+            return query.map((current) => {
+                return this.resolveQuery(current, value);
+            });
+        }
+
         return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, matches => {
             let resolved = matches[0],
                 capture = matches[1].toLowerCase();
