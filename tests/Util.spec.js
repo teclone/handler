@@ -11,6 +11,17 @@ describe('Util Module', function() {
         });
     });
 
+    describe('.isNumber(variable)', function() {
+        it('should return true if argument is of type number and it is not NaN', function() {
+            expect(Util.isNumber(22)).toBeTruthy();
+        });
+
+        it('should return false if argument is not of type number or if argument is NaN', function() {
+            expect(Util.isNumber(NaN)).toBeFalsy();
+            expect(Util.isNumber('22')).toBeFalsy();
+        });
+    });
+
     describe('isInt(variable)', function() {
         it(`should return true if argument is an integer`, function() {
             expect(Util.isInt('042')).toBeTruthy();
