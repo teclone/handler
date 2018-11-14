@@ -76,12 +76,6 @@ export default class DBChecker extends Common {
             return query;
         }
 
-        if(Util.isArray(query)) {
-            return query.map((current) => {
-                return this.resolveQuery(current, value);
-            });
-        }
-
         return Regex.replaceCallback(/\{\s*([^}]+)\s*\}/, matches => {
             let resolved = matches[0],
                 capture = matches[1].toLowerCase();
@@ -147,7 +141,7 @@ export default class DBChecker extends Common {
             if (typeof this._options.query !== 'undefined')
                 this._options.query = this.resolveQuery(this._options.query, value);
             else
-                this._options.query = this.buildQuery(this._options);
+                this._options.query = this.buildQuery(this._options, value);
         }
 
         return this.shouldProceed();
@@ -192,14 +186,12 @@ export default class DBChecker extends Common {
     async checkIfNotExists(required, field, value, options, index) {
         if (this.setup(required, field, value, options, index))
         {
-            if (this.setup(required, field, value, options, index)) {
-                const count = await this.execute(options.query, options.params, options);
-                if (count === 0) {
-                    this.setError(
-                        Util.value('err', options, '{_this}:{this} does not exist'),
-                        value
-                    );
-                }
+            const count = await this.execute(options.query, options.params, options);
+            if (count === 0) {
+                this.setError(
+                    Util.value('err', options, '{_this}:{this} does not exist'),
+                    value
+                );
             }
         }
         return this.succeeds();
