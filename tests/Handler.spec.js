@@ -883,4 +883,27 @@ describe('Handler Module', function() {
             });
         });
     });
+
+    describe('validateOnDemand call', function() {
+        it(`should pick up rules for only fields that were sent`, function() {
+            const source = SimpleSource();
+            const rules = {
+                'first-name': 'text',
+                'last-name': 'text',
+                age: 'positiveInt',
+                notSent: 'text',
+                picture: 'file'
+            };
+
+            const files = {picture: getTestFileDetails('file1.jpg', 'image/jpeg')};
+
+            return handler.setSource(source).setRules(rules).setFiles(files).execute(true)
+                .then(() => {
+                    const rules = handler._rules;
+                    expect(rules).toHaveProperty('first-name');
+                    expect(rules).toHaveProperty('last-name');
+                    expect(rules).toHaveProperty('age');
+                });
+        });
+    });
 });
