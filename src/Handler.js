@@ -758,6 +758,23 @@ export default class {
     }
 
     /**
+     * filters the rules that applies to the sent data
+     *@param {boolean} validateOnDemand - boolean value that indicates if the validation
+     * should be based on the in demand data that was sent
+    */
+    filterRules(validateOnDemand) {
+        if(validateOnDemand) {
+            this._rules = Object.entries(this._rules).reduce((result, [field, value]) => {
+                if (typeof this._source[field] !== 'undefined' ||
+                    (this._files && typeof this._files[field] !== 'undefined')) {
+                    result[field] = value;
+                }
+                return result;
+            }, {});
+        }
+    }
+
+    /**
      * returns boolean indicating if the execute call should proceed
      *@protected
      *@return {boolean}
@@ -1060,14 +1077,19 @@ export default class {
 
     /**
      * executes the handler
+     *@param {boolean} [validateOnDemand=false] - boolean value indicating if it should only
+     * validate and pick fields that were sent, fields that has rules defined, and were sent.
+     * Useful when running api updates
      *@returns {Promise}
      *@throws {DataSourceNotSetException}
      *@throws {RulesNotSetException}
     */
-    async execute() {
+    async execute(validateOnDemand) {
 
         this.shouldExecute();
         this._executed = true;
+
+        this.filterRules(!!validateOnDemand);
 
         this.mergeSource();
         this.processRules();
