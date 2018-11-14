@@ -46,9 +46,6 @@ describe('Handler Module', function() {
                 expect(handler.fails()).toBeTruthy();
             }
             else {
-                if (handler.succeeds() === false)  {
-                    console.log(handler.getErrors());
-                }
                 expect(handler.succeeds()).toBeTruthy();
             }
 
@@ -76,9 +73,9 @@ describe('Handler Module', function() {
 
             //create new handler and await the execute promise
             const handler = new Handler(source, {}, rules, null, new DBChecker);
-            await handler.setSource(source).setFiles({}).setRules(rules).execute();
+            await handler.execute();
 
-            //check on error message  expectations or fied data value expectations
+            //check on each field dbcheck resolved if value expectations
             Object.keys(messages).forEach(field => {
                 const dbcheck = handler._dbChecks[field][0];
                 expect(dbcheck['if']).toEqual(messages[field]);
@@ -89,7 +86,7 @@ describe('Handler Module', function() {
         done();
     };
 
-    describe('#constructor(source, files, rules, validator)', function() {
+    describe('#constructor(source, files, rules, validator, dbChecker)', function() {
         it(`should create an instance with empty argument`, function() {
             expect(new Handler()).toBeInstanceOf(Handler);
         });
@@ -110,39 +107,63 @@ describe('Handler Module', function() {
             let validator = new Validator();
             expect(new Handler(null, null, null, validator)).toBeInstanceOf(Handler);
         });
+
+        it(`should accepts a db checker implementation argument as fifth parameter`, function() {
+            let dbchecker = new DBChecker();
+            expect(new Handler(null, null, null, null, dbchecker)).toBeInstanceOf(Handler);
+        });
     });
 
     describe('#setSource(source)', function() {
-        it(`should set the data source if the given argument is a valid plain object`, function() {
+        it(`should set the data source if the given argument is a valid javascript plain object`, function() {
             expect(handler._source).toBeNull();
-            let source = SimpleSource();
+            const source = SimpleSource();
             expect(handler.setSource(source)._source).toStrictEqual(source);
+        });
+
+        it(`should do nothing if given argument is not a valid javascript plain object`, function() {
+            expect(handler._source).toBeNull();
+            const source = [];
+            expect(handler.setSource(source)._source).toBeNull();
         });
     });
 
     describe('#setFiles(files)', function() {
-        it(`should set the files source if the given argument is a valid plain object`, function() {
+        it(`should set the files source if the given argument is a valid javascript plain object`, function() {
             expect(handler._files).toBeNull();
-            let files = {};
+            const files = {};
             expect(handler.setFiles(files)._files).toStrictEqual(files);
+        });
+
+        it(`should do nothing if given argument is not a valid javascript plain object`, function() {
+            expect(handler._files).toBeNull();
+            const files = [];
+            expect(handler.setFiles(files)._files).toBeNull();
         });
     });
 
     describe('#setRules(rules)', function() {
 
-        it(`should set the rules if the given argument is a valid plain object`, function() {
+        it(`should set the rules if the given argument is a valid javascript plain object`, function() {
             expect(handler._rules).toBeNull();
-            let rules = SimpleRules();
+            const rules = SimpleRules();
             expect(handler.setRules(rules)._rules).toStrictEqual(rules);
+        });
+
+        it(`should do nothing if given argument is not a valid javascript plain object`, function() {
+            expect(handler._source).toBeNull();
+            const rules = [];
+            expect(handler.setRules(rules)._rules).toBeNull();
         });
     });
 
     describe('#setValidator(validator)', function() {
-        it(`should set the validator object if the given argument inherits from
+        it(`should set the validator object if the given argument is an instance of the
             Validator module`, function() {
             expect(handler._validator).toBeInstanceOf(Validator);
+            handler._validator = null;
 
-            let validator = new Validator;
+            const validator = new Validator;
             handler.setValidator(validator);
             expect(handler._validator).toStrictEqual(validator);
         });
@@ -156,11 +177,34 @@ describe('Handler Module', function() {
         });
     });
 
+    describe('#setDBChecker(dbChecker)', function() {
+        it(`should set the dbchecker object if the given argument is an instance and
+        implementation of the DBChecker module`, function() {
+            const handler = new Handler;
+            expect(handler._dbChecker).toBeNull();
+
+            const dbChecker = new DBChecker;
+            handler.setDBChecker(dbChecker);
+
+            expect(handler._dbChecker).toStrictEqual(dbChecker);
+        });
+
+        it(`should do nothing if argument is not an instance of DBChecker`, function() {
+            const handler = new Handler;
+            expect(handler._dbChecker).toBeNull();
+
+            const dbChecker = [];
+            handler.setDBChecker(dbChecker);
+
+            expect(handler._dbChecker).toBeNull();
+        });
+    });
+
     describe('#addField(name, value)', function() {
         it(`should add the given field to the _addedFields instance property`, function() {
             expect(handler._addedFields).toEqual({});
             handler.addField('name', 'Harrison');
-            expect(handler._addedFields).toHaveProperty('name', 'Harrison');
+            expect(handler._addedFields).toMatchObject({name: 'Harrison'});
         });
 
         it(`should do nothing if name is not a string`, function() {
@@ -177,8 +221,10 @@ describe('Handler Module', function() {
                 name: 'Harrison',
                 age: 22
             });
-            expect(handler._addedFields).toHaveProperty('name', 'Harrison');
-            expect(handler._addedFields).toHaveProperty('age', 22);
+            expect(handler._addedFields).toMatchObject({
+                name: 'Harrison',
+                age: 22
+            });
         });
 
         it(`should do nothing if argument is not a plain object`, function() {
@@ -814,6 +860,27 @@ describe('Handler Module', function() {
                 .then(() => {
                     expect(handler.getData('files')).toEqual(filenames);
                 });
+        });
+    });
+
+    describe('db check field parameter resolution', function() {
+        it(`should default the field parameter field to 'id' if field value is an integer
+        and db model is relational`, function() {
+            const source = {userid: '22'};
+            const rules = {
+                userid: {
+                    type: 'integer',
+                    check: {
+                        if: 'exists',
+                        table: 'users'
+                    },
+                },
+            };
+
+            return handler.modelUseRelational().setSource(source).setRules(rules).execute().then(() => {
+                const dbChecks = handler._dbChecks.userid;
+                expect(dbChecks[0].field).toEqual('id');
+            });
         });
     });
 });
