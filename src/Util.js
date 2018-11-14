@@ -14,6 +14,15 @@ export default {
     },
 
     /**
+     * tests if a variable is a number
+     *@param {*} variable - variable to test
+     *@returns {boolean}
+    */
+    isNumber(variable) {
+        return typeof variable === 'number' && !isNaN(variable);
+    },
+
+    /**
      * tests if a variable is an integer
      *@param {mixed} variable - variable to test
      *@return {boolean}
