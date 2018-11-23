@@ -302,7 +302,7 @@ export default {
      *@param {mixed} value - the final value
      *@returns {Object}
     */
-    composeIntoObject(object, keys, value) {
+    expand(object, keys, value) {
 
         object = this.isObject(object)? object : {};
         keys = keys.split('.');

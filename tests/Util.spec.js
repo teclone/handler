@@ -303,7 +303,7 @@ describe('Util Module', function() {
 
     describe('.composeIntoObject(object, keys, value)', function() {
         it(`should compose and assign the value for the given key into the object`, function() {
-            expect(Util.composeIntoObject(null, 'details.address.lga', 'udenu')).toEqual({
+            expect(Util.expand(null, 'details.address.lga', 'udenu')).toEqual({
                 details: {
                     address: {
                         lga: 'udenu'
@@ -321,7 +321,7 @@ describe('Util Module', function() {
                     }
                 }
             };
-            expect(Util.composeIntoObject(data, 'details.info.name', 'Harrison')).toEqual({
+            expect(Util.expand(data, 'details.info.name', 'Harrison')).toEqual({
                 details: {
                     address: {
                         lga: 'udenu'
