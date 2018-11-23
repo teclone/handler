@@ -1,23 +1,23 @@
+import { DB_MODEL_CASE_STYLES, DB_MODELS } from '../src/Constants';
+import DataSourceNotSetException from '../src/Exceptions/DataSourceNotSetException';
+import DBCheckerNotFoundException from '../src/Exceptions/DBCheckerNotFoundException';
+import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
+import InvalidParameterException from '../src/Exceptions/InvalidParameterException';
+import KeyNotFoundException from '../src/Exceptions/KeyNotFoundException';
+import MissingParameterException from '../src/Exceptions/MissingParameterException';
+import RulesNotSetException from '../src/Exceptions/RulesNotSetException';
+import StateException from '../src/Exceptions/StateException';
 import Handler from '../src/Handler';
 import Validator from '../src/Validator';
-import DataSourceNotSetException from '../src/Exceptions/DataSourceNotSetException';
-import SimpleSource from './Helpers/DataProviders/Handler/SimpleSource';
-import RulesNotSetException from '../src/Exceptions/RulesNotSetException';
-import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
-import MissingFieldsTestProvider from './Helpers/DataProviders/Handler/MissingFieldsTestProvider';
-import FilterTestProvider from './Helpers/DataProviders/Handler/FilterTestProvider';
-import KeyNotFoundException from '../src/Exceptions/KeyNotFoundException';
-import StateException from '../src/Exceptions/StateException';
-import SimpleRules from './Helpers/DataProviders/Handler/SimpleRules';
-import RequireIfTestProvider from './Helpers/DataProviders/Handler/RequireIfTestProvider';
-import DBCheckResolutionTestProvider from './Helpers/DataProviders/Handler/DBCheckResolutionTestProvider';
-import InvalidParameterException from '../src/Exceptions/InvalidParameterException';
 import { getTestFileDetails, getTestMultiFileDetails } from './Helpers/bootstrap';
+import DBCheckResolutionTestProvider from './Helpers/DataProviders/Handler/DBCheckResolutionTestProvider';
+import FilterTestProvider from './Helpers/DataProviders/Handler/FilterTestProvider';
 import GeneralFilterErrorTest from './Helpers/DataProviders/Handler/GeneralFilterErrorTest';
+import MissingFieldsTestProvider from './Helpers/DataProviders/Handler/MissingFieldsTestProvider';
+import RequireIfTestProvider from './Helpers/DataProviders/Handler/RequireIfTestProvider';
+import SimpleRules from './Helpers/DataProviders/Handler/SimpleRules';
+import SimpleSource from './Helpers/DataProviders/Handler/SimpleSource';
 import DBChecker from './Helpers/DBChecker';
-import DBCheckerNotFoundException from '../src/Exceptions/DBCheckerNotFoundException';
-import MissingParameterException from '../src/Exceptions/MissingParameterException';
-import { DB_MODELS, DB_MODEL_CASE_STYLES } from '../src/Constants';
 
 describe('Handler Module', function() {
     let handler = null;
@@ -356,7 +356,7 @@ describe('Handler Module', function() {
         });
     });
 
-    describe('#execute()', function() {
+    describe('#execute(validateOnDemand, requiredFields)', function() {
         it(`should throw DataSourceNotSet Exception if there is no data source set for
             handling`, function() {
             return handler.execute().catch(function(err) {
@@ -480,7 +480,7 @@ describe('Handler Module', function() {
                 .toBeInstanceOf(Promise);
         });
 
-        it(`the returned promised must always resolve to a boolean status`, function() {
+        it(`the returned promise must always resolve to a boolean status`, function() {
             return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
                 .then(function(result) {
                     expect(typeof result).toEqual('boolean');
@@ -506,6 +506,83 @@ describe('Handler Module', function() {
             return handler.setSource(source).setRules(rules).execute().catch(function(ex) {
                 expect(ex).toBeInstanceOf(InvalidParameterException);
             });
+        });
+
+        it(`should pick up rules for only fields that were sent if the validateOnDemand
+        parameter is set to true`, function() {
+            const source = SimpleSource();
+            const rules = {
+                'first-name': 'text',
+                'last-name': 'text',
+                age: 'positiveInt',
+                notSent: 'text',
+                picture: 'file'
+            };
+            const files = {picture: getTestFileDetails('file1.jpg', 'image/jpeg')};
+
+            return handler.setSource(source).setRules(rules).setFiles(files).execute(true)
+                .then(() => {
+                    const rules = handler._rules;
+                    expect(rules).toMatchObject({
+                        'first-name': {
+                            required: true,
+                            type: 'text'
+                        },
+                        'last-name': {
+                            required: true,
+                            type: 'text'
+                        },
+                        'age': {
+                            required: true,
+                            type: 'positiveInt'
+                        },
+                        picture: {
+                            required: true,
+                            type: 'file'
+                        }
+                    });
+                });
+        });
+
+        it(`should pick up rules for only fields that were sent if the validateOnDemand
+        parameter is set to true in addition to the list of requiredFields parameter`, function() {
+            const source = SimpleSource();
+            const rules = {
+                'first-name': 'text',
+                'last-name': 'text',
+                age: 'positiveInt',
+                notSent: 'text',
+                picture: 'file'
+            };
+            const files = {picture: getTestFileDetails('file1.jpg', 'image/jpeg')};
+
+            return handler.setSource(source).setRules(rules).setFiles(files)
+                .execute(true, ['notSent'])
+                .then(() => {
+                    const rules = handler._rules;
+                    expect(rules).toMatchObject({
+                        'first-name': {
+                            required: true,
+                            type: 'text'
+                        },
+                        'last-name': {
+                            required: true,
+                            type: 'text'
+                        },
+                        'age': {
+                            required: true,
+                            type: 'positiveInt'
+                        },
+                        picture: {
+                            required: true,
+                            type: 'file'
+                        },
+                        notSent: {
+                            required: true,
+                            type: 'text'
+                        }
+                    });
+                });
         });
     });
 
@@ -687,7 +764,7 @@ describe('Handler Module', function() {
         });
     });
 
-    describe('#mapDataToModel(model?)', function() {
+    describe('#mapDataToModel(model?, expand=true)', function() {
         let source = null,
             rules = null;
         beforeEach(function() {
@@ -728,7 +805,7 @@ describe('Handler Module', function() {
         });
 
         it(`should map the processed data to the given model instance and return it while
-            also resolving dot symbols`, function() {
+            also expanding dot symbols`, function() {
 
             return handler.setSource(source).setRules(rules).execute().then(function() {
                 let mappedData = handler.mapDataToModel({existing: 'something'});
@@ -742,6 +819,22 @@ describe('Handler Module', function() {
                         state: 'Enugu'
                     },
                     existing: 'something'
+                });
+            });
+        });
+
+        it(`should map the processed data to the given model instance and return it without
+            expanding dot symbols if the expand parameter is set to false`, function() {
+
+            return handler.setSource(source).setRules(rules).execute().then(function() {
+                let mappedData = handler.mapDataToModel(null, false);
+                expect(mappedData).toEqual({
+                    firstName: 'Harrison',
+                    lastName: 'Ifeanyichukwu',
+                    email: 'Harrisonifeanyichukwu@gmail.com',
+                    phoneNumber: '08132083436',
+                    'address.country': 'ng',
+                    'address.state': 'Enugu'
                 });
             });
         });
@@ -763,7 +856,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should skip any field that has been asked to be skipped using the modelSkipFields
+        it(`should skip any field that has been asked to be skipped through the modelSkipFields
             and modelSkipField method calls`, function() {
             handler.modelSkipFields(['email', 'address.country']);
 
@@ -881,29 +974,6 @@ describe('Handler Module', function() {
                 const dbChecks = handler._dbChecks.userid;
                 expect(dbChecks[0].field).toEqual('id');
             });
-        });
-    });
-
-    describe('validateOnDemand call', function() {
-        it(`should pick up rules for only fields that were sent`, function() {
-            const source = SimpleSource();
-            const rules = {
-                'first-name': 'text',
-                'last-name': 'text',
-                age: 'positiveInt',
-                notSent: 'text',
-                picture: 'file'
-            };
-
-            const files = {picture: getTestFileDetails('file1.jpg', 'image/jpeg')};
-
-            return handler.setSource(source).setRules(rules).setFiles(files).execute(true)
-                .then(() => {
-                    const rules = handler._rules;
-                    expect(rules).toHaveProperty('first-name');
-                    expect(rules).toHaveProperty('last-name');
-                    expect(rules).toHaveProperty('age');
-                });
         });
     });
 });

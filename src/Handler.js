@@ -1,17 +1,17 @@
-import Util from './Util';
-import Regex from './Regex';
-import Validator from './Validator';
+import { DB_MODEL_CASE_STYLES, DB_MODELS } from './Constants';
 import CustomDate from './CustomDate';
-import DataSourceNotSetException from './Exceptions/DataSourceNotSetException';
-import RulesNotSetException from './Exceptions/RulesNotSetException';
-import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
-import StateException from './Exceptions/StateException';
-import KeyNotFoundException from './Exceptions/KeyNotFoundException';
-import InvalidParameterException from './Exceptions/InvalidParameterException';
-import DBCheckerNotFoundException from './Exceptions/DBCheckerNotFoundException';
-import MissingParameterException from './Exceptions/MissingParameterException';
 import DBChecker from './DBChecker';
-import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
+import DataSourceNotSetException from './Exceptions/DataSourceNotSetException';
+import DBCheckerNotFoundException from './Exceptions/DBCheckerNotFoundException';
+import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
+import InvalidParameterException from './Exceptions/InvalidParameterException';
+import KeyNotFoundException from './Exceptions/KeyNotFoundException';
+import MissingParameterException from './Exceptions/MissingParameterException';
+import RulesNotSetException from './Exceptions/RulesNotSetException';
+import StateException from './Exceptions/StateException';
+import Regex from './Regex';
+import Util from './Util';
+import Validator from './Validator';
 
 export default class {
 
@@ -762,11 +762,16 @@ export default class {
      *@param {boolean} validateOnDemand - boolean value that indicates if the validation
      * should be based on the in demand data that was sent
     */
-    filterRules(validateOnDemand) {
+    filterRules(validateOnDemand, requiredFields) {
         if(validateOnDemand) {
             this._rules = Object.entries(this._rules).reduce((result, [field, value]) => {
-                if (typeof this._source[field] !== 'undefined' ||
-                    (this._files && typeof this._files[field] !== 'undefined')) {
+                if (requiredFields.includes(field)) {
+                    result[field] = value;
+                }
+                else if (typeof this._source[field] !== 'undefined') {
+                    result[field] = value;
+                }
+                else if (this._files && typeof this._files[field] !== 'undefined') {
                     result[field] = value;
                 }
                 return result;
@@ -1078,18 +1083,17 @@ export default class {
     /**
      * executes the handler
      *@param {boolean} [validateOnDemand=false] - boolean value indicating if it should only
-     * validate and pick fields that were sent, fields that has rules defined, and were sent.
-     * Useful when running api updates
+     * validate and pick fields that were sent whose rules are defined
      *@returns {Promise}
      *@throws {DataSourceNotSetException}
      *@throws {RulesNotSetException}
     */
-    async execute(validateOnDemand) {
+    async execute(validateOnDemand, requiredFields) {
 
         this.shouldExecute();
         this._executed = true;
 
-        this.filterRules(!!validateOnDemand);
+        this.filterRules(!!validateOnDemand, Util.makeArray(requiredFields));
 
         this.mergeSource();
         this.processRules();
@@ -1189,9 +1193,10 @@ export default class {
     /**
      * maps data to the given model object
      *@param {Object} model - the model object
+     *@param {boolean} [expand=true] - boolean value inicating if it should expand .dot keys
      *@return {Object}
     */
-    mapDataToModel(model) {
+    mapDataToModel(model, expand = true) {
         model = Util.isObject(model)? model : {};
 
         for(let [key, value] of Object.entries(this._data)) {
@@ -1199,7 +1204,10 @@ export default class {
                 continue; //skip field
 
             key = Util.value(key, this._modelRenameFields, key);
-            model = Util.composeIntoObject(model, key, value);
+            if (expand)
+                model = Util.expand(model, key, value);
+            else
+                model[key] = value;
         }
         return model;
     }
