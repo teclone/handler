@@ -1,5 +1,5 @@
-import mongoose from './Helpers/connection';
 import Handler from '../src/Handler';
+import mongoose from './Helpers/connection';
 import DBChecker from './Helpers/DBChecker';
 
 describe('DBChecker module', function() {
@@ -120,6 +120,70 @@ describe('DBChecker module', function() {
                             email: '{this}'
                         },
                         model
+                    }
+                }
+            };
+
+            return handler.setSource(source).setRules(rules).execute().then(result => {
+                expect(result).toBeTruthy();
+            });
+        });
+    });
+
+    describe('check callbacks', function() {
+        it(`should run the callback method and set error if callback returns true`, function() {
+            const source = {
+                email: 'Harrisonifeanyichukwu@outlook.com',
+            };
+            const callback = jest.fn(() => {
+                return true;
+            });
+            const rules = {
+                email: {
+                    type: 'email',
+                    filters: {
+                        toLower: true
+                    },
+                    check: {
+                        callback,
+                        params: 'nothing',
+                        err: 'email is not known'
+                    }
+                }
+            };
+
+            return handler.setSource(source).setRules(rules).execute().then(result => {
+                expect(result).toBeFalsy();
+                expect(handler.errors.email).toEqual('email is not known');
+
+                //the first argument passed to the callback should be the field name
+                expect(callback.mock.calls[0][0]).toEqual('email');
+                //second argument should be the field value
+                expect(callback.mock.calls[0][1]).toEqual(source.email.toLowerCase());
+                //third argument should be the data object
+                expect(callback.mock.calls[0][2]).toEqual(handler.data);
+                //then comes the params list
+                expect(callback.mock.calls[0][3]).toEqual('nothing');
+            });
+        });
+
+        it(`should run the callback method without setting error if the callback returns false`, function() {
+            const source = {
+                email: 'Harrisonifeanyichukwu@outlook.com',
+            };
+            const callback = jest.fn(() => {
+                return false;
+            });
+            const rules = {
+                email: {
+                    type: 'email',
+                    filters: {
+                        toLower: true
+                    },
+                    check: {
+                        callback,
+                        params: 'nothing',
+                        err: 'email is not known'
                     }
                 }
             };
