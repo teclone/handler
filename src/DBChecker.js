@@ -13,18 +13,19 @@
  * You should leave out this option if you did not define a custom query
 */
 
-import Common from './Traits/Common';
-import Regex from './Regex';
-import Util from './Util';
 import { DB_MODELS } from './Constants';
+import MissingParameterException from './Exceptions/MissingParameterException';
+import Regex from './Regex';
+import Common from './Traits/Common';
+import Util from './Util';
 
 export default class DBChecker extends Common {
 
     /**
      * the execute method carries out the execution. it should return an integer denoting
-     * the count or results return by the select/find query.
+     * the query result count. the method can be asynchronous.
      *
-     * this method must execute asynchronisely
+     * Default implementation here supports mongoose models
      *
      *@param {string|Object} query - the query can be a string for relationals or object for
      * noSql scenerio.
@@ -32,9 +33,16 @@ export default class DBChecker extends Common {
      * to empty array
      *@param {DBCheckOptions} options - the db check options
     */
-    // async execute(query, params, options) {
-
-    // }
+    execute(query, params, options) {
+        if (options.model && typeof options.model.countDocuments !== 'undefined')
+            return options.model.countDocuments(query).exec();
+        else
+            throw new MissingParameterException(
+                'DBCheck option is missing mongoose model. Provide your own db checker instance '
+                +
+                'if you are not using mongoose'
+            );
+    }
 
     /**
      * builds query from the given options. the options object contains

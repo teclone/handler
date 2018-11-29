@@ -2,7 +2,6 @@ import { DB_MODEL_CASE_STYLES, DB_MODELS } from './Constants';
 import CustomDate from './CustomDate';
 import DBChecker from './DBChecker';
 import DataSourceNotSetException from './Exceptions/DataSourceNotSetException';
-import DBCheckerNotFoundException from './Exceptions/DBCheckerNotFoundException';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import InvalidParameterException from './Exceptions/InvalidParameterException';
 import KeyNotFoundException from './Exceptions/KeyNotFoundException';
@@ -177,9 +176,6 @@ export default class {
             return;
 
         const dbChecker = this._dbChecker;
-        if (dbChecker === null)
-            throw new DBCheckerNotFoundException('No db checker instance found');
-
         for (const dbCheck of dbChecks) {
 
             //if there is a callback method, use if
@@ -915,6 +911,9 @@ export default class {
         if (!(validator instanceof Validator))
             validator = new Validator();
 
+        if (!(dbChecker instanceof DBChecker))
+            dbChecker = new DBChecker();
+
         this.setSource(source).setFiles(files).setRules(rules).setValidator(validator)
             .setDBChecker(dbChecker).modelUseNoSql().modelUseCamelCaseStyle();
     }
@@ -1138,8 +1137,7 @@ export default class {
         this.validateFields(this._optionalFields, false);
 
         if (this.succeeds()) {
-            if (this._dbChecker)
-                this._dbChecker.setDBModel(this._dbModel);
+            this._dbChecker.setDBModel(this._dbModel);
 
             await this.validateDBChecks(this._requiredFields, true);
             await this.validateDBChecks(this._optionalFields, false);

@@ -1,37 +1,30 @@
+import MissingParameterException from '../src/Exceptions/MissingParameterException';
 import Handler from '../src/Handler';
-import mongoose from './Helpers/connection';
-import DBChecker from './Helpers/DBChecker';
+import { closeConnection, connect } from './Helpers/connection';
+import model from './Helpers/model';
 
 describe('DBChecker module', function() {
 
-    let handler = null,
-        model = null;
+    let handler = null;
 
-    beforeAll(function(done) {
-        const schema = new mongoose.Schema({
-            email: String,
-            password: String
-        });
-        model = mongoose.model('User', schema);
+    beforeAll(async function() {
+        await connect();
 
         const userData = {
             email: 'harrisonifeanyichukwu@gmail.com',
             password: 'random_243',
         };
-        model.create(userData).then(() => {
-            done();
-        });
-    });
 
-    afterAll(function(done) {
-        model.deleteMany().exec().then(() => {
-            done();
-        });
+        await model.create(userData);
     });
 
     beforeEach(function() {
         handler = new Handler;
-        handler.setDBChecker(new DBChecker);
+    });
+
+    afterAll(async function() {
+        await model.deleteMany({}).exec();
+        await closeConnection();
     });
 
     describe('#checkIfExists', function() {
@@ -119,6 +112,53 @@ describe('DBChecker module', function() {
                         query: {
                             email: '{this}'
                         },
+                        model
+                    }
+                }
+            };
+
+            return handler.setSource(source).setRules(rules).execute().then(result => {
+                expect(result).toBeTruthy();
+            });
+        });
+    });
+
+    describe('Missing Model Error', function() {
+        it(`should throw missing field error if there is no model supplied while using the
+        default dbchecker mongoose implementation of that ships with the library`, function() {
+            const source = {
+                email: 'Harrisonifeanyichukwu@gmail.com',
+            };
+            const rules = {
+                email: {
+                    type: 'email',
+                    filters: {
+                        toLower: true
+                    },
+                    check: {
+                        if: 'exists',
+                        collection: 'users',
+                    }
+                }
+            };
+
+            return handler.setSource(source).setRules(rules).execute().catch(ex => {
+                expect(ex).toBeInstanceOf(MissingParameterException);
+            });
+        });
+
+        it(`should run the db check rule and validate to true if field does not exist`, function() {
+            const source = {
+                email: 'Harrisonifeanyichukwu@example.com',
+            };
+            const rules = {
+                email: {
+                    type: 'email',
+                    filters: {
+                        toUpper: true
+                    },
+                    check: {
+                        if: 'exists',
                         model
                     }
                 }

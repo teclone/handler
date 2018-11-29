@@ -1,6 +1,6 @@
 import { DB_MODEL_CASE_STYLES, DB_MODELS } from '../src/Constants';
+import DBChecker from '../src/DBChecker';
 import DataSourceNotSetException from '../src/Exceptions/DataSourceNotSetException';
-import DBCheckerNotFoundException from '../src/Exceptions/DBCheckerNotFoundException';
 import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
 import InvalidParameterException from '../src/Exceptions/InvalidParameterException';
 import KeyNotFoundException from '../src/Exceptions/KeyNotFoundException';
@@ -10,6 +10,7 @@ import StateException from '../src/Exceptions/StateException';
 import Handler from '../src/Handler';
 import Validator from '../src/Validator';
 import { getTestFileDetails, getTestMultiFileDetails } from './Helpers/bootstrap';
+import { closeConnection, connect } from './Helpers/connection';
 import DBCheckResolutionTestProvider from './Helpers/DataProviders/Handler/DBCheckResolutionTestProvider';
 import FilterTestProvider from './Helpers/DataProviders/Handler/FilterTestProvider';
 import GeneralFilterErrorTest from './Helpers/DataProviders/Handler/GeneralFilterErrorTest';
@@ -17,14 +18,29 @@ import MissingFieldsTestProvider from './Helpers/DataProviders/Handler/MissingFi
 import RequireIfTestProvider from './Helpers/DataProviders/Handler/RequireIfTestProvider';
 import SimpleRules from './Helpers/DataProviders/Handler/SimpleRules';
 import SimpleSource from './Helpers/DataProviders/Handler/SimpleSource';
-import DBChecker from './Helpers/DBChecker';
+import model from './Helpers/model';
 
 describe('Handler Module', function() {
     let handler = null;
 
+    beforeAll(async function() {
+        await connect();
+
+        const userData = {
+            email: 'harrisonifeanyichukwu@gmail.com',
+            password: 'random_243',
+        };
+
+        await model.create(userData);
+    });
+
     beforeEach(function() {
         handler = new Handler;
-        handler.setDBChecker(new DBChecker);
+    });
+
+    afterAll(async function() {
+        await model.deleteMany({}).exec();
+        await closeConnection();
     });
 
     /**
@@ -39,7 +55,6 @@ describe('Handler Module', function() {
 
             //create new handler and await the execute promise
             const handler = new Handler;
-            handler.setDBChecker(new DBChecker);
             await handler.setSource(source).setFiles(files).setRules(rules).execute();
 
             if (isErroneous) {
@@ -72,7 +87,7 @@ describe('Handler Module', function() {
             let [source, rules, messages] = dataset;
 
             //create new handler and await the execute promise
-            const handler = new Handler(source, {}, rules, null, new DBChecker);
+            const handler = new Handler(source, {}, rules, null, null);
             await handler.execute();
 
             //check on each field dbcheck resolved if value expectations
@@ -181,7 +196,6 @@ describe('Handler Module', function() {
         it(`should set the dbchecker object if the given argument is an instance and
         implementation of the DBChecker module`, function() {
             const handler = new Handler;
-            expect(handler._dbChecker).toBeNull();
 
             const dbChecker = new DBChecker;
             handler.setDBChecker(dbChecker);
@@ -191,12 +205,11 @@ describe('Handler Module', function() {
 
         it(`should do nothing if argument is not an instance of DBChecker`, function() {
             const handler = new Handler;
-            expect(handler._dbChecker).toBeNull();
 
             const dbChecker = [];
             handler.setDBChecker(dbChecker);
 
-            expect(handler._dbChecker).toBeNull();
+            expect(handler._dbChecker).toBeInstanceOf(DBChecker);
         });
     });
 
@@ -376,26 +389,6 @@ describe('Handler Module', function() {
             const rules = {file: 'file'};
             return handler.setSource({}).setRules(rules).execute().catch(function(err) {
                 expect(err).toBeInstanceOf((FilesSourceNotSetException));
-            });
-        });
-
-        it(`should throw DBCheckerNotFound Exception if there are db check rules but no
-            dbchecker implementation is set`, function() {
-            const rules = {
-                    email: {
-                        type:'email',
-                        check: {
-                            'if': 'exists',
-                            collection: 'User',
-                        }
-                    },
-                },
-                source = {
-                    email: 'Harrisonifeanyichukwu@gmail.com'
-                };
-
-            return new Handler().setSource(source).setRules(rules).execute().catch(ex => {
-                expect(ex).toBeInstanceOf(DBCheckerNotFoundException);
             });
         });
 
@@ -965,7 +958,8 @@ describe('Handler Module', function() {
                     type: 'integer',
                     check: {
                         if: 'exists',
-                        table: 'users'
+                        table: 'here',
+                        model: model
                     },
                 },
             };

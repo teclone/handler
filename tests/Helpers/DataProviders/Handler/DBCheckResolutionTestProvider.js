@@ -1,3 +1,5 @@
+import model from '../../model';
+
 export default function() {
     return {
         'exists resolution set': [
@@ -17,7 +19,8 @@ export default function() {
                         'if': 'exists',
                         'entity': 'users',
                         'query': 'SELECT 1 FROM products WHERE {_this} = {_index}',
-                        'err': 'product with id {this} already exists'
+                        'err': 'product with id {this} already exists',
+                        model: model
                     },
                 },
                 'email': {
@@ -27,7 +30,8 @@ export default function() {
                             $if: 'exist',
                             entity: 'users',
                             query: 'SELECT 1 FROM users where email = ?',
-                            params: ['{this}']
+                            params: ['{this}'],
+                            model: model
                         }
                     ]
                 },
@@ -40,6 +44,7 @@ export default function() {
                         'err': '{this} is already registered',
                         'query': 'SELECT 1 FROM countries WHERE value = ?',
                         'params': ['{this}'],
+                        model: model
                     },
                 },
                 'name': {
@@ -52,7 +57,8 @@ export default function() {
                                 {firstName: '{this}'},
                                 {lastName: '{this}'}
                             ]
-                        }
+                        },
+                        model: model
                     }
                 }
             },
@@ -78,7 +84,8 @@ export default function() {
                     'check': {
                         'if': 'doesNotExists',
                         'table': 'products',
-                        'err': 'product with id {this} does not exist'
+                        'err': 'product with id {this} does not exist',
+                        model: model
                     },
                 },
                 'email': {
@@ -89,7 +96,8 @@ export default function() {
                             'if': 'doesntExist',
                             'entity': 'users',
                             'field': 'email',
-                            'err': 'user with email "{this}" not found'
+                            'err': 'user with email "{this}" not found',
+                            model: model
                         },
                     ],
                 },
@@ -102,6 +110,7 @@ export default function() {
                         'err': '{this} is not a recognised country',
                         'query': 'SELECT 1 FROM countries WHERE value = ?',
                         'params': ['{this}'],
+                        model: model
                     },
                 },
                 'languages': {
@@ -113,6 +122,7 @@ export default function() {
                         'err': '{this} is not a recognised language',
                         'query': 'SELECT 1 FROM languages WHERE value = ?',
                         'params': ['{_index}'],
+                        model: model
                     }
                 }
             },
