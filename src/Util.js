@@ -129,7 +129,7 @@ export default {
         keys = this.makeArray(keys);
 
         if (this.isPlainObject(object)) {
-            for (let key of keys) {
+            for (const key of keys) {
                 if (this.isString(key) && typeof object[key] !== 'undefined')
                     return object[key];
             }
@@ -153,7 +153,7 @@ export default {
         defaultValue = this.isPlainObject(defaultValue)? defaultValue : {};
 
         if (this.isPlainObject(object)) {
-            for (let key of keys) {
+            for (const key of keys) {
                 if (this.isString(key) && typeof object[key] !== 'undefined') {
                     let value = object[key];
                     if (this.isPlainObject(value))
@@ -180,7 +180,7 @@ export default {
         defaultValue = this.isArray(defaultValue)? defaultValue : [];
 
         if (this.isPlainObject(object)) {
-            for (let key of keys) {
+            for (const key of keys) {
                 if (this.isString(key) && typeof object[key] !== 'undefined') {
                     let value = object[key];
                     if (this.isArray(value))
@@ -220,13 +220,17 @@ export default {
     },
 
     /**
-     * returns true if the given key is defined in the object and its value is truthy
-     *@param {string} key - string key
+     * returns true if any key in the given keys array is defined in the object and its value is truthy
+     *@param {string[]|string} keys - array of keys or a single string key
      *@param {Object} object - the object
     */
-    keySetAndTrue(key, object) {
-        if(this.isPlainObject(object) && !!object[key]) {
-            return true;
+    keySetAndTrue(keys, object) {
+        keys = this.makeArray(keys);
+        if (this.isPlainObject(object)) {
+            for (const key of keys) {
+                if (typeof object[key] !== 'undefined' && object[key])
+                    return true;
+            }
         }
         return false;
     },

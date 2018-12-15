@@ -68,7 +68,7 @@ export default function() {
             //rules
             {
                 'is-current-work': {
-                    'type': 'boolean',
+                    'type': 'checkbox',
                 },
                 'work-end-month': {
                     'type': 'range',
@@ -185,7 +185,7 @@ export default function() {
             //rules
             {
                 'join-newsletter': {
-                    'type': 'boolean',
+                    'type': 'checkbox',
                 },
                 'email': {
                     'type': 'email',

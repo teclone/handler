@@ -1,14 +1,14 @@
-import Common from './Traits/Common';
-import FileExtensionDetector from './FileExtensionDetector';
-import Util from './Util';
 import CustomDate from './CustomDate';
-import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
-import Regex from './Regex';
-import fs from 'fs';
-import crypto from 'crypto';
 import DirectoryNotFoundException from './Exceptions/DirectoryNotFoundException';
 import FileMoveException from './Exceptions/FileMoveException';
+import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import InvalidDateException from './Exceptions/InvalidDateException';
+import FileExtensionDetector from './FileExtensionDetector';
+import Common from './Traits/Common';
+import Util from './Util';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * the validator module
@@ -777,6 +777,7 @@ export default class extends Common
         if (this.setup(required, field, value, options, index)) {
             value = value.toString();
             const err = Util.value('err', options, '{this} is not a valid url'),
+                schemes = Util.arrayValue('schemes', options, this.getURISchemes()),
                 rules = {
                     /*
                      * domain consists of optional scheme, and consists of labels that are each
@@ -784,7 +785,7 @@ export default class extends Common
                     */
                     regex: {
                         test: new RegExp(
-                            '^(?:(?:' + this.getURISchemes().join('|') + ')://)?' //match optional scheme
+                            '^(?:(?:' + schemes.join('|') + ')://)?' //match optional scheme
                             +
                             '[a-z0-9](?:[-a-z0-9]*[a-z0-9])?' //match first label
                             +
@@ -942,13 +943,11 @@ export default class extends Common
             //move file to some other location if moveTo option is set
             let moveTo = Util.value('moveTo', options, '');
             if (moveTo !== '') {
-                moveTo = Regex.replace(/\/+$/, '', moveTo) + '/';
-
                 if(!fs.existsSync(moveTo))
-                    throw new DirectoryNotFoundException(moveTo + ' does not exist');
+                    throw new DirectoryNotFoundException(moveTo + ' moveTo folder does not exist');
 
                 const fileName = crypto.randomBytes(16).toString('hex') + '.' + ext;
-                moveTo += fileName;
+                moveTo = path.join(moveTo, fileName);
 
                 try {
                     fs.renameSync(tempFileLocation, moveTo);

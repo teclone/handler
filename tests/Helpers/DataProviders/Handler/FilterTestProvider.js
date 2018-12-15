@@ -3,94 +3,27 @@
 */
 export default function() {
     return {
-        'first set': [
+        //test trim filter
+        'trim filter test': [
             //data
             {
                 'last-name': '        Harrison        ',
                 'middle-name': '        Ifeanyichukwu        ',
-
-                'ages': ['22yrs', '22.5years'],
-                'fav-numbers': ['4', '7', '10', '11'],
-
-                //'remember-me': 'off', not supplied is the same as false for boolean fields
-                'terms-and-conditions': 'on',
-
-                'email': '(Harrisonifeanyichukwu@gmail.com)',
-                'website': 'http://www.fjsfoundations.com',
-
-                'alpha-one': 'a',
-                'alpha-two': 'Z',
-
-                'money': 'not-money',
-                'cool-money': '500$'
             },
-
             //files
             {},
 
             //rules
             {
-                //test do not trim and trim field filters
                 'last-name': {
                     'filters': {
-                        'trim': false
+                        'trim': false //do not trim
                     }
                 },
                 'middle-name':  {
                     filters: {
-                        trim: true
+                        trim: true //trim
                     }
-                },
-
-                //test float and interger cast filter
-                'ages': {
-                    type: 'positiveFloat',
-                },
-                'fav-numbers': {
-                    type: 'int'
-                },
-
-                //boolean field cast
-                'remember-me': {
-                    type: 'boolean'
-                },
-                'terms-and-conditions': {
-                    type: 'boolean'
-                },
-
-                //test email filter
-                'email': {
-                    type: 'email'
-                },
-
-                //test url filter
-                'website': {
-                    type: 'url'
-                },
-
-                //lower case and upper case filter
-                'alpha-one': {
-                    filters: {
-                        'toUpper': true,
-                        'decode': false
-                    },
-                },
-                'alpha-two': {
-                    filters: {
-                        'toLower': true
-                    },
-                },
-
-                //valid numeric and non valid numeric field cast.
-                'money': {
-                    filters: {
-                        'numeric': true,
-                    },
-                },
-                'cool-money': {
-                    filters: {
-                        'numeric': true,
-                    },
                 },
             },
 
@@ -101,22 +34,232 @@ export default function() {
             {
                 'last-name': '        Harrison        ',
                 'middle-name': 'Ifeanyichukwu',
+            }
+        ],
 
-                'ages': [22, 22.5, ],
-                'fav-numbers': [4, 7, 10, 11],
+        //test int cast filter
+        'int cast test': [
+            //data
+            {
+                'fav-numbers': ['4', '7', '10', '11'],
+            },
+            //files
+            {},
 
-                'remember-me': false,
-                'terms-and-conditions': true,
+            //rules
+            {
+                'fav-numbers': 'int',
+            },
 
-                'email': 'Harrisonifeanyichukwu@gmail.com',
+            //is erronous
+            false,
 
+            //expected
+            {
+                'fav-numbers': [4, 7, 10, 11]
+            }
+        ],
+
+        //test float cast filter
+        'float cast test': [
+            //data
+            {
+                'ages': ['22yrs', '22.5years'],
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                ages: 'positiveFloat',
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+                ages: [22, 22.5]
+            }
+        ],
+
+        //test boolean type cast
+        'boolean cast test': [
+            //data
+            {
+                'roles.isAdmin': true,
+                'roles.isOwner': '0'
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                'roles.isAdmin': 'boolean',
+                'roles.isOwner': 'boolean'
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+                'roles.isAdmin': true,
+                'roles.isOwner': false
+            }
+        ],
+
+        //test checkbox type cast
+        'checkbox filter test': [
+            //data
+            {
+                'subscribe-newsletter': 'checked',
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                'subscribe-newsletter': 'checkbox',
+                'terms-and-condition': 'checkbox'
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+                'subscribe-newsletter': true,
+                'terms-and-condition': false
+            }
+        ],
+
+        //test email type cast
+        'email filter test': [
+            //data
+            {
+                'email': '(Harrisonifeanyichukwu@gmail.com)',
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                email: 'email',
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+                email: 'Harrisonifeanyichukwu@gmail.com'
+            }
+        ],
+
+        //test url type cast
+        'url filter test': [
+            //data
+            {
                 'website': 'http://www.fjsfoundations.com',
+            },
 
-                'alpha-one': 'A',
-                'alpha-two': 'z',
+            //files
+            {},
 
-                'money': 0,
-                'cool-money': 500
+            //rules
+            {
+                website: 'url',
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+                website: 'http://www.fjsfoundations.com'
+            }
+        ],
+
+        'case filter test': [
+            //data
+            {
+                field1: 'a',
+                field2: 'Z',
+                field3: 'hArrison'
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                field1: {
+                    filters: {
+                        toUpper: true,
+                        decode: false
+                    }
+                },
+                field2: {
+                    filters: {
+                        toLower: true,
+                    }
+                },
+                field3: {
+                    filters: {
+                        capitalize: true,
+                    }
+                }
+            },
+
+            //is erronous
+            false,
+
+            //expected
+            {
+
+                field1: 'A',
+                field2: 'z',
+                field3: 'Harrison'
+            }
+        ],
+
+        'numeric cast filter': [
+            //data
+            {
+                amount: '500',
+                age: 'nonsense'
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                amount: {
+                    filters: {
+                        'numeric': true
+                    }
+                },
+
+                age: {
+                    filters: {
+                        'numeric': true
+                    }
+                }
+            },
+
+            //is errornous
+            false,
+
+            //expected result
+            {
+                amount: 500,
+                age: 0
             }
         ],
 
@@ -133,6 +276,7 @@ export default function() {
                         </div>
                     </section>
                 `,
+
                 location: `<br>No.10 <b onClick="(event) => {console.log('clicked')}">VI Lagos<b>`,
 
                 action: '<button type="submit" value="" autofocus>Submit',
@@ -176,5 +320,32 @@ export default function() {
                 comment: '<p>nothing to comment</p>'
             }
         ],
+
+        'callback filter test': [
+            //data
+            {
+                name: 'HARRISON'
+            },
+
+            //files
+            {},
+
+            //rules
+            {
+                name: {
+                    filters: {
+                        callback: value => value.charAt(0).toUpperCase() + value.substring(1).toLowerCase()
+                    }
+                }
+            },
+
+            //is errornous
+            false,
+
+            //expected value
+            {
+                name: 'Harrison'
+            }
+        ]
     };
 }
