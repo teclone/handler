@@ -54,6 +54,7 @@ export default class {
 
             //boolean validation
             'bool': '',
+            'checkbox': '',
 
             //email validation
             'email': 'validateEmail',
@@ -321,8 +322,17 @@ export default class {
      *@param {}
     */
     stripTags(value, stripTagsIgnore) {
-        stripTagsIgnore = Util.isArray(stripTagsIgnore)?
-            stripTagsIgnore.join('').toLowerCase() : stripTagsIgnore.toLowerCase();
+        stripTagsIgnore = (
+            Util.isString(stripTagsIgnore)? stripTagsIgnore.split(/[,\s>]/) : stripTagsIgnore
+        )
+            .map(
+                tag => tag.toLowerCase().replace(/[/<>]/g, '')
+            )
+
+            .filter(
+                tag => tag !== ''
+            );
+
         const matchName = '[_a-z][-\\w]*',
             regex = new RegExp(
                 //capture tagName
@@ -335,12 +345,12 @@ export default class {
                 '\\s*>',
                 'i'
             );
-        return Regex.replaceCallback(regex, (matches) => {
-            let test = '<' + matches[1].toLowerCase() + '>';
-            if (stripTagsIgnore.indexOf(test) > -1)
-                return matches[0];
 
-            return '';
+        return Regex.replaceCallback(regex, (matches) => {
+            if (stripTagsIgnore.includes(matches[1].toLowerCase()))
+                return matches[0];
+            else
+                return '';
         }, value);
     }
 
@@ -360,7 +370,7 @@ export default class {
             });
         }
 
-        if (filters.type === 'bool')
+        if (filters.type === 'bool' || filters.type === 'checkbox')
             return !this.valueIsFalsy(value);
 
         if (value === null || value === undefined)
@@ -373,7 +383,7 @@ export default class {
 
         //strip tags before doing any trim operations
         if (Util.keyNotSetOrTrue('stripTags', filters))
-            value = this.stripTags(value, Util.value('stripTagsIgnore', filters, ''));
+            value = this.stripTags(value, Util.value('stripTagsIgnore', filters, []));
 
         //this filter is great when processing computer propram data such as html, xml, json, etc
         if (Util.value(['compact', 'minimize', 'minimise'], filters)) {
@@ -382,18 +392,25 @@ export default class {
                 .filter(value => !/^\s*$/.test(value)).join('');
         }
 
-        //strip tags before trimming
+        // trim value
         if (Util.keyNotSetOrTrue('trim', filters))
             value = value.trim();
 
+        //cast to float
         if (Util.keySetAndTrue('numeric', filters))
             value = Util.isNumeric(value)? parseFloat(value) : 0;
 
+        //upper case
         if (Util.keySetAndTrue('toUpper', filters))
             value = value.toUpperCase();
 
-        else if (Util.keySetAndTrue('toLower', filters))
+        //lower case
+        if (Util.keySetAndTrue('toLower', filters))
             value = value.toLowerCase();
+
+        //capitalize
+        if (Util.keySetAndTrue(['capitalize', 'capitalise'], filters))
+            value = value.charAt(0).toUpperCase() + value.substring(1).toLowerCase();
 
         switch(filters.type)
         {
@@ -419,6 +436,10 @@ export default class {
                     value = parseFloat(value);
                 break;
         }
+
+        //run callback on the value if given
+        if (Util.isCallable(filters.callback))
+            value = filters.callback(value);
 
         return value;
     }
@@ -564,7 +585,7 @@ export default class {
     resolveOption(field, option) {
         //resolve objects
         if (Util.isPlainObject(option)) {
-            for (let [key, value] of Object.entries(option))
+            for (const [key, value] of Object.entries(option))
                 option[key] = this.resolveOption(field, value);
 
             return option;
@@ -741,7 +762,7 @@ export default class {
      *@protected
     */
     processRules() {
-        for (let [field, rule] of Object.entries(this._rules)) {
+        for (const [field, rule] of Object.entries(this._rules)) {
 
             const type = this.resolveType(Util.value('type', rule, 'text')),
                 dbChecks = Util.arrayValue('checks', rule);
@@ -758,7 +779,7 @@ export default class {
             //resolve require if condition
             rule.required = this.resolveRequire(rule);
 
-            if (!rule.required || type === 'bool') {
+            if (!rule.required || type === 'checkbox') {
                 this._optionalFields.push(field);
                 this._defaultValues[field] = Util.value(['$default', 'default', 'defaultValue'], rule, null);
             }
@@ -806,7 +827,7 @@ export default class {
     */
     shouldExecute() {
         if (this._executed)
-            throw new StateException('A Handler can only be executed once');
+            throw new StateException('A handler can only be executed once');
 
         if (this._source === null)
             throw new DataSourceNotSetException('no data source set');
@@ -896,7 +917,7 @@ export default class {
         /* object containing found errors */
         this._errors = {};
 
-        /* object of processed array of processed data */
+        /* object of processed data */
         this._data = {};
 
         /* array of fields to skip while mapping data to model */
