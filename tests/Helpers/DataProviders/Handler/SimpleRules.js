@@ -11,9 +11,9 @@ export default function() {
                 max: 15,
             },
         },
-        'last-name': {
-            type: 'text'
-        },
+
+        'last-name': 'text',
+
         'middle-name': {
             required: false
         },

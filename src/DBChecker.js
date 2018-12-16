@@ -65,8 +65,9 @@ export default class DBChecker extends Common {
             result[options.field] = value;
             return result;
         }
-
-        return `SELECT count(*) FROM ${options.entity} WHERE ${options.field}=?`;
+        else {
+            return `SELECT count(*) FROM ${options.entity} WHERE ${options.field} = ?`;
+        }
     }
 
     /**

@@ -15,6 +15,7 @@ import DBCheckResolutionTestProvider from './Helpers/DataProviders/Handler/DBChe
 import FilterTestProvider from './Helpers/DataProviders/Handler/FilterTestProvider';
 import GeneralFilterErrorTest from './Helpers/DataProviders/Handler/GeneralFilterErrorTest';
 import MissingFieldsTestProvider from './Helpers/DataProviders/Handler/MissingFieldsTestProvider';
+import OverrideIfTestProvider from './Helpers/DataProviders/Handler/OverrideIfTestProvider';
 import RequireIfTestProvider from './Helpers/DataProviders/Handler/RequireIfTestProvider';
 import SimpleRules from './Helpers/DataProviders/Handler/SimpleRules';
 import SimpleSource from './Helpers/DataProviders/Handler/SimpleSource';
@@ -61,6 +62,9 @@ describe('Handler Module', function() {
                 expect(handler.fails()).toBeTruthy();
             }
             else {
+                if (!handler.succeeds())
+                    console.log(handler.errors);
+
                 expect(handler.succeeds()).toBeTruthy();
             }
 
@@ -430,7 +434,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should throw MissingParameter Exception if there is no query and entity/table parameter
+        it(`should throw MissingParameter Exception if there is no query, model and entity/table parameter
             defined in the dbCheck rule when using the relational model`, function() {
             const rules = {
                     email: {
@@ -527,7 +531,7 @@ describe('Handler Module', function() {
                         },
                         'age': {
                             required: true,
-                            type: 'positiveInt'
+                            type: 'pint'
                         },
                         picture: {
                             required: true,
@@ -564,7 +568,7 @@ describe('Handler Module', function() {
                         },
                         'age': {
                             required: true,
-                            type: 'positiveInt'
+                            type: 'pint'
                         },
                         picture: {
                             required: true,
@@ -904,9 +908,15 @@ describe('Handler Module', function() {
         });
     });
 
-    describe('RequireIf/RequiredIf conditonal testing', function() {
+    describe('requireIf/requiredIf conditonal testing', function() {
         it(`should resolve requireIf/requiredIf conditional rules`, function(done) {
             executeTest(RequireIfTestProvider(), done);
+        });
+    });
+
+    describe('overrideIf conditonal testing', function() {
+        it(`should resolve overrideIf conditional rules`, function(done) {
+            executeTest(OverrideIfTestProvider(), done);
         });
     });
 
