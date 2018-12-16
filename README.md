@@ -8,9 +8,69 @@ It makes the validation process easy and requires you to just define the data va
 
 The most interesting part is how easy it is to validate object of field data and files and the wide range of validation rule types that it affords by default. It is also extensible so that you can define more custom validation rules and types if the need be. See [How to Write Your Custom Validation Types](#how-to-write-your-custom-validation-types) for instructions.
 
-Regarding database integrity checks, It supports both **NOSQL** and **Relational Databases**, at least, it is tested on **MongoDB** and **Mysql**, it is extensible enough to leave the DBChecker implementation up to you by defining an abstract `DBChecker` class. This makes it not tied to any framework, database ORMs. See [How To Implement the DBChecker Interface](#how-to-implement-the-dbchecker-interface) for instructions.
+Regarding database integrity checks, It supports both **NOSQL** and **Relational Databases**, at least. It is extensible enough to leave the DBChecker implementation up to you by defining an abstract `DBChecker` class. This makes it not tied to any framework or database ORMs. See [How To Implement the DBChecker Interface](#how-to-implement-the-dbchecker-interface) for instructions.
 
 By default, it supports mongoose models when performing database integrity checks.
+
+## Table of Content
+
+- [Getting Started](#getting-started)
+
+- [Usage Example](#usage-example)
+
+- [Validation Rule Formats](#validation-rule-formats)
+
+- [Data Filters](#data-filters)
+
+- [Validation Types](#validation-types)
+
+  - [Limiting Rule Validation](#limiting-rule-validations)
+
+  - [Limiting Rule Validation](#limiting-rule-validation)
+
+  - [Regex Rule Validation](#regex-rule-validation)
+
+  - [MatchWith Rule Validation](#matchwith-rule-validation)
+
+  - [Date Validation](#date-validation)
+
+  - [Range Validation](#range-validation)
+
+  - [Choice Validation](#choice-validation)
+
+  - [Email Validation](#email-validation)
+
+  - [URL Validation](#url-validation)
+
+  - [Numeric Validation](#numeric-validation)
+
+  - [Password Validation](#password-validation)
+
+  - [File Validation](#file-validation)
+
+  - [Image File Validation](#image-file-validation)
+
+  - [Audio File Validation](#audio-file-validation)
+
+  - [Video File Validation](#video-file-validation)
+
+  - [Media File Validation](#media-file-validation)
+
+  - [Document File Validation](#document-file-validation)
+
+  - [Archive File Validation](#archive-file-validation)
+
+- [Dealing With Multi-Value Fields and Files](#dealing-with-multi-value-fields-and-files)
+
+- [Specifying Accepted File Mime Types](#specifying-accepted-file-mime-types)
+
+- [Conditional Require & Data Override](#conditional-require-&-data-override)
+
+- [Ondemand Data Handling and Update](#ondemand-data-handling-and-update)
+
+- [Data Expansion & Compaction for NoSQL](#data-expansion-&-compaction-for-nosql)
+
+- [Performing Data Integrity Checks](#performing-data-integrity-checks)
 
 ## Getting Started
 
@@ -136,7 +196,7 @@ userRoutes.post('users', (req, res) => {
 export default userRoutes;
 ```
 
-## Validation Rule Format
+## Validation Rule Formats
 
 Validation rules are defined as JavaScript plain object keyed by the field names. Each field rule object can contain the following rule properties:
 
@@ -224,7 +284,7 @@ const rules = {
 };
 ```
 
-## Validation Filters
+## Data Filters
 
 Filters are applied to the field values prior to validations. You can use filters to modify field values prior to validation. The available filters include:
 
@@ -246,11 +306,13 @@ Filters are applied to the field values prior to validations. You can use filter
 
 9. **compact/minimize/minimise**: determines if the field value should be minimised, with empty lines stripped out, and each line trimmed. This is handy when accepting computer processed values such as html text, markdown text, css text etc.
 
+10. **callback**: a callback function to execute. The callback method accepts the field value, performs some modifications, and returns the result of the operations.
+
 ```javascript
 const rules = {
     country: {
         filters: {
-            toLower: true
+            toLower: true //convert to lowercase
         }
     },
     comment: {
@@ -258,9 +320,9 @@ const rules = {
             stripTagsIgnore: ['p', 'br'] // or ['<p>', '<br>'] or 'p, br' or '<p> <br>', etc
         }
     },
-    country: {
+    description: {
         filters: {
-            toLower: true // convert to lowecase
+            callback: (value) => value,  //do some modifications and return the result
         }
     }
 ];
@@ -269,40 +331,6 @@ const rules = {
 ## Validation Types
 
 The module defines lots of validation types that covers a wide range of validation cases. These includes the following:
-
-- [Limiting Rule Validation](#limiting-rule-validation)
-
-- [Regex Rule Validation](#regex-rule-validation)
-
-- [MatchWith Rule Validation](#matchwith-rule-validation)
-
-- [Date Validation](#date-validation)
-
-- [Range Validation](#range-validation)
-
-- [Choice Validation](#choice-validation)
-
-- [Email Validation](#email-validation)
-
-- [URL Validation](#url-validation)
-
-- [Numeric Validation](#numeric-validation)
-
-- [Password Validation](#password-validation)
-
-- [File Validation](#file-validation)
-
-- [Image File Validation](#image-file-validation)
-
-- [Audio File Validation](#audio-file-validation)
-
-- [Video File Validation](#video-file-validation)
-
-- [Media File Validation](#media-file-validation)
-
-- [Document File Validation](#document-file-validation)
-
-- [Archive File Validation](#archive-file-validation)
 
 ### Limiting Rule Validation
 
@@ -645,77 +673,6 @@ export class UserHandle extends Handler {
 }
 ```
 
-### Dealing With Multi-Value Fields and Files
-
-The handler can process multi-value fields and file fields. The field values are stored inside arrays after processing. Checkout [RServer](https://github.com/harrison-ifeanyichukwu/r-server) for multi-field value and files handling.
-
-```javascript
-//file UserHandler.js
-import Handler from 'forensic-handler';
-import path from 'path';
-import fs from 'fs';
-import UserModel from '../models/UserModel';
-
-export default class UserHandler extends Handler {
-
-    addPictures(userId) {
-        const rules = {
-            //pictures is an array of uploaded files. RServer handles multiple
-            pictures: {
-                type: 'image',
-                options: {
-                    moveTo: path.join(__dirname, '../../storage/media/pictures');
-                }
-            }
-        };
-
-        //return immediately if errors are found
-        if (!this.setRules(rules).execute())
-            return false;
-
-        const remoteUrls = [];
-        for (const filename of this.data.pictures) {
-            //read file and upload to our azure blob storage host.
-            const filePath = moveTo + '/' + filename;
-
-            const remoteUrl = ''; //remote url as returned from our upload
-            remoteUrls.push(remoteUrl);
-
-            //delete the file
-            fs.unlinkSync(filePath);
-        }
-
-        const user = UserModel.findById(userId);
-
-        user.pictures.push(...remoteUrls);
-        await user.save();
-
-        return true;
-    }
-}
-```
-
-### Specifying Accepted File Mimes Extensions
-
-You can specify the accepted mime file extensions during validation. Note that the handler has a `FileExtensionDetector` module that detects file extensions based on its first magic byte. Hence, limiting file extension spoofing errors.
-
-Also note that the current list of file magic bytes are still being updated, you can help us by reporting to us more magic bytes codes that are missing.
-
-To specify accepted mimes, use the `mimes` options.
-
-```javascript
-const rules = {
-    picture: {
-        type: 'file', //we could have used image, just for demonstration purposes
-        options: {
-            max: '400kb',
-            mimes: ['jpeg', 'png'],
-            mimeErr: 'we only accept jpeg and png images'
-        }
-    }
-};
-```
-
 ### Image File Validation
 
 The shortest way to validate image files is to use the `image` type option. The accepted mimes for images include **JPEG**, **PNG** and **GIF**.
@@ -804,4 +761,379 @@ const rules = {
         }
     }
 };
+```
+
+## Dealing With Multi-Value Fields and Files
+
+The handler can process multi-value fields and file fields. The field values are stored inside arrays after processing. Checkout [RServer](https://github.com/harrison-ifeanyichukwu/r-server) for multi-field value and files handling.
+
+```javascript
+//file UserHandler.js
+import Handler from 'forensic-handler';
+import path from 'path';
+import fs from 'fs';
+import UserModel from '../models/UserModel';
+
+export default class UserHandler extends Handler {
+
+    addPictures(userId) {
+        const rules = {
+            //pictures is an array of uploaded files. RServer handles multiple
+            pictures: {
+                type: 'image',
+                options: {
+                    moveTo: path.join(__dirname, '../../storage/media/pictures');
+                }
+            }
+        };
+
+        //return immediately if errors are found
+        if (!this.setRules(rules).execute())
+            return false;
+
+        const remoteUrls = [];
+        for (const filename of this.data.pictures) {
+            //read file and upload to our azure blob storage host.
+            const filePath = moveTo + '/' + filename;
+
+            const remoteUrl = ''; //remote url as returned from our upload
+            remoteUrls.push(remoteUrl);
+
+            //delete the file
+            fs.unlinkSync(filePath);
+        }
+
+        const user = UserModel.findById(userId);
+
+        user.pictures.push(...remoteUrls);
+        await user.save();
+
+        return true;
+    }
+}
+```
+
+## Specifying Accepted File Mime Types
+
+You can specify the accepted mime file extensions during validation. Note that the handler has a `FileExtensionDetector` module that detects file extensions based on its first magic byte. Hence, limiting file extension spoofing errors.
+
+Also note that the current list of file magic bytes are still being updated, you can help us by reporting to us more magic bytes codes that are missing.
+
+To specify accepted mimes, use the `mimes` options.
+
+```javascript
+const rules = {
+    picture: {
+        type: 'file', //we could have used image, just for demonstration purposes
+        options: {
+            max: '400kb',
+            mimes: ['jpeg', 'png'],
+            mimeErr: 'we only accept jpeg and png images'
+        }
+    }
+};
+```
+
+## Conditional Require & Data Override
+
+We can conditionally make a field required or not required using the `requireIf` or `requiredIf` option. We can also override a field's value conditionally using the `overrideIf` option. Such conditions include the following:
+
+1. **If another field is checked or if it is not checked**
+
+    ```javascript
+    const rules = {
+        'is-current-work': 'checkbox',
+
+        'work-end-month': {
+            type: 'range',
+            options: {
+                from: 1,
+                to: 12
+            },
+            //if this is not user's current work, require the work-end-month
+            requiredIf: {
+                condition: 'notChecked',
+                field: 'is-current-work'
+            },
+            //if this is user's current work, override work-end-month and set it to null
+            overrideIf: {
+                condition: 'checked',
+                field: 'is-current-work',
+                with: null
+            }
+        },
+
+        'subscribe-newsletter': 'checkbox',
+
+        email: {
+            type: 'email',
+            //if user decides to subscribe to our newsletter, require user email
+            requiredIf: {
+                condition: 'checked',
+                field: 'subscribe-newsletter'
+            },
+            //if not, we override the email to empty string or null, even if email is supplied,
+            //it will not be picked
+            overrideIf: {
+                condition: 'notChecked',
+                field: 'subscribe-newsletter',
+                with: null
+            }
+        }
+    }
+    ```
+
+2. **If another field equals a given value or if it does not equal a given value**
+
+    ```javascript
+    const rules = {
+        country: {
+            type: 'choice',
+            options: {
+                choices: ['ng', 'us', 'gb', 'ca', 'gh'],
+            }
+        },
+
+        //if your country is not Nigeria, tell us your country calling code
+        countryCode: {
+            requiredIf: {
+                condition: 'notEqual',
+                value: 'ng',
+                field: 'country'
+            }
+        },
+
+        //if you are in Nigeria, you must tell us your salary demand, other countries
+        //are paid a fixed $60,000 per annum
+        salaryDemand: {
+            type: 'money',
+            requireIf: {
+                condition: 'equals',
+                value: 'ng',
+                field: 'country'
+            },
+            overrideIf: {
+                condition: 'notEquals',
+                field: 'country',
+                value: 'ng',
+                with: '60000'
+            }
+        }
+    };
+    ```
+
+## Ondemand Data Handling and Update
+
+When carrying out update operations, it is always good that we update only the fields that are supplied.
+
+Hence, there is the need to filter, pick out and process rules for only fields that are supplied without making other fields mandatory.
+
+This is easily achieved by passing in **true** as the first argument to the execute method. If there is need to still make some fields mandatory, then we can pass those array of fields as second argument to the execute method.
+
+**The execute method signature is as shown below:**
+
+```javascript
+handler.execute(
+    validateOnDemand=false: boolean,
+    requiredFields: String|String[]
+)
+```
+
+## Data Expansion & Compaction for NoSQL
+
+When working with NoSql, there is always the need to expand data during creation, and compact data during updates.
+
+The `mapDataToModel` method has this feature inbuilt. It will expand field data following the dot notation convention.
+
+```javascript
+/* file UserHandler.js */
+import Handler from 'forensic-handler';
+import UserModel from '../models/UserModel.js';
+import bcrypt from 'bcrypt';
+
+export default class UserHandler extends Handler {
+
+    async createUser() {
+        /* define validation rules */
+        const rules = {
+
+            email: {
+                type: 'email',
+
+                hint: 'Enter account email address',
+
+                filters: {
+                    toLower: true,
+                },
+
+                check: {
+                    if: 'exists',
+                    model: UserModel,
+                    err: '{this} is already registered. Please login instead'
+                }
+            },
+
+            password: 'password',
+
+            'address.country': {
+                type: 'choice',
+                filters: {
+                    toLower: true
+                },
+                options: {
+                    choices: ['ng', 'de', 'fr', ...]
+                }
+            },
+
+            'address.street': 'text',
+
+            'address.zipCode': {
+                options: {
+                    regex: {
+                        test: /^\d{6}$/,
+                        err: '{this} is not a valid zip code'
+                    }
+                }
+            }
+        };
+
+        /* return immediately if error is found */
+        if (!(await this.execute()))
+            return false;
+
+        //proceed to create user account and return true
+        const password = await bcrypt.hash(
+            this.data.password,
+            Number.parseInt(process.env.SALT_ROUNDS)
+        );
+        this.setData('password', password);
+
+        // data will be be expanded to
+        // {
+        //     email: 'user email',
+        //     password: 'hashed password',
+        //     address: {
+        //         country: 'country code',
+        //         street: 'street address',
+        //         zipCode: 'address zip code'
+        //     }
+        // }
+        const data = this.mapDataToModel({});
+        const user = await UserModel.create(data);
+
+        this.setData('id', user.id);
+        return true;
+    }
+}
+```
+
+When performing updates, it is always better to leave the data compact. Pass in false as second argument to `mapDataToModel` method.
+
+```javascript
+/* file UserHandler.js */
+import Handler from 'forensic-handler';
+import UserModel from '../models/UserModel.js';
+import bcrypt from 'bcrypt';
+
+export default class UserHandler extends Handler {
+
+    async updateUser(userId) {
+        /* define validation rules */
+        const rules = {
+            firstName: 'text',
+
+            lastName: 'text',
+
+            'address.country': {
+                type: 'choice',
+                filters: {
+                    toLower: true
+                },
+                options: {
+                    choices: ['ng', 'de', 'fr', ...]
+                }
+            },
+
+            'address.street': 'text',
+
+            'address.zipCode': {
+                options: {
+                    regex: {
+                        test: /^\d{6}$/,
+                        err: '{this} is not a valid zip code'
+                    }
+                }
+            }
+        };
+
+        /* execute on demand, return immediately if error is found */
+        if (!(await this.execute(true)))
+            return false;
+
+        await UserModel.findByIdAndUpdate(
+            userId,
+            {
+                $set: this.mapDataToModel({}, false), //do not expand data
+            }
+        ).exec();
+
+        return true;
+    }
+}
+```
+
+## Performing Data Integrity Checks
+
+There is always the need to perform data integrity checks such as making sure that a given value exists or does not exists in a database.
+
+The `check` option defines a single database integrity check while the `checks` option defines array of database integrity checks.
+
+There are various options available when defining the check rules, whether working with NoSQL or relational databases. They are very much similar in structure:
+
+- **model**: A model object that will be used in executing the query such as a mongoose model, etc.
+
+- **query**: A select query object or string to be executed. If not given, it will be built from other available informations.
+
+- **field**: the field part of the select query. if not given, it defaults to the field name under validation with camel casing or snake casing style applied to it depending on the case style in use. The case style in use can be set or updated using any of the **modelUseCamelCaseStyle()** and **modelUseSnakeCaseStyle()** methods. However, if working with relational databases, and the field value is an integer, it will default to **id**.
+
+- **params**: array of parameters to pass in during query execution. If not given, it will default to array containing the field value.
+
+- **callback**: a callback method to execute. The callback method should accept at least three arguments and return true if the integrity check fails. The first argument passed to the callback method is the **field name**, then the **field value**, then the handler **data** object. If you defined a **params** key, it will be passed in as fourth argument and so on, in spread format.
+
+```javascript
+//using relational database, example is mysql database the field property will default to 'id'
+// because field value is an integer
+const rules = {
+    userId: {
+        type: 'pint',
+        check: {
+            $if: 'notExists',
+            table: 'users'
+        }
+    }
+};
+
+//tell the handler that we are running relational database
+                |
+                V
+handler.modelUseRelational().setRules(rules).execute();
+```
+
+**Using Callback:**
+
+```javascript
+const rules = {
+    userId: {
+        type: 'pint',
+        check: {
+            callback: (field, value, data, param1, param2) => {
+                return false; //dont set error
+            },
+            params: ['parameter one', 'parameter two']
+        }
+    }
+};
+
+//assumes nosql by default
+handler.setRules(rules).execute();
 ```
