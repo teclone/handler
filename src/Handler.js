@@ -179,12 +179,10 @@ export default class {
         const dbChecker = this._dbChecker;
         for (const dbCheck of dbChecks) {
 
-            //if there is a callback method, use if
-            if (Util.isCallable(dbCheck['callback'])) {
-
-                const callback = dbCheck['callback'],
-                    params = Util.makeArray(dbCheck['params']);
-
+            const callback = dbCheck.callback;
+            //if there is a callback method, use it
+            if (Util.isCallable(callback)) {
+                const params = Util.makeArray(dbCheck['params']);
                 if (await callback(field, value, this.data, ...params)) {
                     this.setError(
                         field,
@@ -192,55 +190,55 @@ export default class {
                     );
                     break;
                 }
+                continue;
             }
-            else {
-                const dbModel = this._dbModel;
 
-                //throw exception if there is no if parameter
-                if(typeof dbCheck['if'] !== 'string')
-                    throw new MissingParameterException(
-                        `missing if/condition parameter for ${field} dbCheck rule`
-                    );
+            const dbModel = this._dbModel;
 
-                //throw error if model in use is nosql, and there is no entity or model object
-                if (dbModel === DB_MODELS.NOSQL && !Util.isString(dbCheck.entity)
-                    && typeof dbCheck.model === 'undefined')
-                    throw new MissingParameterException(
-                        `missing entity/collection or model nosql parameter for ${field} dbCheck rule`
-                    );
-
-                //throw error if model in use is relational and there is no entity and query string
-                if (dbModel === DB_MODELS.RELATIONAL && !Util.isString(dbCheck.entity)
-                    && !Util.isString(dbCheck.query))
-                    throw new MissingParameterException(
-                        `missing entity/table or query sql parameter for ${field} dbCheck rule`
-                    );
-
-                //default the params to empty array if it is not given
-                dbCheck.params = Util.arrayValue('params', dbCheck);
-
-                //if there is no query, set the field key and the params array
-                if(typeof dbCheck.query === 'undefined') {
-                    if (typeof dbCheck.field === 'undefined') {
-                        if (this._dbModel === DB_MODELS.RELATIONAL && Util.isInt(value))
-                            dbCheck.field = 'id';
-                        else
-                            dbCheck.field = this.modelResolveFieldName(field);
-                    }
-                    dbCheck.params = [value];
-                }
-
-                const checkIf = dbCheck['if'],
-                    method = Util.value(checkIf, this.getDBChecksMethodMap(), 'null');
-
-                if (method === 'null')
-                    throw new InvalidParameterException(checkIf + ' is not a dbCheck rule');
-
-                // clone db check options to avoid any side effect
-                await dbChecker[method](required, field, value, dbCheck, index);
-                if (dbChecker.fails())
-                    break;
+            //throw exception if there is no if parameter
+            if(typeof dbCheck['if'] !== 'string') {
+                throw new MissingParameterException(
+                    `missing if/condition parameter for ${field} dbCheck rule`
+                );
             }
+
+            //throw error if there is no entity or model object for nosql
+            if (dbModel === DB_MODELS.NOSQL && typeof dbCheck.entity === 'undefined' &&
+                typeof dbCheck.model === 'undefined') {
+                throw new MissingParameterException(
+                    `missing one of model and entity/collection/table nosql parameter for ${field} dbCheck rule`
+                );
+            }
+
+            //throw error if model in use is relational and there is no entity, model or query param
+            if (dbModel === DB_MODELS.RELATIONAL && typeof dbCheck.entity === 'undefined' &&
+                typeof dbCheck.model === 'undefined' && typeof dbCheck.query === 'undefined') {
+                throw new MissingParameterException(
+                    `missing entity/table or query sql parameter for ${field} dbCheck rule`
+                );
+            }
+
+            //default the params to array containing the field value if it is not given
+            dbCheck.params = Util.arrayValue('params', dbCheck, [value]);
+
+            //if there is no field option given, default it to the field name under validation
+            dbCheck.field = Util.value(
+                'field',
+                dbCheck,
+                dbModel === DB_MODELS.RELATIONAL && Util.isInt(value)?
+                    'id' : this.modelResolveFieldName(field)
+            );
+
+            const checkIf = dbCheck['if'],
+                method = Util.value(checkIf, this.getDBChecksMethodMap(), 'null');
+
+            if (method === 'null')
+                throw new InvalidParameterException(checkIf + ' is not a dbCheck rule');
+
+            // clone db check options to avoid any side effect
+            await dbChecker[method](required, field, value, dbCheck, index);
+            if (dbChecker.fails())
+                break;
         }
         return this.succeeds();
     }
@@ -473,7 +471,7 @@ export default class {
      *@return {boolean}
     */
     isFileField(field) {
-        return this.isFileType(this._ruleOptions[field]['type']);
+        return this.isFileType(this._rules[field]['type']);
     }
 
     /**
@@ -645,51 +643,71 @@ export default class {
     }
 
     /**
+     * checks the condition and returns true if condition is satified
+     *@returns {boolean}
+    */
+    checkCondition(condition, details, filters) {
+        const field = Util.value('field', details, ''),
+            value = Util.value('value', details, ''),
+            fieldValue = this.filterValue(
+                Util.value(field, this._source),
+                filters
+            );
+
+        switch(condition.toLowerCase()) {
+
+            case 'checked':
+                return !this.valueIsFalsy(fieldValue);
+
+            case 'notchecked':
+                return this.valueIsFalsy(fieldValue);
+
+            case 'equals':
+            case 'equal':
+                return value == fieldValue;
+
+            case 'notequals':
+            case 'notequal':
+                return value != fieldValue;
+        }
+    }
+
+    /**
+     * resolves overrideIf condition
+     *@param {Object} rule - the rule details
+     *@return {boolean}
+    */
+    resolveOverride(rule, filters) {
+        const details = Util.objectValue('overrideIf', rule),
+            condition = Util.value(['if', 'condition'], details, ''),
+            result = {
+                override: false,
+                with: Util.value('with', details, null)
+            };
+
+        if (condition !== '') {
+            result.override = this.checkCondition(condition, details, filters);
+            Util.deleteFromObject('overrideIf', rule);
+        }
+        return result;
+    }
+
+    /**
      * resolves require condition
      *@param {Object} rule - the rule details
      *@return {boolean}
     */
-    resolveRequire(rule) {
-        //if it is not defined,
+    resolveRequire(rule, filters) {
         let result = typeof rule.required === 'undefined'? true : !!rule.required;
 
         const details = Util.objectValue(['requiredIf', 'requireIf'], rule),
             condition = Util.value(['if', 'condition'], details, '');
 
         if (condition !== '') {
-            result = false;
-
-            const field = Util.value('field', details, ''),
-                value = Util.value('value', details, ''),
-                fieldValue = Util.value(field, this._source);
-
-            switch(condition.toLowerCase()) {
-
-                case 'checked':
-                    if (!this.valueIsFalsy(fieldValue))
-                        result = true;
-                    break;
-
-                case 'notchecked':
-                    if (this.valueIsFalsy(fieldValue))
-                        result = true;
-                    break;
-
-                case 'equals':
-                case 'equal':
-                    if (value == fieldValue)
-                        result = true;
-                    break;
-
-                case 'notequals':
-                case 'notequal':
-                    if (value != fieldValue)
-                        result = true;
-                    break;
-            }
-
+            result = this.checkCondition(condition, details, filters);
             Util.deleteFromObject(['requiredIf', 'requireIf'], rule);
         }
+
         return result;
     }
 
@@ -733,6 +751,77 @@ export default class {
     }
 
     /**
+     * processes the rules, extracting the portions as the need be
+     *@protected
+    */
+    processRules() {
+        for (const [field, rule] of Object.entries(this._rules)) {
+
+            const type = rule.type,
+                filters = Util.objectValue('filters', rule),
+                options = Util.objectValue('options', rule),
+                dbChecks = Util.arrayValue('checks', rule);
+
+            filters.type = options.type = type;
+
+            this._filters[field] = filters;
+            this._ruleOptions[field] = options;
+
+            if (typeof rule.check !== 'undefined')
+                dbChecks.unshift(rule.check);
+            this._dbChecks[field] = dbChecks.map(this.resolveDBChecks, this);
+
+            //resolve override
+            const override = this.resolveOverride(rule, filters);
+            if (override.override)
+                this._source[field] = override.with;
+
+            //resolve require if condition
+            rule.required = this.resolveRequire(rule, filters);
+
+            if (!rule.required || type === 'checkbox') {
+                this._optionalFields.push(field);
+                this._defaultValues[field] = Util.value(['$default', 'default', 'defaultValue'], rule, null);
+            }
+            else {
+                this._requiredFields.push(field);
+                this._hints[field] = Util.value('hint', rule, `${field} is required`);
+            }
+        }
+    }
+
+    /**
+     * filters rules that applies to the sent data
+     *@protected
+    */
+    filterRules(requiredFields) {
+        requiredFields = Util.makeArray(requiredFields);
+
+        this._rules = Object.entries(this._rules).reduce((result, [field, value]) => {
+            const isFileField = this.isFileField(field);
+
+            if (requiredFields.includes(field))
+                result[field] = value;
+
+            else if (!isFileField && typeof this._source[field] !== 'undefined')
+                result[field] = value;
+
+            else if (isFileField && this._files && typeof this._files[field] !== 'undefined')
+                result[field] = value;
+
+            return result;
+        }, {});
+    }
+
+    /**
+     * merges the fields and the added field
+     *@protected
+    */
+    mergeSource() {
+        this._source = {...this._source, ...this._addedFields};
+    }
+
+    /**
      * resolves the rule type
      *
      *@protected
@@ -758,67 +847,6 @@ export default class {
     }
 
     /**
-     * processes the rules, extracting the portions as the need be
-     *@protected
-    */
-    processRules() {
-        for (const [field, rule] of Object.entries(this._rules)) {
-
-            const type = this.resolveType(Util.value('type', rule, 'text')),
-                dbChecks = Util.arrayValue('checks', rule);
-
-            if (typeof rule.check !== 'undefined')
-                dbChecks.unshift(rule.check);
-
-            this._dbChecks[field] = dbChecks.map(this.resolveDBChecks, this);
-            this._filters[field] = Util.objectValue('filters', rule);
-            this._ruleOptions[field] = Util.objectValue('options', rule);
-
-            this._ruleOptions[field]['type'] = this._filters[field]['type'] = type;
-
-            //resolve require if condition
-            rule.required = this.resolveRequire(rule);
-
-            if (!rule.required || type === 'checkbox') {
-                this._optionalFields.push(field);
-                this._defaultValues[field] = Util.value(['$default', 'default', 'defaultValue'], rule, null);
-            }
-            else {
-                this._requiredFields.push(field);
-                this._hints[field] = Util.value('hint', rule, `${field} is required`);
-            }
-        }
-    }
-
-    /**
-     * merges the fields and the added field
-     *@protected
-    */
-    mergeSource() {
-        this._source = {...this._source, ...this._addedFields};
-    }
-
-    /**
-     * filters the rules that applies to the sent data
-     *@param {boolean} validateOnDemand - boolean value that indicates if the validation
-     * should be based on the in demand data that was sent
-    */
-    filterRules(validateOnDemand, requiredFields) {
-        this._rules = Object.entries(this._rules).reduce((result, [field, value]) => {
-            if (requiredFields.includes(field)) {
-                result[field] = value;
-            }
-            else if (typeof this._source[field] !== 'undefined') {
-                result[field] = value;
-            }
-            else if (this._files && typeof this._files[field] !== 'undefined') {
-                result[field] = value;
-            }
-            return result;
-        }, {});
-    }
-
-    /**
      * returns boolean indicating if the execute call should proceed
      *@protected
      *@return {boolean}
@@ -837,23 +865,19 @@ export default class {
 
         //resolve all rules to objects
         const fields = Object.keys(this._rules);
-        fields.forEach(field => {
-            const rule = this._rules[field];
-            if (typeof rule === 'string')
-                this._rules[field] = {type: rule};
-        });
+        for (const field of fields) {
+            let rule = this._rules[field];
+
+            if (Util.isString(rule))
+                rule = {type: rule};
+
+            rule.type = this.resolveType(Util.value('type', rule, 'text'));
+            this._rules[field] = rule;
+        }
 
         //if there is a file field, and the user did not set the files object, throw
-        if (this._files === null) {
-
-            const someFileFieldsExists = fields.some(field => {
-                const type = Util.value('type', this._rules[field], 'text').toLowerCase();
-                return this.isFileType(type);
-            });
-
-            if (someFileFieldsExists)
-                throw new FilesSourceNotSetException('no file source set');
-        }
+        if (!this._files && fields.some(field => this.isFileType(this._rules[field].type)))
+            throw new FilesSourceNotSetException('no file source set');
 
         return true;
     }
@@ -925,9 +949,6 @@ export default class {
 
         /* object of field new names to use when mapping field data to model */
         this._modelRenameFields = {};
-
-        /* boolean value indicating if model field names should be camelized */
-        this.modelCamelizeFields = false;
 
         if (!(validator instanceof Validator))
             validator = new Validator();
@@ -1127,7 +1148,9 @@ export default class {
     /**
      * executes the handler
      *@param {boolean} [validateOnDemand=false] - boolean value indicating if it should only
-     * validate and pick fields that were sent whose rules are defined
+     * pick and validate fields that were sent and whose rules are defined
+     *@param {string|string[]} requiredFields - field or array of fields that must be included
+     * whether they were sent or not, if validateOnDemand is set to true
      *@returns {Promise}
      *@throws {DataSourceNotSetException}
      *@throws {RulesNotSetException}
@@ -1137,12 +1160,12 @@ export default class {
         this.shouldExecute();
         this._executed = true;
 
-        if (validateOnDemand)
-            this.filterRules(validateOnDemand, Util.makeArray(requiredFields));
-
         this.mergeSource();
-        this.processRules();
 
+        if (validateOnDemand)
+            this.filterRules(requiredFields);
+
+        this.processRules();
         this.resolveOptions(this._hints);
 
         if (!this.checkMissingFields())
