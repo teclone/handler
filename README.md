@@ -6,9 +6,9 @@ Handler is a **NodeJS** package that sits independently between the controller a
 
 It makes the validation process easy and requires you to just define the data validation rules which are written in plain **JavaScript** objects.
 
-The most interesting part is how easy it is to validate object of field data and files and the wide range of validation rule types that it affords by default. It is also extensible so that you can define more custom validation rules and types if the need be. See [How to Write Your Custom Validation Types](#how-to-write-your-custom-validation-types) for instructions.
+The most interesting part is how easy it is to validate object of field data and files and the wide range of validation rule types that it affords by default. It is also extensible so that you can define more custom validation rules and types if the need be. See [How to Write Your Custom Validation Types](#how-to-define-custom-validation-types) for instructions.
 
-Regarding database integrity checks, It supports both **NOSQL** and **Relational Databases**, at least. It is extensible enough to leave the DBChecker implementation up to you by defining an abstract `DBChecker` class. This makes it not tied to any framework or database ORMs. See [How To Implement the DBChecker Interface](#how-to-implement-the-dbchecker-interface) for instructions.
+Regarding database integrity checks, It supports both **NOSQL** and **Relational Databases**, at least. It is extensible enough to leave the DBChecker implementation up to you by defining a base `DBChecker` class (like an interface). This makes it not tied to any framework or database ORMs. See [How To Define Custom DBChecker](#how-to-define-custom-dbchecker) for instructions.
 
 By default, it supports mongoose models when performing database integrity checks.
 
@@ -630,7 +630,7 @@ const rules = {
 };
 ```
 
-You can define an absolute path to move the file to using the **moveTo** option. The file will be moved to the given location, witha hashed name computed for it. The hashed name is stored in the data property keyed in by the field name.
+You can define an absolute path to move the file to using the **moveTo** option. The file will be moved to the given location, with a hashed name computed for it. The hashed name is stored in the data property keyed in by the field name.
 
 ```javascript
 //file UserHandler.js
@@ -639,7 +639,7 @@ import path from 'path';
 import fs from 'fs';
 import UserModel from '../models/UserModel';
 
-export class UserHandle extends Handler {
+export class UserHandler extends Handler {
 
     updateProfilePicture(userId) {
         const rules = {
@@ -1033,7 +1033,6 @@ When performing updates, it is always better to leave the data compact. Pass in 
 /* file UserHandler.js */
 import Handler from 'forensic-handler';
 import UserModel from '../models/UserModel.js';
-import bcrypt from 'bcrypt';
 
 export default class UserHandler extends Handler {
 
@@ -1137,3 +1136,273 @@ const rules = {
 //assumes nosql by default
 handler.setRules(rules).execute();
 ```
+
+### How to Define Custom Validation Types
+
+The module is built to be extensible such that you can define custom validation types to suit your purpose. You would need to understand some basic things on how the module works.
+
+To define custom validation types or even override inbuilt validation methods, the following steps are to be taken:
+
+1. **Inherit from the main Validator:**
+
+    ```javascript
+    //file CustomValidator.js
+    import Validator from 'forensic-handler/lib/Validator';
+
+    export default class CustomValidator extends Validator {
+        /**
+         * define a name type validation
+        */
+        validateName(required, field, value, options, index=0) {
+            options.min = 3;
+            options.max = 15;
+
+            options.regexAll = [
+                //only alphabets, dash and apostrophe is allowed in names
+                {
+                    test: /^[-a-z\']$/i,
+                    err: 'only alphabets, hyphen and apostrophe allowed in names'
+                },
+                //name must start with at least two alphabets
+                {
+                    test: /^[a-z]{2,}/i,
+                    err: 'name must start with at least two alphabets'
+                }
+            ];
+
+            return this.validateText(required, field, value, options, index);
+        }
+    }
+    ```
+
+2. **Inherit from the main Handler and integrate CustomValidator:**
+
+    ```javascript
+    //file CustomHandler.js
+    import Handler from 'forensic-handler';
+    import CustomValidator from './CustomValidator';
+
+    export default class CustomHandler extends Handler {
+
+        /**
+         * create an instance of Custom Validator and pass along
+        */
+        constructor(source, files, rules, validator, dbChecker) {
+            super(source, files, rules, new CustomValidator, dbChecker);
+        }
+
+        /**
+         * override parent method, lets notify the handler that name rule type maps
+         * to validateName method
+         *@override
+        */
+        getRuleTypesMethodMap() {
+            //let it know that name rule type maps to 'validateName' method
+            return {
+                ...super.getRuleTypesMethodMap(),
+                name: 'validateName'
+            }
+        }
+    }
+    ```
+
+3. **Use the new rule Type:**
+    we can now use the **name** type in our validations.
+
+    ```javascript
+    /* file UserHandler.js */
+    import Handler from './CustomHandler';
+    import UserModel from '../models/UserModel.js';
+
+    export default class UserHandler extends Handler {
+
+        async updateUser(userId) {
+            /* define validation rules */
+            const rules = {
+                firstName: 'name',
+
+                lastName: 'name',
+
+                'address.country': {
+                    type: 'choice',
+                    filters: {
+                        toLower: true
+                    },
+                    options: {
+                        choices: ['ng', 'de', 'fr', ...]
+                    }
+                },
+
+                'address.street': 'text',
+
+                'address.zipCode': {
+                    options: {
+                        regex: {
+                            test: /^\d{6}$/,
+                            err: '{this} is not a valid zip code'
+                        }
+                    }
+                }
+            };
+
+            /* execute on demand, return immediately if error is found */
+            if (!(await this.execute(true)))
+                return false;
+
+            await UserModel.findByIdAndUpdate(
+                userId,
+                {
+                    $set: this.mapDataToModel({}, false), //do not expand data
+                }
+            ).exec();
+
+            return true;
+        }
+    }
+    ```
+
+## How to Define Custom DBChecker
+
+You can define your custom DBChecker to suit the current database and or ORM in use whether it is a relational or NOSQL database.
+
+To define a custom dbchecker, the following steps are to be taken:
+
+1. **Extend the main DBChecker, Override buildQuery and execute methods:**
+    The example here uses mongodb driver.
+
+    ```javascript
+    //file connection.js
+    import {MongoClient} from 'mongodb';
+    const db = null;
+
+    export default function() {
+        if (db)
+            return Promise.resolve(db);
+
+        return new Promise((resolve, reject) => {
+            const url = `mongodb://${process.env.DB_HOST}/${process.env.DB_NAME}`;
+            MongoClient.connect(url, function(err, database) {
+                if (err)
+                    return reject(err);
+
+                db = database;
+                resolve(db);
+            });
+        });
+    };
+
+    //file CustomDBChecker.js
+    import DBChecker from 'forensic-handler/lib/DBChecker';
+    import connect from '../connection';
+
+    export default class CustomDBChecker extends DBChecker {
+
+        /**
+         * override the buildQuery method. build query is called if there is no
+         * query parameter defined in the dbchecker rule.
+         *@override
+        */
+        buildQuery(options, value) {
+            const result = {};
+            result[options.field] = value;
+            return result;
+
+            //we could define the rule like below for relational databases such as mysql.
+            //return `SELECT count(*) FROM ${options.entity} WHERE ${options.field} = ?`;
+        }
+
+        /**
+         * override the execute method. it should resolve to the number of items
+         * matching the select query.
+        */
+        execute(query, params, options) {
+            //retrieve the collection
+            const collection = await connect().collection(options.entity);
+
+            return new Promise((resolve) => {
+                //we can even use options.query. it is the same as the query parameter
+                collection.find(query).toArray((err, docs) => {
+                    if(err)
+                        reject(err);
+                    else
+                        resolve(docs.length);
+                })
+            });
+        }
+    }
+    ```
+
+2. **Inherit from the main Handler and integrate CustomDBChecker:**
+
+    ```javascript
+    //file CustomHandler.js
+    import Handler from 'forensic-handler';
+    import CustomDBChecker from './CustomDBChecker';
+
+    export default class CustomHandler extends Handler {
+
+        /**
+         * create an instance of Custom DBChecker and pass along
+        */
+        constructor(source, files, rules, validator, dbChecker) {
+            super(source, files, rules, validator, new CustomDBChecker);
+        }
+    }
+    ```
+
+3. **Use the new db checker:**
+    we can now use it performing database integrity checks.
+
+    ```javascript
+    /* file UserHandler.js */
+    import Handler from './CustomHandler';
+
+    export default class UserHandler extends Handler {
+
+        async updateUser(userId) {
+            /* define validation rules */
+            const rules = {
+                email: {
+                    type: 'email',
+                    check: {
+                        if: 'exists',
+                        collection: 'users',
+                        field: 'email', //we can even leave it as it will default to email,
+                        err: '{this} is already registered. use another please'
+                    }
+                },
+
+                firstName: 'name',
+
+                lastName: 'name',
+
+                'address.country': {
+                    type: 'choice',
+                    filters: {
+                        toLower: true
+                    },
+                    options: {
+                        choices: ['ng', 'de', 'fr', ...]
+                    }
+                },
+
+                'address.street': 'text',
+
+                'address.zipCode': {
+                    options: {
+                        regex: {
+                            test: /^\d{6}$/,
+                            err: '{this} is not a valid zip code'
+                        }
+                    }
+                }
+            };
+
+            /* execute on demand, return immediately if error is found */
+            if (!(await this.execute(true)))
+                return false;
+
+            return true;
+        }
+    }
+    ```
