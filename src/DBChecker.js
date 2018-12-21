@@ -32,16 +32,15 @@ export default class DBChecker extends Common {
      *@param {Array} params - array of parameters, applicable to relational database. defaults
      * to empty array
      *@param {DBCheckOptions} options - the db check options
+     *@returns {Promise}
     */
     execute(query, params, options) {
-        if (options.model && typeof options.model.countDocuments !== 'undefined')
-            return options.model.countDocuments(query).exec();
-        else
+        if (!options.model || typeof options.model.countDocuments === 'undefined')
             throw new MissingParameterException(
-                'DBCheck option is missing mongoose model. Provide your own db checker instance '
-                +
-                'if you are not using mongoose'
+                'Mongoose model not found. Provide your own DB Checker if you are not using mongoose'
             );
+
+        return options.model.countDocuments(query).exec();
     }
 
     /**
