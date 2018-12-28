@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic MissingParameterException
+ * missing parameter exception
 */
 export default class MissingParameterException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, MissingParameterException);

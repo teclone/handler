@@ -652,24 +652,6 @@ describe('Handler Module', function() {
         });
     });
 
-    describe('#getErrors()', function() {
-        it(`should return a copy of the error message bag when called`, function() {
-            return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
-                .then(function() {
-                    expect(handler.getErrors()).toEqual({
-                        name: 'name is required'
-                    });
-                });
-        });
-
-        it(`should return the empty error bag object copy if there are no errors`, function() {
-            return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function() {
-                    expect(handler.getErrors()).toEqual({});
-                });
-        });
-    });
-
     describe('#errors', function() {
         it(`a getter property that maps to a copy of the error object`, function() {
             return handler.setSource({}).setRules({name: {type: 'text'}}).execute()
@@ -738,16 +720,6 @@ describe('Handler Module', function() {
             expect(function() {
                 handler.getData('name');
             }).toThrow(KeyNotFoundException);
-        });
-    });
-
-    describe('#getAllData(key)', function() {
-        it(`should return a copy of all the processed data when called`, function() {
-            return handler.setSource(SimpleSource()).setRules(SimpleRules()).execute()
-                .then(function() {
-                    expect(handler.getAllData()).toHaveProperty('first-name', 'Harrison');
-                    expect(handler.getAllData()).toEqual(handler._data);
-                });
         });
     });
 

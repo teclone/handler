@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic FileSourceNotSetException
+ * directory not found exception
 */
 export default class DirectoryNotFoundException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, DirectoryNotFoundException);

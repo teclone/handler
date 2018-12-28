@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic DataSourceNotSetException
+ * data source not set exception
 */
 export default class DataSourceNotSetException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, DataSourceNotSetException);

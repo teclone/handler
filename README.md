@@ -530,7 +530,7 @@ const rules = {
     country: {
         type: 'choice',
         options: {
-            choices: ['ng', 'gb', 'us', 'ca', 'de', ],// array of country codes,
+            choices: ['ng', 'gb', 'us', 'ca', 'de'],// array of country codes,
             err: '{this} is not a valid country code'
         },
     },

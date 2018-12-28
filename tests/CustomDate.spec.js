@@ -1,6 +1,7 @@
 import CustomDate from '../src/CustomDate';
 
-describe('CustomDate module', function() {
+describe('CustomDate', function() {
+
     describe('#constructor()', function() {
         it(`should inherit from the Date object`, function() {
             expect(new CustomDate()).toBeInstanceOf(CustomDate);

@@ -1,3 +1,17 @@
+/**
+ * validation configuration options
+ *@typedef {Object} ValidationOptions
+ *@param {string} [hint] - error message to set if field is missing
+ *@param {number|string} [min] - expected field value minimum length
+ *@param {string} [minErr] - error message to set if min validation fails
+ *@param {number|string} [max] - expected field value maximum length
+ *@param {string} [maxErr] - error message to set if max validation fails
+ *@param {number|string} [gt] - specifies that the field value must be greater than a given value
+ *@param {string} [gtErr] - error message to set if gt validation fails
+ *@param {number|string} [lt] - specifies that the field value must be less than a given value
+ *@param {string} [ltErr] - error message to set if lt validation fails
+*/
+
 import CustomDate from './CustomDate';
 import DirectoryNotFoundException from './Exceptions/DirectoryNotFoundException';
 import FileMoveException from './Exceptions/FileMoveException';
@@ -11,66 +25,14 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * the validator module
- *
- * limiting rules options include min, max, gt (greaterThan), and lt (lessThan) options,
- *
- * Their associated errors are minErr, maxErr, gtErr, and ltErr.
- *
- * Their is the regex family options that include
- *
- * regex is an object containing test reglet moveTo = Util.value('moveTo', options, '');ex expression and associated err. The value must match
- * the regex test else, it is flagged as error
- *
- * e.g 'regex': {
- *          'test': '/regex to test/',
- *          'err': 'error to set if value does not match regex test'
- *      }
- *
- * regexAll, contains object of regex expressions that the value must match. The value
- * must match all the regex all expressions, else it is flagged as an error
- *
- * e.g 'regexAll' => [
- *      //array of regex expressions,
- *      {
- *          'test': '/regex to test/',
- *          'err': 'error message to set if the test fails'
- *      },
- *      {
- *          'test': '/another regex to test/',
- *          'err': 'error message to set if the test fails'
- *      },
- * ]
- *
- * regexAny contains array of regex expression tests which must be mathed at least for one
- * regex expression
- * It is an error if the value did not match any of the entries.
- *
- * e.g 'regexAny' => {
- *      'tests':  ['/regex test one/', '/regex test two/', .....],
- *      'err': 'error message if none of the regex matches'
- * }
- *
- * regexNone, that is an array of regex expressions.
- * It is an error if the value matches any of the regex expressions.
- *
- * 'regexNone' => [
- *      //array of regex expressions,
- *      {
- *          'test': '/regex to test/',
- *          'err': 'error message to set if the test succeeds'
- *      },
- *      {
- *          'test': '/another regex to test/',
- *          'err': 'error message to set if the test succeeds'
- *      },
- * ]
+ * Validator module
 */
-
-export default class extends Common
+export default class Validator extends Common
 {
     /**
      * returns support schemes for uri validation
+     *
+     *@protected
      *@returns {Array}
     */
     getURISchemes() {
@@ -93,7 +55,11 @@ export default class extends Common
 
     /**
      * validate matchWith or matchAgainst rule option
+     *
      *@protected
+     *@param {mixed} value - reference value
+     *@param {ValidationOptions} options - validation options
+     *@param {string} prefix - error prefix to use
      *@returns {boolean}
     */
     matchWith(value, options, prefix) {
@@ -113,10 +79,11 @@ export default class extends Common
 
     /**
      * runs post validation
+     *
      *@protected
      *@param {string} value - current value under validation
      *@param {Object} options - validation rule options
-     *@param {string} [prefix] - the prefix string to use
+     *@param {string} [prefix] - error prefix to use
      *@returns {boolean}
     */
     postValidate(value, options, prefix) {
@@ -128,6 +95,7 @@ export default class extends Common
 
     /**
      * checks the regexNone rule
+     *
      *@protected
      *@param {mixed} value - the value
      *@param {Array} regexes - array of regex test expression objects
@@ -154,6 +122,7 @@ export default class extends Common
 
     /**
      * checks the regexAny rule
+     *
      *@protected
      *@param {mixed} value - the value
      *@param {Object} regex - object containing the regex tests array
@@ -181,6 +150,7 @@ export default class extends Common
 
     /**
      * checks the regexAll rule
+     *
      *@protected
      *@param {mixed} value - the value
      *@param {Array} regexes - array of regex test expression objects
@@ -207,6 +177,7 @@ export default class extends Common
 
     /**
      * checks the regex rule
+     *
      *@protected
      *@param {mixed} value - the value
      *@param {Object} regex - regex test expression object
@@ -229,6 +200,7 @@ export default class extends Common
 
     /**
      * runs regex rule checks
+     *
      *@protected
      *@param {string} value - the field value
      *@param {Array} options - field rule options
@@ -255,6 +227,7 @@ export default class extends Common
 
     /**
      * construct limiting rule error
+     *
      *@protected
      *@returns {string}
     */
@@ -294,6 +267,7 @@ export default class extends Common
 
     /**
      * runs the callback method on the given value
+     *
      *@protected
      *@param {mixed} value - the value
      *@param {Callable} callback - the callback method
@@ -308,6 +282,8 @@ export default class extends Common
 
     /**
      * resolve limiting value. string values will be converted accurately
+     *
+     *@protected
      *@param {string} key - the rule key
      *@param {Object} options - the rule options object
      *@return {mixed}
@@ -330,12 +306,12 @@ export default class extends Common
 
     /**
      * checks the limiting rules such as min, max, lt, gt
+     *
      *@protected
      *@param {string} value - the value
      *@param {number|Date} actual - the actual value
-     *@param {Object} options - the field rules
      *@param {string} unit - the unit of measurement to use
-     *@param {Callable}} [callback=null] - a callback method
+     *@param {Callable} [callback=null] - a callback method
      *@param {string} [prefix] - a string prefix to use
      *@return {boolean}
     */
@@ -409,6 +385,7 @@ export default class extends Common
 
     /**
      * returns date format regex
+     *
      *@protected
      *@return {RegExp}
     */
@@ -418,6 +395,8 @@ export default class extends Common
 
     /**
      * resolves the date parameter
+     *
+     *@protected
      *@return {CustomDate|null}
     */
     resolveDate(value) {
@@ -435,6 +414,12 @@ export default class extends Common
     /**
      * resets the validator, and checks if the validation should proceed
      *
+     *@protected
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@protected
      *@return {boolean}
     */
@@ -458,7 +443,9 @@ export default class extends Common
     }
 
     /**
-     *@param array [$error_bag] - the error bag, passed by reference
+     *@param {Object} files - the files object
+     *@param {Object} errorBag - error bag to store errors
+     *@param {FileExtensionDetector} [fileExtensionDetector=FileExtensionDetector] - a file extension detector instance
     */
     constructor(files, errorBag, fileExtensionDetector)
     {
@@ -533,6 +520,7 @@ export default class extends Common
 
     /**
      * returns the magic byte for the last file validation
+     *
      *@return {string}
     */
     getFileMagicByte() {
@@ -543,6 +531,10 @@ export default class extends Common
      * validates text
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@return {boolean}
     */
     validateText(required, field, value, options, index) {
@@ -561,7 +553,12 @@ export default class extends Common
 
     /**
      * validates date
+     *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateDate(required, field, value, options, index) {
@@ -599,6 +596,10 @@ export default class extends Common
      * validates integers
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateInteger(required, field, value, options, index) {
@@ -620,6 +621,10 @@ export default class extends Common
      * validates positive integers
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validatePInteger(required, field, value, options, index) {
@@ -640,6 +645,10 @@ export default class extends Common
      * validates negative integers
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateNInteger(required, field, value, options, index) {
@@ -660,6 +669,10 @@ export default class extends Common
      * validates floats
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateFloat(required, field, value, options, index) {
@@ -680,6 +693,10 @@ export default class extends Common
      * validates positive floats
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validatePFloat(required, field, value, options, index) {
@@ -700,6 +717,10 @@ export default class extends Common
      * validates negative floats
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateNFloat(required, field, value, options, index) {
@@ -719,6 +740,11 @@ export default class extends Common
     /**
      * validates email
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateEmail(required, field, value, options, index) {
@@ -771,6 +797,10 @@ export default class extends Common
      * validates url
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateURL(required, field, value, options, index) {
@@ -815,6 +845,10 @@ export default class extends Common
      * validates choice
      *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateChoice(required, field, value, options, index) {
@@ -837,7 +871,12 @@ export default class extends Common
 
     /**
      * validates range of options, either numbers or alphabets with optional step increment
+     *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validateRange(required, field, value, options, index) {
@@ -851,7 +890,12 @@ export default class extends Common
 
     /**
      * validate password
+     *
      *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@returns {boolean}
     */
     validatePassword(required, field, value, options, index) {
@@ -887,6 +931,11 @@ export default class extends Common
     /**
      * validates file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */
@@ -966,6 +1015,11 @@ export default class extends Common
     /**
      * validates image file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */
@@ -981,6 +1035,11 @@ export default class extends Common
     /**
      * validates audio file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */
@@ -996,6 +1055,11 @@ export default class extends Common
     /**
      * validates video file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */
@@ -1011,6 +1075,11 @@ export default class extends Common
     /**
      * validates media file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */
@@ -1026,6 +1095,11 @@ export default class extends Common
     /**
      * validates document file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */
@@ -1041,6 +1115,11 @@ export default class extends Common
     /**
      * validates archive file upload
      *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - file field name
+     *@param {mixed} value - file field value
+     *@param {ValidationOptions} options - validation options
+     *@param {number} index - current field value index
      *@throws {DirectoryNotFoundException}
      *@throws {FileMoveException}
     */

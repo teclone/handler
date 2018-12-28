@@ -1,10 +1,11 @@
-import Util from './Util';
 import InvalidParameterException from './Exceptions/InvalidParameterException';
+import Util from './Util';
 
 let replacementText = '';
 
 /**
  * returns the replacement text
+ *
  *@private
 */
 const callback = function() {
@@ -12,7 +13,44 @@ const callback = function() {
     },
 
     /**
+     * runs the string replace algorithm
+     *
+     *@private
+     *@param {string} pattern - the string pattern
+     *@param {Callable} callback - replacement callback
+     *@param {string} string - the string
+     *@param {boolean} caseSensitive - boolean indicating if the operation should be case
+     * sensitive
+     *@param {integer} replaceCount - number of times to perform replacement
+     *@return {string}
+    */
+    runString = function(pattern, callback, string, caseSensitive, replaceCount) {
+
+        let result = '',
+            start = 0,
+            counts = 0;
+
+        const searchFor = caseSensitive? pattern : pattern.toLowerCase(),
+            searchFrom = caseSensitive? string : string.toLowerCase(),
+            len = pattern.length;
+
+        while (++counts && (replaceCount === -1 || counts <= replaceCount)) {
+            const index = searchFrom.indexOf(searchFor, start);
+            if (index > -1) {
+                result += string.slice(start, index) + callback([pattern], counts);
+                start = index + len;
+                continue;
+            }
+            break;
+        }
+
+        result += string.slice(start);
+        return result;
+    },
+
+    /**
      * runs the regex replace algorithm
+     *
      *@private
      *@param {RegExp} pattern - the regex pattern
      *@param {Callable} callback - replacement callback
@@ -22,12 +60,11 @@ const callback = function() {
     */
     runRegex = function(pattern, callback, string, replaceCount) {
 
-        let status = true,
-            result = '',
+        let result = '',
             start = 0,
             counts = 0;
 
-        while (status && ++counts && (replaceCount === -1 || counts <= replaceCount)) {
+        while (++counts && (replaceCount === -1 || counts <= replaceCount)) {
             let matches = pattern.exec(string);
             if (matches) {
                 const index = matches.index,
@@ -35,10 +72,9 @@ const callback = function() {
 
                 result += string.slice(start, index) + callback(matches, counts);
                 start = index + len;
+                continue;
             }
-            else {
-                status = false;
-            }
+            break;
         }
 
         result += string.slice(start);
@@ -46,26 +82,43 @@ const callback = function() {
     },
 
     /**
+     * resolves the given regex pattern and returns a RegExp instance
+     *
      *@private
-     * resolves the regex pattern and returns a new RegExp instance or null
      *@param {RegExp} pattern - the regex pattern
-     *@return {RegExp|null}
+     *@return {RegExp}
     */
     resolveRegexPattern = function(pattern) {
-        if(Util.isRegex(pattern)) {
-            let modifiers = 'gm';
+        let modifiers = 'gm';
 
-            if (pattern.ignoreCase)
-                modifiers += 'i';
+        if (pattern.ignoreCase)
+            modifiers += 'i';
 
-            return new RegExp(pattern.source, modifiers);
-        }
-        return null;
+        return new RegExp(pattern.source, modifiers);
     },
 
     /**
+     * cordinates the replacement operation
+     *
      *@private
+     *@param {mixed} pattern - the pattern
+     *@param {Callable} callback - replacement callback
+     *@param {string} string - the string
+     *@param {boolean} caseSensitive - boolean indicating if the operation should be case sensitive
+     *@param {integer} replaceCount - number of times to perform replacement
+     *@return {string}
+    */
+    cordinateReplacement = function(pattern, callback, string, caseSensitive, replaceCount) {
+        if (Util.isRegex(pattern))
+            return runRegex(resolveRegexPattern(pattern), callback, string, replaceCount);
+        else
+            return runString(pattern.toString(), callback, string, caseSensitive, replaceCount);
+    },
+
+    /**
      * resolves the replacement count and returns an integer
+     *
+     *@private
      *@param {boolean|number} [replaceCount] - the replacement count to be resolved
      *@returns {number}
     */
@@ -77,9 +130,9 @@ const callback = function() {
     },
 
     /**
-     *@private
      * it synchronizes the patterns size and the replacements size
      *
+     *@private
      *@param {Array} patterns - patterns array
      *@param {Array} replacements - replacements array
      *@returns {Array}
@@ -96,19 +149,26 @@ const callback = function() {
         return [...replacements, Array(difference).fill(fillWith)];
     };
 
+/**
+ * Regex module
+ *@module Regex
+*/
 export default {
 
     /**
      * iteratively replace every occurence of patterns with the given replacement value
      *
-     *@param {RegExp|...RegExp} patterns - array of regex patterns or a single regex pattern
+     *@param {string|RegExp|(string|RegExp)[]} patterns - string or regex pattern or array of
+     * such combinations
      *@param {string|string[]} replacements - replacement text or array of replacement text
      *@param {string} string - the string to work on.
-     *@param {boolean|integer} replaceCount - number of times to replace occurrence. if true,
+     *@param {boolean} [caseSensitive=false] - boolean indicating if the operation should be case
+     * sensitive
+     *@param {boolean|number} replaceCount - number of times to replace occurrence. if true,
      * it is replaced only once, if false or not given, every occurence is replaced
      *@returns {string}
     */
-    replace(patterns, replacements, string, replaceCount) {
+    replace(patterns, replacements, string, caseSensitive, replaceCount) {
         if (string === null || string === undefined)
             return string;
 
@@ -119,28 +179,25 @@ export default {
         replaceCount = resolveReplaceCount(replaceCount);
 
         return patterns.reduce((result, pattern, index) => {
-
-            pattern = resolveRegexPattern(pattern);
-            if (pattern !== null) {
-                replacementText = replacements[index];
-                result = runRegex(pattern, callback, result, replaceCount);
-            }
-
-            return result;
+            replacementText = replacements[index];
+            return cordinateReplacement(pattern, callback, result, caseSensitive, replaceCount);
         }, string);
     },
 
     /**
      * iteratively replace every occurence of pattern with return value from callback
      *
-     *@param {RegExp|...RegExp} patterns - the regex pattern
+     *@param {string|RegExp|(string|RegExp)[]} patterns - string or regex pattern or array of
+     * such combinations
      *@param {Callable} callback - a callback function
      *@param {string} string - the string to work on.
+     *@param {boolean} [caseSensitive=false] - boolean indicating if the operation should be case
+     * sensitive
      *@param {boolean|integer} replaceCount - number of times to replace occurrence. if true,
      * it is replaced only once, if false or not given, every occurence is replaced
      *@returns {string}
     */
-    replaceCallback(patterns, callback, string, replaceCount) {
+    replaceCallback(patterns, callback, string, caseSensitive, replaceCount) {
 
         if (!Util.isCallable(callback))
             throw new InvalidParameterException('argument two is not a callback function');
@@ -152,11 +209,7 @@ export default {
         replaceCount = resolveReplaceCount(replaceCount);
 
         return Util.makeArray(patterns).reduce((result, pattern) => {
-            pattern = resolveRegexPattern(pattern);
-            if (pattern !== null)
-                result = runRegex(pattern, callback, result, replaceCount);
-
-            return result;
+            return cordinateReplacement(pattern, callback, result, caseSensitive, replaceCount);
         }, string);
     },
 };

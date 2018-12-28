@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic FileMoveException
+ * file move exception
 */
 export default class FileMoveException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, FileMoveException);

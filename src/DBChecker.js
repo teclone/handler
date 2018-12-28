@@ -1,16 +1,20 @@
 /**
- * event initialization options.
+ * db check rule options
  *@typedef {Object} DBCheckOptions
- *@property {string|Object} [query] - custom select query string for relationals or find object
- * for no sql.
- *@property {string} [entity] - a string denoting the table or collection to check on. This
- * option is required if there is no custom query defined or if db model is no sql
- *@property {string} [field] - defines the field to check on. This option is needed when there
- * is no custom query defined. it defaults to fieldName for noSql, and defaults to id or
- * fieldName for relational depending on if the field value is an integer or not
- *@property {Array} [params] - array of params to be used while running the query. This is needed
- * for relational databases if there is a custom query defined. it defaults to empty array
- * You should leave out this option if you did not define a custom query
+ *
+ *@property {string|Object} [query] - custom select query string (for relational models) or
+ * query object (for nosql models).
+ *@property {Object} [model] - a model object such as mongoose model, to be used in carring out
+ * the query.
+ *@property {string} [entity] - database table or collection name. **Required if model & query
+ * parameters are not defined.**
+ *@property {string} [table] - alias for the entity parameter
+ *@property {string} [collection] - alias for the entity parameter.
+ *@property {string} [field] - defines the table or collection field to check on. Defaults to
+ * current field name under validation. If db model is relational, and field value is an integer,
+ * it will default to id
+ *@property {Array} [params] - array of params to be used while running the query.
+ * Applies mostly to relational database models
 */
 
 import { DB_MODELS } from './Constants';
@@ -19,6 +23,9 @@ import Regex from './Regex';
 import Common from './Traits/Common';
 import Util from './Util';
 
+/**
+ * database checker module
+*/
 export default class DBChecker extends Common {
 
     /**
@@ -27,6 +34,7 @@ export default class DBChecker extends Common {
      *
      * Default implementation here supports mongoose models
      *
+     *@protected
      *@param {string|Object} query - the query can be a string for relationals or object for
      * noSql scenerio.
      *@param {Array} params - array of parameters, applicable to relational database. defaults
@@ -54,9 +62,11 @@ export default class DBChecker extends Common {
      * followed by the field to check on. Leave out the params option. if no field is given,
      * it defaults to fieldName for noSql, and defaults to id or fieldName for relational
      * depending on if the field value is an integer or not
+     *
+     *@protected
      *@param {DBCheckOptions} options - the database check options
      *@param {mixed} value - current field value under validation
-     *@param {string|Object}
+     *@returns {string|Object}
     */
     buildQuery(options, value) {
         if (this._dbModel === DB_MODELS.NOSQL) {
@@ -72,6 +82,7 @@ export default class DBChecker extends Common {
     /**
      * resolve query
      *
+     *@protected
      *@param {string|Object} query - query string for relational or query object for nosql
      *@param {mixed} value - the current value
      *@return {string|Object}
@@ -109,6 +120,7 @@ export default class DBChecker extends Common {
     /**
      * resolve parameters
      *
+     *@protected
      *@param {Array} params - array of parameters
      *@param {mixed} value - the current value
      *@return {Array}
@@ -136,6 +148,7 @@ export default class DBChecker extends Common {
     /**
      * resets the db checker, and checks if the check call should proceed
      *
+     *@protected
      *@return bool
     */
     setup(required, field, value, options, index) {
@@ -144,8 +157,7 @@ export default class DBChecker extends Common {
         if (!required && (value === '' || value === null || value === undefined)) {
             this.shouldProceed(false);
         }
-        else
-        {
+        else {
             this.shouldProceed(true);
 
             //resolve the params in the options array
@@ -163,7 +175,7 @@ export default class DBChecker extends Common {
 
     /**
      *@param {Object} errorBag - the error bag
-     *@param {int} dbModel - the db model in use
+     *@param {number} dbModel - the db model in use
     */
     constructor(errorBag, dbModel) {
         super(errorBag);
@@ -172,7 +184,8 @@ export default class DBChecker extends Common {
 
     /**
      * sets the db model
-     *@param {int} dbModel - the db model in use
+     *
+     *@param {number} dbModel - the db model in use
     */
     setDBModel(dbModel) {
         this._dbModel = dbModel;
@@ -180,6 +193,13 @@ export default class DBChecker extends Common {
 
     /**
      * check if a field exists, set error if it does
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {DBCheckOptions} options - database check options
+     *@param {number} index - current field value index
+     *@returns {boolean}
     */
     async checkIfExists(required, field, value, options, index) {
         if (this.setup(required, field, value, options, index)) {
@@ -196,6 +216,13 @@ export default class DBChecker extends Common {
 
     /**
      * check if a field does not exist, set error if it does not
+     *
+     *@param {boolean} required - boolean indicating if field is required
+     *@param {string} field - field name
+     *@param {mixed} value - field value
+     *@param {DBCheckOptions} options - database check options
+     *@param {number} index - current field value index
+     *@returns {boolean}
     */
     async checkIfNotExists(required, field, value, options, index) {
         if (this.setup(required, field, value, options, index))

@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic StateException
+ * state exception
 */
 export default class StateException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, StateException);

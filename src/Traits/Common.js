@@ -1,8 +1,14 @@
 import Regex from '../Regex';
 import Util from '../Util';
 
-export default class {
+/**
+ * common module. defines common methods used by DBChecker and Validator modules
+*/
+export default class Common {
 
+    /**
+     *@param {Object} [errorBag={}] - error bag object to store errors
+    */
     constructor(errorBag) {
         /* object of error bag containing all errors detected since the instance creation */
         if (!Util.isPlainObject(errorBag))
@@ -29,6 +35,7 @@ export default class {
     /**
      * resets the instance
      *
+     *@protected
      *@param {string} field - the next field to process
      *@param {Object} options - validation object
      *@param {integer} [index=0] - the current field value index
@@ -48,6 +55,8 @@ export default class {
 
     /**
      * returns the should proceed status
+     *
+     *@protected
      *@returns {boolean}
     */
     shouldProceed(status) {
@@ -59,9 +68,11 @@ export default class {
 
     /**
      * sets the given error message
+     *
+     *@protected
      *@param {string} err - the error message
      *@param {mixed} value - the current field value under validation
-     *@returns {boolean} returns false
+     *@returns {false}
     */
     setError(err, value) {
         if(!Util.isNumeric(value))
@@ -82,12 +93,14 @@ export default class {
             }, err);
 
         this._succeeds = false;
+
         return false;
     }
 
     /**
      * sets the error bag
      *
+     *@protected
      *@param {Object} errorBag - the error bag
     */
     setErrorBag(errorBag) {
@@ -97,6 +110,8 @@ export default class {
 
     /**
      * the error bag
+     *
+     *@protected
      *@type {Object}
     */
     getErrorBag() {
@@ -105,9 +120,10 @@ export default class {
 
     /**
      * returns the error message for the given key, if key is not given, it returns any
-     * error message in the error bag
+     * error message in the error bag. it returns undefined if there are no errors or if there
+     * is no error for the given key.
      *
-     * it returns undefined if there are no errors or if there is no error for the given key.
+     *@protected
      *@param {string} [field] - the field to return its error message
      *@returns {string|undefined}
     */
@@ -126,6 +142,8 @@ export default class {
 
     /**
      * tells if the last validation succeeded or not
+     *
+     *@protected
      *@returns {boolean}
     */
     succeeds() {
@@ -134,6 +152,8 @@ export default class {
 
     /**
      * tells if the last validation failed or not
+     *
+     *@protected
      *@returns {boolean}
     */
     fails() {

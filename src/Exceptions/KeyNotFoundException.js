@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic KeyNotFoundException
+ * key not found exception
 */
 export default class KeyNotFoundException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, KeyNotFoundException);

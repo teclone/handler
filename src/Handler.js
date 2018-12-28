@@ -12,10 +12,15 @@ import Regex from './Regex';
 import Util from './Util';
 import Validator from './Validator';
 
-export default class {
+/**
+ * handler module. project entry path
+*/
+export default class Handler {
 
     /**
      * returns db checks rule to method map
+     *
+     *@protected
      *@returns {Array}
     */
     getDBChecksMethodMap() {
@@ -31,6 +36,7 @@ export default class {
     /**
      * returns rule type to validation method map
      *
+     *@protected
      *@return {Object}
     */
     getRuleTypesMethodMap()
@@ -96,7 +102,6 @@ export default class {
     /**
      * sets error message for a given field
      *
-     *@protected
      *@param {string} field - the field
      *@param {string} err - the error message
      *@return {this}
@@ -109,7 +114,6 @@ export default class {
     /**
      * sets the given data
      *
-     *@protected
      *@param {string} field - the field name
      *@param {string} value - the field value
      *@returns {this}
@@ -122,8 +126,7 @@ export default class {
     /**
      * calls the setData method on each data field in the object
      *
-     *@protected
-     *@param {Object} data - object of field: value data
+     *@param {Object} data - object of field: value data pairs
      *@returns {this}
     */
     setDatas(data) {
@@ -136,7 +139,8 @@ export default class {
     /**
      * tests if a value is falsy
      *
-     *@param $value - the value to test
+     *@protected
+     *@param {mixed} value - the value to test
      *@returns {boolean}
     */
     valueIsFalsy(value) {
@@ -146,6 +150,8 @@ export default class {
 
     /**
      * resolves database model field name to either camelCase like or snake case
+     *
+     *@protected
      *@param {string} field - the field to resolve
      *@return {string}
     */
@@ -165,6 +171,7 @@ export default class {
     /**
      * runs the database checks
      *
+     *@protected
      *@param {boolean} required - boolean indicating if field is required
      *@param {string} field - field being checked
      *@param {mixed} value - field value
@@ -246,7 +253,8 @@ export default class {
     /**
      * runs database checks on the fields
      *
-     *@param {array} fields - the array of fields to validate
+     *@protected
+     *@param {Array} fields - the array of fields to validate
      *@param {boolean} required - boolean value indicating if field is required
     */
     async validateDBChecks(fields, required) {
@@ -263,6 +271,7 @@ export default class {
     /**
      * runs validation on the given field whose value is the given value
      *
+     *@protected
      *@param {boolean} required - boolean indicating if field is required
      *@param {string} field - field to validate
      *@param {mixed} value - field value
@@ -297,7 +306,8 @@ export default class {
     /**
      * validate the fields
      *
-     *@param {array} fields - the array of fields to validate
+     *@protected
+     *@param {Array} fields - the array of fields to validate
      *@param {boolean} required - boolean value indicating if field is required
     */
     validateFields(fields, required) {
@@ -313,11 +323,11 @@ export default class {
 
     /**
      * strips html tags out of the text value
+     *
      *@protected
      *@param {string} value - value to remove html tags from
      *@param {string|string[]} stripTagsIgnore - string containing xml tags to ignore or array
-     * of such strings
-     *@param {}
+     * of such string xml tags
     */
     stripTags(value, stripTagsIgnore) {
         stripTagsIgnore = (
@@ -464,7 +474,7 @@ export default class {
     }
 
     /**
-     * returns true if the field type is a file type
+     * returns true if the field's type is a file type
      *
      *@protected
      *@param {string} field - the field
@@ -478,6 +488,7 @@ export default class {
      * checks if the given field is missing
      *
      *@protected
+     *@param {string} field - the field name
      *@return {boolean}
     */
     fieldIsMissing(field) {
@@ -519,7 +530,7 @@ export default class {
     }
 
     /**
-     * runs the get field call
+     * retrieve each field data
      *
      *@protected
      *@param {Array} fields - array of fields
@@ -539,7 +550,8 @@ export default class {
     }
 
     /**
-     * gets the fields
+     * retrieves fields' data
+     *
      *@protected
     */
     getFields() {
@@ -574,11 +586,11 @@ export default class {
     }
 
     /**
-     * resolves option
+     * resolves rule options
      *
      *@protected
      *@param {string} field - the field key
-     *@param {Object|string} option - the option to resolve
+     *@param {mixed} option - the option to resolve
     */
     resolveOption(field, option) {
         //resolve objects
@@ -644,9 +656,15 @@ export default class {
 
     /**
      * checks the condition and returns true if condition is satified
+     *
+     *@protected
+     *@param {string} condition - the condition
+     *@param {Object} details - the condition details
+     *@param {Object} filters - object of filter options
      *@returns {boolean}
     */
     checkCondition(condition, details, filters) {
+
         const field = Util.value('field', details, ''),
             value = Util.value('value', details, ''),
             fieldValue = this.filterValue(
@@ -674,7 +692,10 @@ export default class {
 
     /**
      * resolves overrideIf condition
+     *
+     *@protected
      *@param {Object} rule - the rule details
+     *@param {Object} filters - the filters object
      *@return {boolean}
     */
     resolveOverride(rule, filters) {
@@ -694,7 +715,10 @@ export default class {
 
     /**
      * resolves require condition
+     *
+     *@protected
      *@param {Object} rule - the rule details
+     *@param {Object} filters - the filters object
      *@return {boolean}
     */
     resolveRequire(rule, filters) {
@@ -752,6 +776,7 @@ export default class {
 
     /**
      * processes the rules, extracting the portions as the need be
+     *
      *@protected
     */
     processRules() {
@@ -792,6 +817,8 @@ export default class {
 
     /**
      * filters rules that applies to the sent data
+     *
+     *@param {String|String[]} requiredFields - required field or array of required fields
      *@protected
     */
     filterRules(requiredFields) {
@@ -815,6 +842,7 @@ export default class {
 
     /**
      * merges the fields and the added field
+     *
      *@protected
     */
     mergeSource() {
@@ -825,7 +853,7 @@ export default class {
      * resolves the rule type
      *
      *@protected
-     *@param {string} - the rule type
+     *@param {string} type - the rule type
      *@return {string}
     */
     resolveType(type) {
@@ -848,6 +876,7 @@ export default class {
 
     /**
      * returns boolean indicating if the execute call should proceed
+     *
      *@protected
      *@return {boolean}
      *@throws {DataSourceNotSetException}
@@ -885,7 +914,7 @@ export default class {
     /**
      *@param {Object} [source] - the data source
      *@param {Object} [files] - the files source
-     *@param {Object} [rules] - the data rules
+     *@param {Object} [rules] - field rules
      *@param {Validator} [validator] - the validator instance
      *@param {DBChecker} [dbChecker] - the db checker instance
     */
@@ -893,7 +922,7 @@ export default class {
         /* the raw data to be handled and processed */
         this._source = null;
 
-        /** the raw files to be handled and processed */
+        /* the raw files to be handled and processed */
         this._files = null;
 
         /* object of added fields */
@@ -1001,6 +1030,7 @@ export default class {
 
     /**
      * sets the validator instance
+     *
      *@param {Validator} validator
      *@return {this}
     */
@@ -1015,6 +1045,7 @@ export default class {
 
     /**
      * sets the db checker instance
+     *
      *@param {DBChecker} dbChecker
      *@return {this}
     */
@@ -1029,6 +1060,7 @@ export default class {
 
     /**
      * turns the used db model to noSql
+     *
      *@return {this}
     */
     modelUseNoSql() {
@@ -1038,6 +1070,7 @@ export default class {
 
     /**
      * turns the used db model to relational
+     *
      *@return {this}
     */
     modelUseRelational() {
@@ -1047,6 +1080,7 @@ export default class {
 
     /**
      * turns the used db model case style to camel case
+     *
      *@return {this}
     */
     modelUseCamelCaseStyle() {
@@ -1056,6 +1090,7 @@ export default class {
 
     /**
      * turns the used db model case to snake case
+     *
      *@return {this}
     */
     modelUseSnakeCaseStyle() {
@@ -1080,7 +1115,7 @@ export default class {
     /**
      * adds one or more fields to the existing source
      *
-     *@param {object} fields - object of field name value pairs
+     *@param {Object} fields - object of field name value pairs
      *@return {this}
     */
     addFields(fields) {
@@ -1094,6 +1129,7 @@ export default class {
 
     /**
      * defines a field that should be skipped while mapping to a model
+     *
      *@param {string} field
      *@return {this}
     */
@@ -1119,6 +1155,7 @@ export default class {
 
     /**
      * defines the new name to use when mapping field data to a model
+     *
      *@param {string} field
      *@param {string} newName
      *@return {this}
@@ -1132,6 +1169,7 @@ export default class {
 
     /**
      * defines the new names to use when mapping field data to a model
+     *
      *@param {Object} newNames - object of oldName: newName entries
      *@return {this}
     */
@@ -1147,6 +1185,7 @@ export default class {
 
     /**
      * executes the handler
+     *
      *@param {boolean} [validateOnDemand=false] - boolean value indicating if it should only
      * pick and validate fields that were sent and whose rules are defined
      *@param {string|string[]} requiredFields - field or array of fields that must be included
@@ -1192,6 +1231,7 @@ export default class {
 
     /**
      * returns boolean indicating if data validation and handling processes succeeded
+     *
      *@return {boolean}
     */
     succeeds() {
@@ -1200,6 +1240,7 @@ export default class {
 
     /**
      * returns boolean indicating if data validation and handling processes failed
+     *
      *@return {boolean}
     */
     fails() {
@@ -1228,14 +1269,6 @@ export default class {
     }
 
     /**
-     * returns all errors as an object
-     *@returns {Object}
-    */
-    getErrors() {
-        return {...this._errors};
-    }
-
-    /**
      * returns the data for the given key if it exists, or null
      *
      *@param {string} key - the field key
@@ -1250,15 +1283,8 @@ export default class {
     }
 
     /**
-     * returns all data as an object
-     *@returns {Object}
-    */
-    getAllData() {
-        return {...this._data};
-    }
-
-    /**
      * maps data to the given model object
+     *
      *@param {Object} model - the model object
      *@param {boolean} [expand=true] - boolean value inicating if it should expand .dot keys
      *@return {Object}

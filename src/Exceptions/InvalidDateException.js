@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic InvalidDateException
+ * invalid date exception
 */
 export default class InvalidDateException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, InvalidDateException);

@@ -1,11 +1,11 @@
 /**
- * generic Exception base class
+ * exception base class
 */
 export default class Exception extends Error {
 
     /**
-     *@param {string} [message=''] - the error message
-     *@param {Object} [domain=Exception] - the error class
+     *@param {string} [message=''] - error message
+     *@param {Object} [domain=Exception] - error class
     */
     constructor(message, domain) {
         super(message);

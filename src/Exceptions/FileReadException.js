@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic FileReadException
+ * file read exception
 */
 export default class FileReadException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, FileReadException);

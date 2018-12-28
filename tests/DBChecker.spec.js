@@ -3,7 +3,7 @@ import Handler from '../src/Handler';
 import { closeConnection, connect } from './Helpers/connection';
 import model from './Helpers/model';
 
-describe('DBChecker module', function() {
+describe('DBChecker', function() {
 
     let handler = null;
 
@@ -27,7 +27,7 @@ describe('DBChecker module', function() {
         await closeConnection();
     });
 
-    describe('#checkIfExists', function() {
+    describe('#checkIfExists()', function() {
         it(`should run the db check rule and set error if field exist`, function() {
             const source = {
                 email: 'Harrisonifeanyichukwu@gmail.com',

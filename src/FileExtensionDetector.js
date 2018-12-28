@@ -1,9 +1,12 @@
-import Util from './Util';
-import fs from 'fs';
 import FileNotFoundException from './Exceptions/FileNotFoundException';
 import FileReadException from './Exceptions/FileReadException';
+import Util from './Util';
+import fs from 'fs';
 
-export default class {
+/**
+ * file extension detector module
+*/
+export default class FileExtensionDetector {
 
     constructor() {
         this._extensions = {
@@ -42,14 +45,6 @@ export default class {
     }
 
     /**
-     * returns the magic byte for the last file validation
-     *@returns {string}
-    */
-    getMagicByte() {
-        return this._magicByte;
-    }
-
-    /**
      * returns array of image file extensions
      *
      *@return {Array}
@@ -60,6 +55,7 @@ export default class {
 
     /**
      * returns array of audio file extensions
+     *
      *@return {Array}
     */
     getAudioMimes() {
@@ -68,6 +64,7 @@ export default class {
 
     /**
      * returns array of video file extensions
+     *
      *@return {Array}
     */
     getVideoMimes() {
@@ -76,6 +73,7 @@ export default class {
 
     /**
      * returns array of media file extensions
+     *
      *@return {Array}
     */
     getMediaMimes() {
@@ -88,6 +86,7 @@ export default class {
 
     /**
      * returns array of document file extensions
+     *
      *@return {Array}
     */
     getDocumentMimes() {
@@ -96,6 +95,7 @@ export default class {
 
     /**
      * returns array of archive file extensions
+     *
      *@return {Array}
     */
     getArchiveMimes() {
@@ -103,10 +103,19 @@ export default class {
     }
 
     /**
+     * returns the magic byte for the last file validation
+     *
+     *@returns {string}
+    */
+    getMagicByte() {
+        return this._magicByte;
+    }
+
+    /**
      * resolves a given extension to something compatible with its internal extension
      *
      *@param {string} ext - the extension
-     *@return string
+     *@return {string}
     */
     resolveExtension(ext) {
         ext = Util.isString(ext)? ext.toLowerCase() : '';
@@ -120,6 +129,7 @@ export default class {
 
     /**
      * resolves array of extensions
+     *
      *@param {Array} exts - array of file extensions to resolve
      *@return {Array}
     */

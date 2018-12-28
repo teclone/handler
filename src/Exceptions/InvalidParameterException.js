@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic InvalidParameterException
+ * invalid parameter exception
 */
 export default class InvalidParameterException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, InvalidParameterException);

@@ -1,7 +1,8 @@
-/**
- * Utility module. contains loads of utility methods
-*/
 const toString = Object.prototype.toString;
+
+/**
+ * Utility module
+*/
 export default {
 
     /**

@@ -1,11 +1,12 @@
 import Exception from './Exception';
 
 /**
- * generic FileSourceNotSetException
+ * files source not set exception
 */
 export default class FilesSourceNotSetException extends Exception {
+
     /**
-     *@param {string} message the error message
+     *@param {string} message - error message
     */
     constructor(message) {
         super(message, FilesSourceNotSetException);

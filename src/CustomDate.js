@@ -1,9 +1,13 @@
+/**
+ *@module CustomDate
+ *@extends Date
+*/
+
 import Util from './Util';
 
 /**
- * extend the Date module and export
+ *@memberof CustomDate#
 */
-
 Date.prototype.toString = function() {
     return `${this.getFullYear()}-${Util.padZeros(this.getMonth() + 1)}-${Util.padZeros(this.getDate())}`;
 };
@@ -11,6 +15,8 @@ Date.prototype.toString = function() {
 /**
  * validates if the given date is valid
  *
+ *@memberof CustomDate
+ *@static
  *@return {boolean}
 */
 Date.isValid = function(year, month, day) {
