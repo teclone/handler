@@ -1,5 +1,5 @@
 {
-  "name": "handler",
+  "name": "forensic-handler",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,9 @@
     "watch-test": "npm run test -- --watchAll",
     "commit": "git-cz",
     "prebuild": "rimraf dist && rimraf lib",
-    "build": "BABEL_ENV=build rollup --config"
+    "build": "BABEL_ENV=build rollup --config",
+    "validate-doc": "documentation lint src/**",
+    "generate-doc": "rimraf docs && documentation build src/** -f html -o docs"
   },
   "author": "Harrison Ifeanyichukwu <harrisonifeanyichukwu@gmail.com> (https://github.com/harrison-ifeanyichukwu)",
   "license": "MIT",
@@ -18,8 +20,11 @@
     "babel-core": "7.0.0-bridge.0",
     "babel-jest": "23.6.0",
     "commitizen": "3.0.4",
+    "coveralls": "3.0.2",
     "cz-conventional-changelog": "2.1.0",
+    "documentation": "9.0.0-alpha.0",
     "jest": "23.6.0",
+    "jsdoc": "3.5.5",
     "mongoose": "5.3.10",
     "regenerator-runtime": "0.12.1",
     "rimraf": "2.6.2",
