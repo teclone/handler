@@ -1,6 +1,10 @@
 # Handler
 
+[![Build Status](https://travis-ci.org/harrison-ifeanyichukwu/forensic-handler.svg?branch=master)](https://travis-ci.org/harrison-ifeanyichukwu/forensic-handler)
+[![Coverage Status](https://coveralls.io/repos/github/harrison-ifeanyichukwu/forensic-handler/badge.svg?branch=master)](https://coveralls.io/github/harrison-ifeanyichukwu/forensic-handler?branch=master)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+[![npm version](https://badge.fury.io/js/forensic-handler.svg)](https://badge.fury.io/js/forensic-handler)
+![npm](https://img.shields.io/npm/dt/forensic-handler.svg)
 
 Handler is a **NodeJS** package that sits independently between the controller and the model, and asynchronously performs request data validation, conversion, serialization and integrity checks. It is easy to use and is independent of any framework or ORMs.
 
