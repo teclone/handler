@@ -2,7 +2,7 @@
   "name": "forensic-handler",
   "version": "0.0.0-development",
   "description": "a module that sits independently between the controller and the model, performing request data validation, serialization and integrity checks",
-  "main": "index.js",
+  "main": "lib/Handler.js",
   "scripts": {
     "test": "BABEL_ENV=test jest --config ./jest.config.json --runInBand --forceExit",
     "watch-test": "npm run test -- --watchAll",
