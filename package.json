@@ -1,7 +1,7 @@
 {
   "name": "forensic-handler",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.0-development",
+  "description": "a module that sits independently between the controller and the model, performing request data validation, serialization and integrity checks",
   "main": "index.js",
   "scripts": {
     "test": "BABEL_ENV=test jest --config ./jest.config.json --runInBand --forceExit",
@@ -10,7 +10,9 @@
     "prebuild": "rimraf dist && rimraf lib",
     "build": "BABEL_ENV=build rollup --config",
     "validate-doc": "documentation lint src/**",
-    "generate-doc": "rimraf docs && documentation build src/** -f html -o docs"
+    "generate-doc": "rimraf docs && documentation build src/** -f html -o docs",
+    "semantic-release": "semantic-release",
+    "report-coverage": "jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "author": "Harrison Ifeanyichukwu <harrisonifeanyichukwu@gmail.com> (https://github.com/harrison-ifeanyichukwu)",
   "license": "MIT",
@@ -31,11 +33,16 @@
     "rollup": "0.66.6",
     "rollup-all": "1.3.1",
     "rollup-plugin-babel": "4.0.3",
-    "rollup-plugin-node-resolve": "3.4.0"
+    "rollup-plugin-node-resolve": "3.4.0",
+    "semantic-release": "^15.13.2"
   },
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/harrison-ifeanyichukwu/forensic-handler.git"
   }
 }
