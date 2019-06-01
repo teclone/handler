@@ -7,7 +7,7 @@ import {
 } from './rules/NumberRules';
 import RangeRule, { RangeOptions } from './rules/RangeRule';
 import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
-import { BaseOptions } from './rules/BaseRule';
+import BaseRule, { BaseOptions } from './rules/BaseRule';
 import {
     FileRule, ImageFileRule, AudioFileRule, VideoFileRule, MediaFileRule,
     DocumentFileRule, ArchiveFileRule
@@ -46,10 +46,12 @@ export declare interface FilesSource {
 
 
 export declare type Unit = 'character' | 'number' | 'date' | 'file';
+
 export declare interface Regex {
     pattern: RegExp;
     err?: string;
 }
+
 export declare interface ErrorBag {
     [field: string]: string;
 }
@@ -74,6 +76,7 @@ export declare interface DataTypeMethodMap {
     number: string;
     nNumber: string;
     pNumber: string;
+    money: string;
     date: string;
 
     //choice rules
@@ -92,11 +95,17 @@ export declare interface DataTypeMethodMap {
 export declare type DataType = keyof DataTypeMethodMap;
 
 
-export declare interface RequiredIf {
-    if: 'checked' | 'notChecked' | 'equals' | 'notEquals',
+export declare type RequiredIf = {
+    if: 'checked' | 'notChecked',
+    field: string;
+} | {
+    if: 'equals' | 'notEquals',
     field: string;
     value: string | boolean | number;
 }
+
+export declare type FilterCallback = (value: string) => string | number | boolean;
+
 export declare interface Filters {
     decode?: boolean;
     stripTags?: boolean;
@@ -107,8 +116,9 @@ export declare interface Filters {
     toUpper?: boolean;
     toLower?: boolean;
     capitalize?: boolean;
-    callback?: (value: string | number | boolean) => string | number | boolean;
+    callback?: FilterCallback
 }
+
 export declare type Options = BaseOptions | NumberOptions | TextOptions | RangeOptions
     | ChoiceOptions;
 export declare interface DBCheck {}
@@ -131,7 +141,7 @@ export declare interface ResolvedRule {
 
     hint: string;
 
-    default: RawData;
+    defaultValue: RawData | undefined;
 
     requiredIf?: RequiredIf;
 

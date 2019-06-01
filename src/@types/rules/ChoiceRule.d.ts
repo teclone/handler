@@ -12,5 +12,5 @@ export default interface ChoiceRule extends BaseRule {
     /**
      * defines validation options to be used for choice field type validations
      */
-    options?: ChoiceOptions;
+    options: ChoiceOptions;
 }

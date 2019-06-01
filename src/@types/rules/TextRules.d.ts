@@ -71,7 +71,7 @@ declare interface BaseTextRule extends BaseRule {
 
 //text rules
 declare interface TextRule extends BaseTextRule {
-    type: 'text';
+    type?: 'text'
 }
 
 declare interface EmailRule extends BaseTextRule {
