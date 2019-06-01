@@ -1,14 +1,11 @@
-import Exception from './Exception';
+import Exception from '.';
 
 /**
  * rules not set exception
 */
 export default class RulesNotSetException extends Exception {
 
-    /**
-     *@param {string} message - error message
-    */
-    constructor(message) {
+    constructor(message: string = 'validation rules not found') {
         super(message, RulesNotSetException);
     }
 }

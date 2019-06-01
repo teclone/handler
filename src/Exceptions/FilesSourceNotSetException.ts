@@ -1,14 +1,10 @@
-import Exception from './Exception';
+import Exception from '.';
 
 /**
  * files source not set exception
 */
 export default class FilesSourceNotSetException extends Exception {
-
-    /**
-     *@param {string} message - error message
-    */
-    constructor(message) {
+    constructor(message: string = 'files source not found') {
         super(message, FilesSourceNotSetException);
     }
 }

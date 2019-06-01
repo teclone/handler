@@ -1,14 +1,11 @@
-import Exception from './Exception';
+import Exception from '.';
 
 /**
  * data source not set exception
 */
 export default class DataSourceNotSetException extends Exception {
 
-    /**
-     *@param {string} message - error message
-    */
-    constructor(message) {
+    constructor(message: string = 'data source not found') {
         super(message, DataSourceNotSetException);
     }
 }
