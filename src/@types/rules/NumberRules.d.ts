@@ -60,7 +60,7 @@ export declare interface PIntegerRule extends BaseNumberRule {
 }
 
 export declare interface NumberRule extends BaseNumberRule {
-    type: 'number';
+    type: 'number' | 'money';
 }
 
 export declare interface NNumberRule extends BaseNumberRule {

@@ -1,19 +1,23 @@
 import { DataValue, RequiredIf, Filters, DBCheck, DataType } from '..';
 
+export declare interface ShouldMatchObject {
+    /**
+     * the target field
+     */
+    target: string;
+
+    /**
+     * optional error message to use if values did not match
+     */
+    err?: string;
+}
+
 export declare interface BaseOptions {
     /**
      * defines a target field that this field value must match
      */
-    matchAgainst?: {
-        /**
-         * the target field
-        */
-        target: string;
-        /**
-         * optional error message to use if values did not match
-         */
-        err?: string;
-    };
+    shouldMatch?: ShouldMatchObject | string;
+
     /**
      * optional error message to use if field validation fails
      */
@@ -25,7 +29,7 @@ export default interface BaseRule {
     /**
      * field type. determines the kind of validations to perform on the field value(s)
      */
-    type: DataType;
+    type?: DataType;
 
     /**
      * indicates if field is required
@@ -40,7 +44,7 @@ export default interface BaseRule {
     /**
      * default value to use for optional fields that are missing
      */
-    default?: DataValue;
+    defaultValue?: DataValue;
 
     /**
      * defines a condition which if satisfied, makes the field required, otherwise, the field

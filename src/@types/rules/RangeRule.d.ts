@@ -38,5 +38,5 @@ export default interface RangeRule extends BaseRule {
     /**
      * defines validation options to be used for range ield type validations
      */
-    options?: RangeOptions;
+    options: RangeOptions;
 }
