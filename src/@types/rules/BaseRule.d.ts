@@ -61,4 +61,9 @@ export default interface BaseRule {
      * defines a list of database integrity checks to perform on the field value(s)
      */
     checks?: DBCheck | DBCheck[];
+
+    /**
+     * computes field value after all validations succeeds
+     */
+    postCompute?: (value: DataValue) => Promise<DataValue>;
 }

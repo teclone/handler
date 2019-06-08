@@ -8,7 +8,7 @@ import DataSourceNotSetException from './Exceptions/DataSourceNotSetException';
 import RulesNotSetException from './Exceptions/RulesNotSetException';
 import {
     isString, pickValue, copy, makeArray, isUndefined, pickObject,
-    isArray, keyNotSetOrTrue, isNumeric, isObject, isNull, isTypeOf
+    isArray, keyNotSetOrTrue, isNumeric, isObject, isNull, isTypeOf, isCallable
 } from '@forensic-js/utils';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import FieldRuleNotFoundException from './Exceptions/FieldRuleNotFoundException';
@@ -158,6 +158,18 @@ export default class Handler {
      */
     private isFileField(field: string): boolean {
         return this.isFileDataType(this.resolvedRules[field].type);
+    }
+
+    /**
+     * runs data post validation computations
+     */
+    private async postComputeDataValues() {
+        for (const field of Object.keys(this.resolvedRules)) {
+            const rule = this.resolvedRules[field];
+            if (isCallable(rule.postCompute)) {
+                this.data[field] = await rule.postCompute(this.data[field]);
+            }
+        }
     }
 
     /**
@@ -611,6 +623,7 @@ export default class Handler {
             options: pickObject('options', rule),
             filters: pickObject('filters', rule),
             checks: makeArray(rule.checks as DBCheck[]),
+            postCompute: pickValue('postCompute', rule, undefined)
         };
 
         //enclose the target field if it is not enclosed
@@ -802,6 +815,10 @@ export default class Handler {
             this.dbChecker.setDBModel(this.dbModel).setDBModelCaseStyle(this.dbModelCaseStyle);
             await this.validateDBChecks(this.requiredFields, true);
             await this.validateDBChecks(this.optionalFields, false);
+        }
+
+        if (this.succeeds()) {
+            await this.postComputeDataValues();
         }
 
         return this.succeeds();
