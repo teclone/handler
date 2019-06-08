@@ -17,10 +17,6 @@ export default class Common {
 
     protected shouldProceed: boolean = true;
 
-    constructor(errorBag?: ErrorBag) {
-        this.setErrorBag(errorBag);
-    }
-
     /**
      * resets the instance and makes it ready for the next validation process
      *
@@ -72,10 +68,8 @@ export default class Common {
     /**
      * sets the error bag if given
      */
-    setErrorBag(errorBag?: ErrorBag): this {
-        if (errorBag) {
-            this.errors = errorBag;
-        }
+    setErrorBag(errorBag: ErrorBag): this {
+        this.errors = errorBag;
         return this;
     }
 

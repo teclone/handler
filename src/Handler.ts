@@ -1,14 +1,14 @@
 import {
     DataSource, FilesSource, Rules, ResolvedRules, ResolvedRule, Rule, DataType,
-    Filters, RawData, DataValue, Data, Options, ErrorBag, DataTypeMethodMap, RequiredIf
+    Filters, RawData, DataValue, Data, Options, ErrorBag, RequiredIf, DataTypeMethodMaps, DBCheckMethodMaps, DBCheck, CallbackDBCheck, ModelDBCheck
 } from './@types';
 import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
 import StateException from './Exceptions/StateException';
 import DataSourceNotSetException from './Exceptions/DataSourceNotSetException';
 import RulesNotSetException from './Exceptions/RulesNotSetException';
 import {
-    isString, pickValue, copy, makeArray, isUndefined, pickObject, pickArray,
-    isArray, keyNotSetOrTrue, isNumeric, isObject, isNull
+    isString, pickValue, copy, makeArray, isUndefined, pickObject,
+    isArray, keyNotSetOrTrue, isNumeric, isObject, isNull, isTypeOf
 } from '@forensic-js/utils';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import FieldRuleNotFoundException from './Exceptions/FieldRuleNotFoundException';
@@ -16,8 +16,41 @@ import { replaceCallback, replace } from '@forensic-js/regex';
 import Validator from './Validator';
 import CustomDate from './CustomDate';
 import DataProxy from './DataProxy';
+import DBChecker from './DBChecker';
+
+
+const globalConfig = {
+    dbModel: DB_MODELS.NOSQL,
+    dbModelCaseStyle: DB_MODEL_CASE_STYLES.CAMEL_CASE
+};
 
 export default class Handler {
+
+    /**
+     * supported database models
+     */
+    static DB_MODELS = DB_MODELS;
+
+    /**
+     * supported database field case styles
+     */
+    static DB_MODEL_CASE_STYLES = DB_MODEL_CASE_STYLES;
+
+    /**
+     * globally sets the database model to use
+     * @param dbModel
+     */
+    static setDBModel(dbModel: number) {
+        globalConfig.dbModel = dbModel;
+    }
+
+    /**
+     * globally sets the database model field case style to use
+     * @param dbModelCaseStyle
+     */
+    static setDBModelCaseStyle(dbModelCaseStyle: number) {
+        globalConfig.dbModelCaseStyle = dbModelCaseStyle;
+    }
 
     private dataSource: DataSource | null = null;
 
@@ -35,22 +68,20 @@ export default class Handler {
 
     private optionalFields: string[] = [];
 
-    private validator: Validator = new Validator();
+    private validator: Validator;
 
-    //private dbChecker: DBChecker = new DBChecker();
+    private dbChecker: DBChecker;
 
     // database model in use
-    private dbModel: number = DB_MODELS.NOSQL;
+    private dbModel: number = globalConfig.dbModel;
 
-    private dbModelCaseStyle: number = DB_MODEL_CASE_STYLES.CAMEL_CASE;
-
-    private dbChecks: {} = {};
+    private dbModelCaseStyle: number = globalConfig.dbModelCaseStyle;
 
     private modelSkipFields: [] = [];
 
     private modelRenameFields: [] = [];
 
-    private dataTypeToMethod: DataTypeMethodMap = {
+    private dataTypeToMethod: DataTypeMethodMaps = {
 
         text: 'validateText',
         date: 'validateDate',
@@ -88,15 +119,23 @@ export default class Handler {
         password: 'validatePassword'
     };
 
+    private DBCheckTypesToMethod: DBCheckMethodMaps = {
+        //check if exist method map
+        exists: 'checkIfExists',
+
+        //check if not exists method map
+        notExists: 'checkIfNotExists',
+    };
+
     public data: Data = new Proxy<Data>({}, DataProxy);
 
     public errors: ErrorBag = {};
 
     constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules,
-        validator?: Validator) {
+        validator?: Validator, dbChecker?: DBChecker) {
 
         this.setDataSource(dataSource).setFilesSource(filesSource).setRules(rules)
-            .setValidator(validator || new Validator());
+            .setValidator(validator || new Validator()).setDBChecker(dbChecker || new DBChecker());
         //.setDBChecker(dbChecker).modelUseNoSql().modelUseCamelCaseStyle();
     }
 
@@ -119,6 +158,50 @@ export default class Handler {
      */
     private isFileField(field: string): boolean {
         return this.isFileDataType(this.resolvedRules[field].type);
+    }
+
+    /**
+     * runs db check
+     */
+    private async runDBCheck(required: boolean, field: string, value: DataValue, checks: DBCheck[],
+        index: number) {
+        for (const check of checks) {
+            if (isTypeOf<CallbackDBCheck>('callback', check)) {
+                if (await check.callback(field, value, index)) {
+                    this.setError(
+                        field,
+                        pickValue('err', check, 'condition not satisfied')
+                    );
+                    break;
+                }
+            }
+            else {
+                const method = this.DBCheckTypesToMethod[check.if];
+                await this.dbChecker[method](required, field, value, check as ModelDBCheck, index);
+                if (this.dbChecker.fails()) {
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * performs database integrity checks
+     *
+     * @param fields array of fields
+     * @param required boolean indicating if fields are required
+     */
+    private async validateDBChecks(fields: string[], required: boolean) {
+        for (const field of fields) {
+            const { checks } = this.resolvedRules[field];
+            if (checks.length > 0) {
+                const values = makeArray<string | boolean | number>(this.data[field]);
+
+                const len = values.length;
+                let i = -1;
+                while (++i < len && await this.runDBCheck(required, field, values[i], checks, i));
+            }
+        }
     }
 
     /**
@@ -146,6 +229,12 @@ export default class Handler {
         }
     }
 
+    /**
+     * performs data validation
+     *
+     * @param fields array of fields
+     * @param required boolean indicating if fields are required
+     */
     private async validateFields(fields: string[], required: boolean) {
 
         for (const field of fields) {
@@ -274,7 +363,7 @@ export default class Handler {
     }
 
     /**
-     * resolves the specific target objects within all resolvedrules
+     * resolves the specific target objects within all resolved rules
      */
     private resolveOptions(target: keyof ResolvedRule) {
         Object.keys(this.resolvedRules).forEach(field => {
@@ -287,7 +376,7 @@ export default class Handler {
      * extracts required fields and optional fields.
      * @param rules
      */
-    private processRules(rules: ResolvedRules) {
+    private categorizeRules(rules: ResolvedRules) {
         Object.keys(rules).forEach(field => {
             const rule = rules[field];
             if (rule.required) {
@@ -400,6 +489,7 @@ export default class Handler {
             else if (filters.toLower) {
                 result = (result as string).toLowerCase();
             }
+
             //capitalize
             else if (filters.capitalize) {
                 result = (result as string).charAt(0).toUpperCase() + (result as string).substring(1).toLowerCase();
@@ -453,7 +543,7 @@ export default class Handler {
      */
     private resolveRequiredIf(rules: ResolvedRules): ResolvedRules {
 
-        for (const [field, rule] of Object.entries(rules)) {
+        for (const [, rule] of Object.entries(rules)) {
 
             const requiredIf = rule.requiredIf;
             if (isObject<RequiredIf>(requiredIf)) {
@@ -520,13 +610,13 @@ export default class Handler {
             requiredIf: pickValue('requiredIf', rule, undefined),
             options: pickObject('options', rule),
             filters: pickObject('filters', rule),
-            checks: pickArray('checks', rule),
+            checks: makeArray(rule.checks as DBCheck[]),
         };
 
         //enclose the target field if it is not enclosed
         if (!isUndefined(result.options.shouldMatch)) {
             if (isString(result.options.shouldMatch)) {
-                result.options.shouldMatch = {target: result.options.shouldMatch};
+                result.options.shouldMatch = { target: result.options.shouldMatch };
             }
             if (result.options.shouldMatch.target.charAt(0) !== '{') {
                 result.options.shouldMatch.target = `{${result.options.shouldMatch.target}}`;
@@ -606,7 +696,7 @@ export default class Handler {
     }
 
     /**
-     * sets the validator if given
+     * sets the validator instance to use
      */
     setValidator(validator: Validator): this {
         validator.setErrorBag(this.errors);
@@ -615,10 +705,57 @@ export default class Handler {
     }
 
     /**
+     * sets the db checker instance to use
+     * @param dbChecker
+     */
+    setDBChecker(dbChecker: DBChecker): this {
+        dbChecker.setErrorBag(this.errors);
+        this.dbChecker = dbChecker;
+        return this;
+    }
+
+    /**
+     * sets the instance database model to use
+     * @param dbModel
+     */
+    setDBModel(dbModel: number) {
+        this.dbModel = dbModel;
+    }
+
+    /**
+     * sets the instance database model field case style to use
+     * @param dbModelCaseStyle
+     */
+    setDBModelCaseStyle(dbModelCaseStyle: number) {
+        this.dbModelCaseStyle = dbModelCaseStyle;
+    }
+
+    /**
      * sets the error message
      */
     setError(field: string, errorMessage: string): this {
         this.errors[field] = errorMessage;
+        return this;
+    }
+
+    /**
+     *
+     * @param field
+     * @param value
+     */
+    addField(field: string, value: DataValue) {
+        this.addedFields[field] = value as RawData;
+        return this;
+    }
+
+    /**
+     * add extra fields to the data to be validated
+     * @param fields object of field value pairs
+     */
+    addFields(fields: { [field: string]: DataValue }) {
+        Object.keys(fields).forEach(field => {
+            this.addField(field, fields[field]);
+        });
         return this;
     }
 
@@ -642,7 +779,7 @@ export default class Handler {
         if (validateOnDemand) {
             this.resolvedRules = this.filterRules(this.resolvedRules, requredFields);
         }
-        this.processRules(this.resolvedRules);
+        this.categorizeRules(this.resolvedRules);
 
         //resolve hints
         this.resolveOptions('hint');
@@ -657,9 +794,15 @@ export default class Handler {
         this.resolveOptions('options');
         this.resolveOptions('checks');
 
-        this.validator.setFiles(this.filesSource);
+        this.validator.setFiles(this.filesSource || {});
         await this.validateFields(this.requiredFields, true);
         await this.validateFields(this.optionalFields, false);
+
+        if (this.succeeds()) {
+            this.dbChecker.setDBModel(this.dbModel).setDBModelCaseStyle(this.dbModelCaseStyle);
+            await this.validateDBChecks(this.requiredFields, true);
+            await this.validateDBChecks(this.optionalFields, false);
+        }
 
         return this.succeeds();
     }
@@ -684,5 +827,19 @@ export default class Handler {
      */
     getResolvedRules() {
         return this.resolvedRules;
+    }
+
+    /**
+     * gets the instance current database model in use
+     */
+    getDBModel() {
+        return this.dbModel;
+    }
+
+    /**
+     * gets the instance current database model field case style in use
+     */
+    getDBModelCaseStyle() {
+        return this.dbModelCaseStyle;
     }
 }

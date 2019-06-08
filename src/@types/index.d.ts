@@ -57,7 +57,7 @@ export declare interface ErrorBag {
 }
 
 
-export declare interface DataTypeMethodMap {
+export declare interface DataTypeMethodMaps {
 
     // boolean rules
     checkbox: string;
@@ -92,7 +92,14 @@ export declare interface DataTypeMethodMap {
     document: string;
     archive: string;
 }
-export declare type DataType = keyof DataTypeMethodMap;
+export declare type DataType = keyof DataTypeMethodMaps;
+
+
+export declare interface DBCheckMethodMaps {
+    exists: string;
+    notExists: string;
+}
+export declare type DBCheckType = keyof DBCheckMethodMaps;
 
 
 export declare type RequiredIf = {
@@ -119,9 +126,22 @@ export declare interface Filters {
     callback?: FilterCallback
 }
 
-export declare type Options = BaseOptions | NumberOptions | TextOptions | RangeOptions
-    | ChoiceOptions;
-export declare interface DBCheck {}
+export declare type Options = BaseOptions | NumberOptions | TextOptions | RangeOptions | ChoiceOptions;
+
+
+export declare interface ModelDBCheck {
+    if: DBCheckType;
+    model: object;
+    field?: string;
+    query?: object;
+    err?: string;
+}
+export declare interface CallbackDBCheck {
+    if: DBCheckType;
+    callback: (fieldName: string, fieldValue: DataValue, fieldIndex: number) => Promise<boolean>;
+    err?: string;
+}
+export declare type DBCheck = CallbackDBCheck | ModelDBCheck;
 
 
 export declare type Rule = BooleanRule | CheckboxRule | TextRule | EmailRule | URLRule

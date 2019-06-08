@@ -9,9 +9,15 @@ describe('Common Module', function() {
         common = new Common();
     });
 
-    describe('#constructor(errorBag?: ErrorBag)', function() {
+    describe('#constructor()', function() {
         it(`should create a common instance`, function() {
-            expect(new Common({})).toBeInstanceOf(Common);
+            expect(new Common()).toBeInstanceOf(Common);
+        });
+    });
+
+    describe('#setErrorBag(errorBag: ErrorBag)', function() {
+        it(`should set the instance error bag and return this`, function() {
+            expect(common.setErrorBag({})).toBeInstanceOf(Common);
         });
     });
 
