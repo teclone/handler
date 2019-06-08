@@ -25,11 +25,6 @@ export default class Validator extends Common {
 
     private fileName: string = '';
 
-    constructor(errorBag?: ErrorBag, files?: FilesSource) {
-        super(errorBag);
-        this.setFiles(files);
-    }
-
     /**
      * gets the file type of the given file
      * @param filePath
@@ -282,10 +277,8 @@ export default class Validator extends Common {
     /**
      * sets the files source
      */
-    setFiles(files?: FilesSource | null) {
-        if (files) {
-            this.files = files;
-        }
+    setFiles(files: FilesSource) {
+        this.files = files;
         return this;
     }
 

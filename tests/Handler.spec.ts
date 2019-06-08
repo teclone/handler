@@ -9,111 +9,186 @@ import { range } from '@forensic-js/utils';
 import FieldRuleNotFoundException from '../src/Exceptions/FieldRuleNotFoundException';
 import CustomDate from '../src/CustomDate';
 import { DateRule, NumberRule } from '../src/@types/rules/NumberRules';
-import * as path from 'path';
-import { createFile, createFileCollection } from './helpers';
+import { createFile, createFileCollection, noSqlConnect, noSqlPopulate, noSqlDepopulate, noSqlDisconnect } from './helpers';
 import { ShouldMatchObject } from '../src/@types/rules/BaseRule';
+import DBChecker from '../src/DBChecker';
+import NoSqlUser from './helpers/nosql/models/User';
 
-class CustomValidator extends Validator {}
+class CustomValidator extends Validator { }
 
-describe('Handler Module', function() {
+class CustomDBChecker extends DBChecker { }
+
+describe('Handler Module', function () {
     let handler: Handler = null;
 
-    beforeEach(function() {
+    beforeEach(function () {
         handler = new Handler();
     });
 
-    describe(`#constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules,
-        validator?: Validator)`, function() {
-        it(`should create an instance with empty argument, defaulting the validator to the
-            internal validator`, function() {
-            expect(new Handler()).toBeInstanceOf(Handler);
-        });
+    describe('static setDBModel(dbModel: number)', function () {
+        it(`should set the global database model to use for all created instances`, function () {
+            expect(handler.getDBModel()).toEqual(Handler.DB_MODELS.NOSQL);
+            Handler.setDBModel(Handler.DB_MODELS.RELATIONAL);
+            handler = new Handler();
+            expect(handler.getDBModel()).toEqual(Handler.DB_MODELS.RELATIONAL);
 
-        it(`should use a custom validator if given`, function() {
-            expect(new Handler({}, {}, {}, new CustomValidator())).toBeInstanceOf(Handler);
+            Handler.setDBModel(Handler.DB_MODELS.NOSQL);
+
         });
     });
 
-    describe(`#setDataSource(dataSource?: DataSource): this`, function() {
-        it(`should set the given data source if given, returning the this object`, function() {
+    describe('static setDBModelCaseStyle(dbModel: number)', function () {
+        it(`should set the global database model case style to use for all created instances`, function () {
+            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            Handler.setDBModelCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            handler = new Handler();
+            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+
+            Handler.setDBModelCaseStyle(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+        });
+    });
+
+    describe(`#constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules,
+        validator?: Validator, dbChecker?: DBChecker)`, function () {
+        it(`should create an instance with empty argument, defaulting the validator to the
+        internal validator`, function () {
+                expect(new Handler()).toBeInstanceOf(Handler);
+            });
+
+        it(`should use a custom validator if given`, function () {
+            expect(new Handler({}, {}, {}, new CustomValidator())).toBeInstanceOf(Handler);
+        });
+
+        it(`should use a custom db checker if given`, function () {
+            expect(new Handler({}, {}, {}, new CustomValidator(), new CustomDBChecker())).toBeInstanceOf(Handler);
+        });
+    });
+
+    describe(`#setDataSource(dataSource?: DataSource): this`, function () {
+        it(`should set the given data source if given, returning the this object`, function () {
             expect(handler.setDataSource({})).toEqual(handler);
         });
     });
 
-    describe(`#setFilesSource(filesSource?: FilesSource): this`, function() {
-        it(`should set the given files source if given, returning the this object`, function() {
+    describe(`#setFilesSource(filesSource?: FilesSource): this`, function () {
+        it(`should set the given files source if given, returning the this object`, function () {
             expect(handler.setFilesSource({})).toEqual(handler);
         });
     });
 
-    describe(`#setRules(rules?: Rules): this`, function() {
-        it(`should set the given field rules if given, returning the this object`, function() {
+    describe(`#setRules(rules?: Rules): this`, function () {
+        it(`should set the given field rules if given, returning the this object`, function () {
             expect(handler.setRules({})).toEqual(handler);
         });
     });
 
-    describe(`#setError(field: string, errorMessage: string): this`, function() {
-        it(`should set the given error message for the given field name, returning the this object`, function() {
+    describe(`#setValidator(validator: Validator): this`, function () {
+        it(`should set the given validator as instance validator module, returning itself`, function () {
+            expect(handler.setValidator(new CustomValidator)).toEqual(handler);
+        });
+    });
+
+    describe(`#setDBChecker(dbChecker: DBChecker): this`, function () {
+        it(`should set the given database integrity checker as instance dbChecker module,
+            returning itself`, function () {
+                expect(handler.setDBChecker(new CustomDBChecker)).toEqual(handler);
+            });
+    });
+
+    describe(`#setError(field: string, errorMessage: string): this`, function () {
+        it(`should set the given error message for the given field name, returning the this object`, function () {
             expect(handler.setError('first-name', 'first name is not given')).toEqual(handler);
         });
     });
 
-    describe(`#getResolvedRules(): ResolvedRules`, function() {
-        it(`should return the resolved rules object`, function() {
+    describe('#setDBModel(dbModel: number)', function () {
+        it(`should override the instance database model to use`, function () {
+            expect(handler.getDBModel()).toEqual(Handler.DB_MODELS.NOSQL);
+
+            handler.setDBModel(Handler.DB_MODELS.RELATIONAL);
+            expect(handler.getDBModel()).toEqual(Handler.DB_MODELS.RELATIONAL);
+        });
+    });
+
+    describe('#setDBModelCaseStyle(dbModel: number)', function () {
+        it(`should override the instance database model case style to use`, function () {
+            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            handler.setDBModelCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+        });
+    });
+
+    describe(`#getResolvedRules(): ResolvedRules`, function () {
+        it(`should return the resolved rules object`, function () {
             expect(handler.getResolvedRules()).toEqual({});
         });
     });
 
-    describe(`async #execute(validateOnDemand: boolean = false, requredFields: string[] | string = '')`, function() {
+    describe(`#addField(field: string, value: DataValue)`, function () {
+        it(`should add the given field to the data source and return this`, function () {
+            expect(handler.addField('name', 'Harrison')).toEqual(handler);
+        });
+    });
 
-        it(`should throw error if data source is not set`, async function(done) {
+    describe(`#addFields(fields: {[field: string]: DataValue})`, function () {
+        it(`should add the given fields to the data source and return this`, function () {
+            const fields = {
+                name: 'Harrison'
+            }
+            expect(handler.addFields(fields)).toEqual(handler);
+        });
+    });
+
+    describe(`async #execute(validateOnDemand: boolean = false, requredFields: string[] | string = '')`, function () {
+
+        it(`should throw error if data source is not set`, async function (done) {
             const handler = new Handler();
             try {
                 await handler.execute();
             }
-            catch(ex) {
+            catch (ex) {
                 expect(ex).toBeInstanceOf(DataSourceNotSetException);
                 done();
             }
         });
 
-        it(`should throw error if field rules is not set`, async function(done) {
+        it(`should throw error if field rules is not set`, async function (done) {
             const handler = new Handler({});
             try {
                 await handler.execute();
             }
-            catch(ex) {
+            catch (ex) {
                 expect(ex).toBeInstanceOf(RulesNotSetException);
                 done();
             }
         });
 
-        it(`should throw error if a handler instance is executed twice`, async function(done) {
+        it(`should throw error if a handler instance is executed twice`, async function (done) {
             const handler = new Handler({}, undefined, {});
             await handler.execute();
             try {
                 await handler.execute();
             }
-            catch(ex) {
+            catch (ex) {
                 expect(ex).toBeInstanceOf(StateException);
                 done();
             }
         });
 
-        it(`should throw error if a file field type is specified without supplying files source`, async function(done) {
+        it(`should throw error if a file field type is specified without supplying files source`, async function (done) {
             const handler = new Handler({}, undefined, {
                 imageFile: 'image'
             });
             try {
                 await handler.execute();
             }
-            catch(ex) {
+            catch (ex) {
                 expect(ex).toBeInstanceOf(FilesSourceNotSetException);
                 done();
             }
         });
 
-        it(`should resolve field rules prior to execution`, function() {
+        it(`should resolve field rules prior to execution`, function () {
             const handler = new Handler({}, undefined, {
                 firstName: 'text',
                 password1: 'password',
@@ -131,38 +206,38 @@ describe('Handler Module', function() {
         });
     });
 
-    describe(`rule type resolution`, function() {
+    describe(`rule type resolution`, function () {
         it(`should resolve rule type, puting the type inside an object if it is specified as
-        string`, function() {
-            const handler = new Handler({}, undefined, {
-                password: 'password'
+        string`, function () {
+                const handler = new Handler({}, undefined, {
+                    password: 'password'
+                });
+                return handler.execute().then(() => {
+                    const resolvedRules = handler.getResolvedRules();
+                    expect(resolvedRules.password.type).toEqual('password');
+                });
             });
-            return handler.execute().then(() => {
-                const resolvedRules = handler.getResolvedRules();
-                expect(resolvedRules.password.type).toEqual('password');
-            });
-        });
 
         it(`should resolve shouldMatch rule option, adding begining and enclosing brackets if not
-        present`, function() {
-            const handler = new Handler({}, undefined, {
-                password1: 'password',
-                password2: {
-                    type: 'password',
-                    options: {
-                        shouldMatch: {
-                            target: 'password1'
+        present`, function () {
+                const handler = new Handler({}, undefined, {
+                    password1: 'password',
+                    password2: {
+                        type: 'password',
+                        options: {
+                            shouldMatch: {
+                                target: 'password1'
+                            }
                         }
                     }
-                }
+                });
+                return handler.execute().then(() => {
+                    const resolvedRules = handler.getResolvedRules();
+                    expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
+                });
             });
-            return handler.execute().then(() => {
-                const resolvedRules = handler.getResolvedRules();
-                expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
-            });
-        });
 
-        it(`should set checkbox rule type as optional`, function() {
+        it(`should set checkbox rule type as optional`, function () {
             const handler = new Handler({}, undefined, {
                 termsAndCondition: {
                     type: 'checkbox'
@@ -175,8 +250,8 @@ describe('Handler Module', function() {
         });
     });
 
-    describe(`Placeholders resolution`, function() {
-        it(`should resolve rules, replacing every occurence of {_this} with the field name`, function() {
+    describe(`Placeholders resolution`, function () {
+        it(`should resolve rules, replacing every occurence of {_this} with the field name`, function () {
             const handler = new Handler({}, undefined, {
                 password: {
                     type: 'password',
@@ -189,7 +264,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve rules, replacing every occurence of {current_date} with current date string`, function() {
+        it(`should resolve rules, replacing every occurence of {current_date} with current date string`, function () {
             const data = {
                 date: '2018-01-01'
             };
@@ -209,7 +284,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve rules, replacing every occurence of {current_year} with current year string`, function() {
+        it(`should resolve rules, replacing every occurence of {current_year} with current year string`, function () {
             const data = {
                 year: '2018'
             };
@@ -228,7 +303,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve rules, replacing every occurence of {current_time} with current timestamp string`, function() {
+        it(`should resolve rules, replacing every occurence of {current_time} with current timestamp string`, function () {
             const data = {
                 time: '201810101001'
             };
@@ -247,7 +322,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve rules, leaving values with no relevant placeholders untouched`, function() {
+        it(`should resolve rules, leaving values with no relevant placeholders untouched`, function () {
             const data = {
                 time: '201810101001',
                 country: 'Ng'
@@ -274,11 +349,11 @@ describe('Handler Module', function() {
         });
     });
 
-    describe(`requiredIf resolution`, function() {
+    describe(`requiredIf resolution`, function () {
         const countries = ['ng', 'fi', 'pl', 'fr', 'en'];
         const months = range(0, 11).map(value => value.toString());
 
-        it(`should resolve the requiredIf notChecked rule, making field required if condition is met`, function() {
+        it(`should resolve the requiredIf notChecked rule, making field required if condition is met`, function () {
 
             const data = {
                 isCurrentWork: 'false'
@@ -305,7 +380,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve the requiredIf checked rule, making field required if condition is met`, function() {
+        it(`should resolve the requiredIf checked rule, making field required if condition is met`, function () {
             const data = {
                 subscribe: 'true'
             };
@@ -327,7 +402,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve the requiredIf equals rule, making field required if condition is met`, function() {
+        it(`should resolve the requiredIf equals rule, making field required if condition is met`, function () {
             const data = {
                 country: 'ng'
             };
@@ -356,7 +431,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should resolve the requiredIf notEquals rule, making field required if condition is met`, function() {
+        it(`should resolve the requiredIf notEquals rule, making field required if condition is met`, function () {
             const data = {
                 country: 'pl'
             };
@@ -385,7 +460,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should throw error if the requiredIf target field rule is not defined`, async function(done) {
+        it(`should throw error if the requiredIf target field rule is not defined`, async function (done) {
             const data = {
                 country: 'pl'
             };
@@ -405,15 +480,15 @@ describe('Handler Module', function() {
             try {
                 await handler.execute();
             }
-            catch(ex) {
+            catch (ex) {
                 expect(ex).toBeInstanceOf(FieldRuleNotFoundException);
                 done();
             }
         });
     });
 
-    describe(`Validate OnDemand Rule Filteration`, function() {
-        it(`should filter rules, validating only fields that are sent, whose rules where defined`, function() {
+    describe(`Validate OnDemand Rule Filteration`, function () {
+        it(`should filter rules, validating only fields that are sent, whose rules where defined`, function () {
 
             const files: FilesSource = {
                 cv: createFile()
@@ -441,31 +516,31 @@ describe('Handler Module', function() {
         });
 
         it(`should pick up rules for extra required fields even when there data are not
-            sent`, function() {
+            sent`, function () {
 
-            const rules: Rules = {
-                firstName: 'text',
-                lastName: 'text',
-                email: 'email',
-                dateOfBirth: 'date'
-            };
+                const rules: Rules = {
+                    firstName: 'text',
+                    lastName: 'text',
+                    email: 'email',
+                    dateOfBirth: 'date'
+                };
 
-            const data: DataSource = {
-                email: 'example.com'
-            };
+                const data: DataSource = {
+                    email: 'example.com'
+                };
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true, ['firstName', 'dateOfBirth']).then(() => {
-                const resolvedRules = handler.getResolvedRules();
-                expect(resolvedRules).toHaveProperty('firstName');
-                expect(resolvedRules).toHaveProperty('dateOfBirth');
-                expect(resolvedRules).not.toHaveProperty('lastName');
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true, ['firstName', 'dateOfBirth']).then(() => {
+                    const resolvedRules = handler.getResolvedRules();
+                    expect(resolvedRules).toHaveProperty('firstName');
+                    expect(resolvedRules).toHaveProperty('dateOfBirth');
+                    expect(resolvedRules).not.toHaveProperty('lastName');
+                });
             });
-        });
     });
 
-    describe(`Data Filters`, function() {
-        it(`should cast data values to boolean if rule type is either checkbox or boolean`, function() {
+    describe(`Data Filters`, function () {
+        it(`should cast data values to boolean if rule type is either checkbox or boolean`, function () {
 
             const data: DataSource = {
                 subscribe: 'false',
@@ -484,122 +559,121 @@ describe('Handler Module', function() {
         });
 
         it(`should decode data values by default unless the decode filter rule option is explicitly
-        set to false`, function() {
-            const name = 'Harrison Ifeanyichukwu';
-            const encodedName = encodeURIComponent(name);
+        set to false`, function () {
+                const name = 'Harrison Ifeanyichukwu';
+                const encodedName = encodeURIComponent(name);
 
-            const data: DataSource = {
-                name1: encodedName,
-                name2: encodedName,
-                name3: encodedName
-            };
+                const data: DataSource = {
+                    name1: encodedName,
+                    name2: encodedName,
+                    name3: encodedName
+                };
 
-            const rules: Rules = {
-                name1: 'text',
-                name2: {
-                    filters: {
-                        decode: true
-                    }
-                },
-                name3: {
-                    filters: {
-                        decode: false
-                    }
-                },
-            }
+                const rules: Rules = {
+                    name1: 'text',
+                    name2: {
+                        filters: {
+                            decode: true
+                        }
+                    },
+                    name3: {
+                        filters: {
+                            decode: false
+                        }
+                    },
+                }
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.name1).toStrictEqual(name);
-                expect(handler.data.name2).toStrictEqual(name);
-                expect(handler.data.name3).toStrictEqual(encodedName);
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.name1).toStrictEqual(name);
+                    expect(handler.data.name2).toStrictEqual(name);
+                    expect(handler.data.name3).toStrictEqual(encodedName);
+                });
             });
-        });
 
         it(`should strip out html tags by default unless the stripTags filter rule option is
-            explicitly set to false`, function() {
+            explicitly set to false`, function () {
 
-            const name = 'Harrison Ifeanyichukwu';
-            const text = `<p><i>${name}</i><br></p>`;
+                const name = 'Harrison Ifeanyichukwu';
+                const text = `<p><i>${name}</i><br></p>`;
 
-            const data: DataSource = {
-                text1: text,
-                text2: text,
-                text3: text
-            };
+                const data: DataSource = {
+                    text1: text,
+                    text2: text,
+                    text3: text
+                };
 
-            const rules: Rules = {
-                text1: 'text',
-                text2: {
-                    filters: {
-                        stripTags: true
-                    }
-                },
-                text3: {
-                    filters: {
-                        stripTags: false
-                    }
-                },
-            };
+                const rules: Rules = {
+                    text1: 'text',
+                    text2: {
+                        filters: {
+                            stripTags: true
+                        }
+                    },
+                    text3: {
+                        filters: {
+                            stripTags: false
+                        }
+                    },
+                };
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.text1).toStrictEqual(name);
-                expect(handler.data.text2).toStrictEqual(name);
-                expect(handler.data.text3).toStrictEqual(text);
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.text1).toStrictEqual(name);
+                    expect(handler.data.text2).toStrictEqual(name);
+                    expect(handler.data.text3).toStrictEqual(text);
+                });
             });
-        });
 
-        it(`should not remove tags defined in the user defined stripTagsIgnore filter
-            options`, function() {
+        it(`should not remove tags defined in the user defined stripTagsIgnore filter options`, function () {
 
-            const name = 'Harrison Ifeanyichukwu';
-            const text = `<p><i>${name}</i><br></p>`;
+                const name = 'Harrison Ifeanyichukwu';
+                const text = `<p><i>${name}</i><br></p>`;
 
-            const data: DataSource = {
-                text1: text,
-            };
+                const data: DataSource = {
+                    text1: text,
+                };
 
-            const rules: Rules = {
-                text1: {
-                    filters: {
-                        stripTags: true,
-                        stripTagsIgnore: 'p,<br>'
-                    }
-                },
-            }
+                const rules: Rules = {
+                    text1: {
+                        filters: {
+                            stripTags: true,
+                            stripTagsIgnore: 'p,<br>'
+                        }
+                    },
+                }
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.text1).toStrictEqual(`<p>${name}<br></p>`);
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.text1).toStrictEqual(`<p>${name}<br></p>`);
+                });
             });
-        });
 
         it(`should trim and remove empty lines if the minimize filter option is set to true
-            options`, function() {
+            options`, function () {
 
-            const text = `  This text enters new line
+                const text = `  This text enters new line
             which starts here`;
 
-            const data: DataSource = {
-                text1: text,
-            };
+                const data: DataSource = {
+                    text1: text,
+                };
 
-            const rules: Rules = {
-                text1: {
-                    filters: {
-                        minimize: true
-                    }
-                },
-            }
+                const rules: Rules = {
+                    text1: {
+                        filters: {
+                            minimize: true
+                        }
+                    },
+                }
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.text1).toStrictEqual(`This text enters new line which starts here`);
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.text1).toStrictEqual(`This text enters new line which starts here`);
+                });
             });
-        });
 
-        it(`should trim texts by default unless the trim filter option is explicitly set to false`, function() {
+        it(`should trim texts by default unless the trim filter option is explicitly set to false`, function () {
 
             const text = `  My text       `;
 
@@ -625,37 +699,37 @@ describe('Handler Module', function() {
         });
 
         it(`should cast value to float if the toNumeric filter option is explicitly set to true,
-            assigning 0 if value is not numeric`, function() {
+            assigning 0 if value is not numeric`, function () {
 
-            const numericText = '200AD';
-            const nonNumericText = 'AD30';
+                const numericText = '200AD';
+                const nonNumericText = 'AD30';
 
-            const data: DataSource = {
-                num1: numericText,
-                num2: nonNumericText
-            };
+                const data: DataSource = {
+                    num1: numericText,
+                    num2: nonNumericText
+                };
 
-            const rules: Rules = {
-                num1: {
-                    filters: {
-                        toNumeric: true
-                    }
-                },
-                num2: {
-                    filters: {
-                        toNumeric: true
-                    }
-                },
-            }
+                const rules: Rules = {
+                    num1: {
+                        filters: {
+                            toNumeric: true
+                        }
+                    },
+                    num2: {
+                        filters: {
+                            toNumeric: true
+                        }
+                    },
+                }
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.num1).toStrictEqual(200);
-                expect(handler.data.num2).toStrictEqual(0);
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.num1).toStrictEqual(200);
+                    expect(handler.data.num2).toStrictEqual(0);
+                });
             });
-        });
 
-        it(`should transform values to upper case if the toUpper filter option is explicitly set to true`, function() {
+        it(`should transform values to upper case if the toUpper filter option is explicitly set to true`, function () {
 
             const names = ['jack', 'jane', 'janet', 'julius'];
 
@@ -677,7 +751,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should transform values to lowercase case if the toLower filter option is explicitly set to true`, function() {
+        it(`should transform values to lowercase case if the toLower filter option is explicitly set to true`, function () {
 
             const names = ['jack', 'jane', 'janet', 'julius'];
 
@@ -699,7 +773,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should capitalize values if the capitalize filter option is explicitly set to true`, function() {
+        it(`should capitalize values if the capitalize filter option is explicitly set to true`, function () {
 
             const names = ['jack', 'jane', 'janet', 'julius'];
 
@@ -723,7 +797,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should sanitize/remove disallowed characters if field type is email`, function() {
+        it(`should sanitize/remove disallowed characters if field type is email`, function () {
 
             const email = '(someone@example.com)';
 
@@ -741,7 +815,7 @@ describe('Handler Module', function() {
             });
         });
 
-        it(`should sanitize/remove disallowed characters if field type is url`, function() {
+        it(`should sanitize/remove disallowed characters if field type is url`, function () {
 
             const url = 'http://www.example<>.com';
 
@@ -760,87 +834,87 @@ describe('Handler Module', function() {
         });
 
         it(`should cast value to integer if field type is int, pInt or nInt, and value is
-            numeric`, function() {
-            const numericValue = '-20ad';
-            const nonNumericValue = 'ad-20';
+            numeric`, function () {
+                const numericValue = '-20ad';
+                const nonNumericValue = 'ad-20';
 
-            const data: DataSource = {
-                num1: numericValue,
-                num2: numericValue,
-                num3: numericValue,
-                num4: nonNumericValue
-            };
+                const data: DataSource = {
+                    num1: numericValue,
+                    num2: numericValue,
+                    num3: numericValue,
+                    num4: nonNumericValue
+                };
 
-            const rules: Rules = {
-                num1: 'int',
-                num2: 'pInt',
-                num3: 'nInt',
-                num4: 'int'
-            }
+                const rules: Rules = {
+                    num1: 'int',
+                    num2: 'pInt',
+                    num3: 'nInt',
+                    num4: 'int'
+                }
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.num1).toEqual(-20);
-                expect(handler.data.num2).toEqual(-20);
-                expect(handler.data.num3).toEqual(-20);
-                expect(handler.data.num4).toEqual('ad-20');
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.num1).toEqual(-20);
+                    expect(handler.data.num2).toEqual(-20);
+                    expect(handler.data.num3).toEqual(-20);
+                    expect(handler.data.num4).toEqual('ad-20');
+                });
             });
-        });
 
         it(`should cast value to float if field type is number, pNumber or nNumber, and value is
-            numeric`, function() {
-            const numericValue = '-20.2ad';
-            const nonNumericValue = 'ad-20.2';
+            numeric`, function () {
+                const numericValue = '-20.2ad';
+                const nonNumericValue = 'ad-20.2';
 
-            const data: DataSource = {
-                num1: numericValue,
-                num2: numericValue,
-                num3: numericValue,
-                num4: nonNumericValue
-            };
+                const data: DataSource = {
+                    num1: numericValue,
+                    num2: numericValue,
+                    num3: numericValue,
+                    num4: nonNumericValue
+                };
 
-            const rules: Rules = {
-                num1: 'number',
-                num2: 'pNumber',
-                num3: 'nNumber',
-                num4: 'number'
-            }
+                const rules: Rules = {
+                    num1: 'number',
+                    num2: 'pNumber',
+                    num3: 'nNumber',
+                    num4: 'number'
+                }
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(handler.data.num1).toEqual(-20.2);
-                expect(handler.data.num2).toEqual(-20.2);
-                expect(handler.data.num3).toEqual(-20.2);
-                expect(handler.data.num4).toEqual('ad-20.2');
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(handler.data.num1).toEqual(-20.2);
+                    expect(handler.data.num2).toEqual(-20.2);
+                    expect(handler.data.num3).toEqual(-20.2);
+                    expect(handler.data.num4).toEqual('ad-20.2');
+                });
             });
-        });
 
         it(`should call the given filter callback if defined, passing in the value as the only argument
-        to the callback`, function() {
-            const callback = jest.fn((value) => value.toUpperCase());
+        to the callback`, function () {
+                const callback = jest.fn((value) => value.toUpperCase());
 
-            const data: DataSource = {
-                text: 'abcd'
-            };
+                const data: DataSource = {
+                    text: 'abcd'
+                };
 
-            const rules: Rules = {
-                text: {
-                    filters: {
-                        callback
+                const rules: Rules = {
+                    text: {
+                        filters: {
+                            callback
+                        }
                     }
-                }
-            };
+                };
 
-            const handler = new Handler(data, undefined, rules);
-            return handler.execute(true).then(() => {
-                expect(callback.mock.calls[0][0]).toEqual('abcd');
-                expect(handler.data.text).toEqual('ABCD');
+                const handler = new Handler(data, undefined, rules);
+                return handler.execute(true).then(() => {
+                    expect(callback.mock.calls[0][0]).toEqual('abcd');
+                    expect(handler.data.text).toEqual('ABCD');
+                });
             });
-        });
     });
 
-    describe('Missing fields', function() {
-        it(`should detect all missing fields before proceeding to validations`, function() {
+    describe('Missing fields', function () {
+        it(`should detect all missing fields before proceeding to validations`, function () {
 
             const data = {
                 languages: [],
@@ -868,8 +942,8 @@ describe('Handler Module', function() {
         });
     });
 
-    describe('Optional fields & Default values', function() {
-        it(`should not flag fields as missing if they are declared optional`, function() {
+    describe('Optional fields & Default values', function () {
+        it(`should not flag fields as missing if they are declared optional`, function () {
 
             const data = {
                 languages: ['fr', 'en-US', 'en-UK'],
@@ -898,51 +972,123 @@ describe('Handler Module', function() {
         });
 
         it(`should set the value of missing optional fields with the defaultValue option if
-        given`, function() {
+        given`, function () {
 
-            const data = {
-                languages: [],
-                firstName: ''
-            };
+                const data = {
+                    languages: [],
+                    firstName: ''
+                };
 
-            const files: FilesSource = {
-                cv: createFile(),
-                cvs: createFileCollection()
-            };
+                const files: FilesSource = {
+                    cv: createFile(),
+                    cvs: createFileCollection()
+                };
 
-            const rules: Rules = {
-                languages: {
-                    defaultValue: ['english']
-                },
-                firstName: {
-                    defaultValue: 'Mustermann'
-                },
-                image: {
-                    type: 'image',
-                    defaultValue: 'default-image.png'
-                },
-                cv: 'document',
-                cvs: 'document'
-            };
+                const rules: Rules = {
+                    languages: {
+                        defaultValue: ['english']
+                    },
+                    firstName: {
+                        defaultValue: 'Mustermann'
+                    },
+                    image: {
+                        type: 'image',
+                        defaultValue: 'default-image.png'
+                    },
+                    cv: 'document',
+                    cvs: 'document'
+                };
 
-            const handler = new Handler(data, files, rules);
-            return handler.execute().then(status => {
-                expect(status).toBeTruthy();
+                const handler = new Handler(data, files, rules);
+                return handler.execute().then(status => {
+                    expect(status).toBeTruthy();
+                });
             });
-        });
     });
 
-    describe(`#succeeds()`, function() {
-        it(`should return true if the handler has been executed and was successful`, function() {
+    describe(`#succeeds()`, function () {
+        it(`should return true if the handler has been executed and was successful`, function () {
             const handler = new Handler({}, {}, {});
             expect(handler.succeeds()).toBeFalsy();
         });
     });
 
-    describe(`#fails()`, function() {
-        it(`should return true if the handler has not been executed and or its execution was unsuccessful`, function() {
+    describe(`#fails()`, function () {
+        it(`should return true if the handler has not been executed and or its execution was unsuccessful`, function () {
             const handler = new Handler({}, {}, {});
             expect(handler.fails()).toBeTruthy();
+        });
+    });
+
+    describe(`Database checks`, function() {
+        beforeEach(async function() {
+            await noSqlConnect();
+            await noSqlPopulate();
+        });
+
+        afterEach(async function() {
+            await noSqlDepopulate();
+            await noSqlDisconnect();
+        });
+
+        it(`should carry out database checks on fields if all validations succeeds`, async function() {
+            handler.setDataSource({
+                firstName: 'Harrison',
+                email: 'someone30@example.com'
+            });
+
+            handler.setRules({
+                firstName: {
+                    checks: {
+                        if: 'exists',
+                        model: NoSqlUser,
+                        err: '{this} already exists'
+                    }
+                },
+                email: {
+                    checks: {
+                        if: 'exists',
+                        model: NoSqlUser,
+                        err: 'email address already exists'
+                    }
+                }
+            });
+
+            return handler.execute().then(status => {
+                expect(status).toBeFalsy();
+                expect(handler.errors.firstName).toEqual('"Harrison" already exists');
+            });
+        });
+
+        it(`should carry out database calling the given async callback, it should pass
+        in the field name`, async function() {
+
+            handler.setDataSource({
+                firstName: 'Harrison',
+                email: 'someone30@example.com'
+            });
+
+            const callback = jest.fn(async () => true);
+
+            handler.setRules({
+                firstName: {
+                    checks: {
+                        if: 'exists',
+                        callback
+                    }
+                },
+                email: {
+                    checks: {
+                        if: 'exists',
+                        callback: async () => false
+                    }
+                }
+            });
+
+            return handler.execute().then(status => {
+                expect(status).toBeFalsy();
+                expect(handler.errors.firstName).toEqual('condition not satisfied');
+            });
         });
     });
 });

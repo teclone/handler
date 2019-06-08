@@ -5,4 +5,7 @@ module.exports = {
         '^.+\\.tsx?$': 'babel-jest'
     },
     testRegex: '\\.spec\\.ts',
+    setupFiles: [
+        './test.setup.js'
+    ]
 };

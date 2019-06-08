@@ -4,31 +4,29 @@ import * as fs from 'fs';
 import * as path from 'path';
 import DirectoryNotFoundException from '../src/Exceptions/DirectoryNotFoundException';
 import FileMoveException from '../src/Exceptions/FileMoveException';
-import { Regex } from '../src/@types';
+import Common from '../src/Common';
 
 describe('Validator', function() {
 
     let validator: Validator = null;
 
     beforeEach(function() {
-        validator = new Validator({}, {});
+        validator = new Validator();
     });
 
-    describe('#constructor(errorBag?: ErrorBag, files?: FilesSource)', function() {
+    describe('#constructor()', function() {
         it(`should create a validator instance when called`, function() {
             expect(new Validator()).toBeInstanceOf(Validator);
         });
-    });
 
-    describe('#setFiles(files?: FilesSource | null)', function() {
-        it(`should set the files object if given, return this object`, function() {
-            expect(validator.setFiles({})).toEqual(validator);
+        it(`should inherit from Common module`, function() {
+            expect(new Validator()).toBeInstanceOf(Common);
         });
     });
 
-    describe('#setErrorBag(errorBag)', function() {
-        it(`should set the error bag object if given`, function() {
-            expect(validator.setErrorBag({})).toEqual(validator);
+    describe('#setFiles(files: FilesSource)', function() {
+        it(`should set the files object, return this object`, function() {
+            expect(validator.setFiles({})).toEqual(validator);
         });
     });
 
@@ -440,7 +438,7 @@ describe('Validator', function() {
 
         it(`should return false if file size did not meet size specifications`, function() {
             const file = createFile();
-            const validator = new Validator({}, {file});
+            validator.setFiles({file});
 
             return validator.validateFile(true, 'file', '', {
                 min: file.size + 1000000
@@ -451,7 +449,7 @@ describe('Validator', function() {
 
         it(`should return false if file extension is not allowed`, function() {
             const file = createFile();
-            const validator = new Validator({}, {file});
+            validator.setFiles({file});
 
             return validator.validateFile(true, 'file', '', {
                 exts: ['jpg', 'png']
@@ -464,7 +462,7 @@ describe('Validator', function() {
         it(`should move file after validation if the moveTo option is specified`, function() {
             const file = createFile();
             const moveTo = getFilesDirectory();
-            const validator = new Validator({}, {file});
+            validator.setFiles({file});
 
             return validator.validateFile(true, 'file', '', {moveTo}, 0).then(status => {
                 const filename = validator.getFileName();
@@ -480,7 +478,7 @@ describe('Validator', function() {
         it(`should throw error if specified moveTo folder does not exist`, function() {
             const file = createFile();
             const moveTo = 'some/unknown/directory';
-            const validator = new Validator({}, {file});
+            validator.setFiles({file});
 
             return validator.validateFile(true, 'file', '', {moveTo}, 0).catch(ex => ex).then(ex => {
                 expect(ex).toBeInstanceOf(DirectoryNotFoundException);
@@ -491,7 +489,7 @@ describe('Validator', function() {
 
             const file = createFile();
             const moveTo = getFilesDirectory();
-            const validator = new Validator({}, {file});
+            validator.setFiles({file});
 
             //lock the files directory
             fs.chmodSync(moveTo, '0575');
@@ -507,7 +505,7 @@ describe('Validator', function() {
 
         it(`should validate image files`, function() {
 
-            const validator = new Validator({}, {
+            validator.setFiles({
                 image: createFile()
             });
             return validator.validateImage(true, 'image', '', {}, 0).then(status => {
@@ -522,7 +520,7 @@ describe('Validator', function() {
 
         it(`should validate audio files`, function() {
 
-            const validator = new Validator({}, {
+            validator.setFiles({
                 audio: createFile()
             });
             return validator.validateAudio(true, 'audio', '', {}, 0).then(status => {
@@ -537,7 +535,7 @@ describe('Validator', function() {
 
         it(`should validate video files`, function() {
 
-            const validator = new Validator({}, {
+            validator.setFiles({
                 video: createFile()
             });
             return validator.validateVideo(true, 'video', '', {}, 0).then(status => {
@@ -552,7 +550,7 @@ describe('Validator', function() {
 
         it(`should validate media files`, function() {
 
-            const validator = new Validator({}, {
+            validator.setFiles({
                 media: createFile()
             });
             return validator.validateMedia(true, 'media', '', {}, 0).then(status => {
@@ -567,7 +565,7 @@ describe('Validator', function() {
 
         it(`should validate document files`, function() {
 
-            const validator = new Validator({}, {
+            validator.setFiles({
                 document: createFile()
             });
             return validator.validateDocument(true, 'document', '', {}, 0).then(status => {
@@ -581,7 +579,7 @@ describe('Validator', function() {
 
         it(`should validate archive files`, function() {
 
-            const validator = new Validator({}, {
+            validator.setFiles({
                 archive: createFile()
             });
             return validator.validateArchive(true, 'archive', '', {}, 0).then(status => {
