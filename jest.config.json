@@ -1,4 +1,0 @@
-{
-    "collectCoverage": true,
-    "globalSetup": "./tests/globalSetup.js"
-}

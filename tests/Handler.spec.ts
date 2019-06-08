@@ -4,7 +4,7 @@ import DataSourceNotSetException from '../src/Exceptions/DataSourceNotSetExcepti
 import RulesNotSetException from '../src/Exceptions/RulesNotSetException';
 import StateException from '../src/Exceptions/StateException';
 import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
-import { Rules, DataSource, FilesSource } from '../src/@types';
+import { Rules, DataSource, FilesSource, DataValue } from '../src/@types';
 import { range } from '@forensic-js/utils';
 import FieldRuleNotFoundException from '../src/Exceptions/FieldRuleNotFoundException';
 import CustomDate from '../src/CustomDate';
@@ -1006,20 +1006,6 @@ describe('Handler Module', function () {
             });
     });
 
-    describe(`#succeeds()`, function () {
-        it(`should return true if the handler has been executed and was successful`, function () {
-            const handler = new Handler({}, {}, {});
-            expect(handler.succeeds()).toBeFalsy();
-        });
-    });
-
-    describe(`#fails()`, function () {
-        it(`should return true if the handler has not been executed and or its execution was unsuccessful`, function () {
-            const handler = new Handler({}, {}, {});
-            expect(handler.fails()).toBeTruthy();
-        });
-    });
-
     describe(`Database checks`, function() {
         beforeEach(async function() {
             await noSqlConnect();
@@ -1060,8 +1046,8 @@ describe('Handler Module', function () {
             });
         });
 
-        it(`should carry out database calling the given async callback, it should pass
-        in the field name`, async function() {
+        it(`should carry out database check calling the given async callback, it should pass
+        in the field name, field value and field index`, async function() {
 
             handler.setDataSource({
                 firstName: 'Harrison',
@@ -1069,7 +1055,6 @@ describe('Handler Module', function () {
             });
 
             const callback = jest.fn(async () => true);
-
             handler.setRules({
                 firstName: {
                     checks: {
@@ -1089,6 +1074,41 @@ describe('Handler Module', function () {
                 expect(status).toBeFalsy();
                 expect(handler.errors.firstName).toEqual('condition not satisfied');
             });
+        });
+    });
+
+    describe(`Data PostComputation`, function() {
+        it(`should call the postCompute callback if defined, after all validations
+            has succeeded`, function() {
+            const dataSource: DataSource = {
+                firstName: 'Harrison',
+                email: 'someone@example.com'
+            };
+            const rules: Rules = {
+                firstName: 'text',
+                email: {
+                    postCompute: jest.fn(
+                        (value: DataValue) => Promise.resolve(value.toString().toUpperCase())
+                    )
+                }
+            };
+            return handler.setDataSource(dataSource).setRules(rules).execute().then(() => {
+                expect(handler.data.email).toEqual('SOMEONE@EXAMPLE.COM');
+            });
+        });
+    });
+
+    describe(`#succeeds()`, function () {
+        it(`should return true if the handler has been executed and was successful`, function () {
+            const handler = new Handler({}, {}, {});
+            expect(handler.succeeds()).toBeFalsy();
+        });
+    });
+
+    describe(`#fails()`, function () {
+        it(`should return true if the handler has not been executed and or its execution was unsuccessful`, function () {
+            const handler = new Handler({}, {}, {});
+            expect(handler.fails()).toBeTruthy();
         });
     });
 });

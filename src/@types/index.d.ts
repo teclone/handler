@@ -170,6 +170,11 @@ export declare interface ResolvedRule {
     filters: Filters;
 
     checks: DBCheck[];
+
+    /**
+     * computes field value after all validations succeeds
+     */
+    postCompute?: (value: DataValue) => Promise<DataValue>;
 }
 export declare interface ResolvedRules {
     [field: string]: ResolvedRule;
