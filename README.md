@@ -78,6 +78,14 @@ It is also extensible, customizable so that you can define more custom validatio
 npm install --save forensic-handler
 ```
 
+## Development & Testing
+
+before working with development version of this project and running test, you need to setup **mysql** database and connection credentials, and also **Mongodb**. create a `.env` file for setting up your mysql database credentials and add the following env settings:
+
+1. **DB_USER**, database user
+2. **DB_PSWD**, user database password
+3. **DB_NAME**, your test database name (likely **test**)
+
 ## Usage Example
 
 **The Handler**:

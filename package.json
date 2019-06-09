@@ -3,7 +3,7 @@
   "version": "0.0.0-development",
   "description": "A module that sits independently between the controller and the model, performing request data validation, serialization and integrity checks",
   "main": "lib/Handler",
-  "typings": "typings/Handler",
+  "typings": "lib/typings/Handler",
   "scripts": {
     "commit": "git-cz",
     "test": "BABEL_ENV=test jest",
