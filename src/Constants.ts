@@ -4,12 +4,6 @@ export const DB_MODELS = {
     RELATIONAL: 2
 };
 
-/** supported database model case styles */
-export const DB_MODEL_CASE_STYLES = {
-    CAMEL_CASE: 1,
-    SNAKE_CASE: 2
-};
-
 /** supported date format */
 export const DATE_FORMAT = /^([0-9]{4})([-._:|/\s])?([0-9]{1,2})\2?([0-9]{1,2})$/;
 

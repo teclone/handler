@@ -1,11 +1,12 @@
 import DBChecker from '../src/DBChecker';
-import { DB_MODELS, DB_MODEL_CASE_STYLES } from '../src/Constants';
+import { DB_MODELS} from '../src/Constants';
 import {
     noSqlConnect, noSqlDisconnect, noSqlPopulate, noSqlDepopulate,
     sqlConnect, sqlPopulate, sqlDepopulate, sqlDisconnect
 } from './helpers';
 import NoSqlUser from './helpers/nosql/models/User';
 import SqlUser from './helpers/sql/models/User';
+import { CASE_STYLES } from '@forensic-js/utils';
 
 describe('DBChecker', function() {
     let dbChecker: DBChecker = null;
@@ -20,7 +21,7 @@ describe('DBChecker', function() {
 
     beforeEach(function() {
         dbChecker = new DBChecker().setDBModel(DB_MODELS.NOSQL).setDBCaseStyle(
-            DB_MODEL_CASE_STYLES.CAMEL_CASE
+            CASE_STYLES.CAMEL_CASE
         );
     });
 
@@ -46,7 +47,7 @@ describe('DBChecker', function() {
 
     describe('#setDBCaseStyle(dbModelCaseStyle: number)', function() {
         it(`should set the database model case style in use and return this`, function() {
-            expect(dbChecker.setDBCaseStyle(DB_MODEL_CASE_STYLES.CAMEL_CASE)).toStrictEqual(dbChecker);
+            expect(dbChecker.setDBCaseStyle(CASE_STYLES.CAMEL_CASE)).toStrictEqual(dbChecker);
         });
     });
 
@@ -186,7 +187,7 @@ describe('DBChecker', function() {
         });
 
         it(`should convert field to snake case format if case style is set as SNAKE_CASE`, function() {
-            dbChecker.setDBCaseStyle(DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            dbChecker.setDBCaseStyle(CASE_STYLES.SNAKE_CASE);
             return dbChecker.checkIfExists(true, 'last-name', 'Ifeanyichukwu', {
                 if: 'exists',
                 model: NoSqlUser,

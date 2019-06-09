@@ -1,14 +1,14 @@
 import {
     DataSource, FilesSource, Rules, ResolvedRules, ResolvedRule, Rule, DataType,
     Filters, RawData, DataValue, Data, Options, ErrorBag, RequiredIf, DBCheck,
-    CallbackDBCheck, ModelDBCheck, DefaultFields, DBCheckType
+    CallbackDBCheck, ModelDBCheck, DefaultFields, DBCheckType, OverrideIf
 } from './@types';
-import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
+import { DB_MODELS} from './Constants';
 import StateException from './Exceptions/StateException';
 import DataSourceNotSetException from './Exceptions/DataSourceNotSetException';
 import RulesNotSetException from './Exceptions/RulesNotSetException';
 import {
-    isString, pickValue, copy, makeArray, isUndefined, pickObject,
+    isString, pickValue, copy, makeArray, isUndefined, pickObject, CASE_STYLES,
     isArray, keyNotSetOrTrue, isNumeric, isObject, isNull, isTypeOf, isCallable
 } from '@forensic-js/utils';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
@@ -23,7 +23,7 @@ import Model from './Model';
 
 const globalConfig = {
     dbModel: DB_MODELS.NOSQL,
-    dbCaseStyle: DB_MODEL_CASE_STYLES.CAMEL_CASE
+    dbCaseStyle: CASE_STYLES.CAMEL_CASE
 };
 
 
@@ -37,7 +37,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * supported database field case styles
      */
-    static DB_MODEL_CASE_STYLES = DB_MODEL_CASE_STYLES;
+    static DB_MODEL_CASE_STYLES = CASE_STYLES;
 
     /**
      * globally sets the database model to use
@@ -80,7 +80,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
 
     private dbCaseStyle: number = globalConfig.dbCaseStyle;
 
-    private dataTypeToMethod: {[P in DataType]: string} = {
+    private dataTypeToMethod: { [P in DataType]: string } = {
 
         text: 'validateText',
         date: 'validateDate',
@@ -118,7 +118,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
         password: 'validatePassword'
     };
 
-    private DBCheckTypesToMethod: {[P in DBCheckType]: string} = {
+    private DBCheckTypesToMethod: { [P in DBCheckType]: string } = {
         //check if exist method map
         exists: 'checkIfExists',
 
@@ -400,7 +400,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
 
     private filterRules(rules: ResolvedRules<Fields>, requredFields: string | string[]): ResolvedRules<Fields> {
 
-        requredFields = makeArray(requredFields || []);
+        requredFields = makeArray(requredFields);
 
         return Object.keys(rules).reduce((result, field) => {
             const rule = rules[field];
@@ -549,6 +549,71 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     }
 
     /**
+     * performs the conditional if resolution
+     * @param conditionalIf
+     */
+    private resolveConditionalIf(conditionalIf: RequiredIf | OverrideIf): boolean {
+        const targetField = conditionalIf.field;
+        const targetFieldRule = this.resolvedRules[targetField];
+
+        if (isUndefined(targetFieldRule)) {
+            throw new FieldRuleNotFoundException(targetField);
+        }
+
+        let status = false;
+        switch (conditionalIf.if) {
+            case 'checked':
+                status = !!this.filterValue(
+                    pickValue(targetField, this.dataSource as DataSource, ''),
+                    targetFieldRule.type,
+                    targetFieldRule.filters
+                );
+                break;
+
+            case 'notChecked':
+                status = !this.filterValue(
+                    pickValue(targetField, this.dataSource as DataSource, ''),
+                    targetFieldRule.type,
+                    targetFieldRule.filters
+                );
+                break;
+
+            case 'equals':
+                status = this.filterValue(
+                    pickValue(targetField, this.dataSource as DataSource, ''),
+                    targetFieldRule.type,
+                    targetFieldRule.filters
+                ) === conditionalIf.value;
+                break;
+
+            case 'notEquals':
+                status = this.filterValue(
+                    pickValue(targetField, this.dataSource as DataSource, ''),
+                    targetFieldRule.type,
+                    targetFieldRule.filters
+                ) !== conditionalIf.value;
+                break;
+        }
+        return status;
+    }
+
+    /**
+     * resolves all overrideIf conditional rule
+     */
+    private resolveOverrideIf(rules: ResolvedRules<Fields>): ResolvedRules<Fields> {
+        for (const [field, rule] of Object.entries<ResolvedRule>(rules)) {
+
+            const overrideIf = rule.overrideIf;
+            if (isObject<OverrideIf>(overrideIf)) {
+                if (this.resolveConditionalIf(overrideIf)) {
+                    (this.dataSource as DataSource)[field] = overrideIf.with;
+                }
+            }
+        }
+        return rules;
+    }
+
+    /**
      * resolves all requiredIf conditional rule
      */
     private resolveRequiredIf(rules: ResolvedRules<Fields>): ResolvedRules<Fields> {
@@ -557,47 +622,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
 
             const requiredIf = rule.requiredIf;
             if (isObject<RequiredIf>(requiredIf)) {
-
-                const targetField = requiredIf.field;
-                const targetFieldRule = rules[targetField];
-
-                if (isUndefined(rules[targetField])) {
-                    throw new FieldRuleNotFoundException(targetField);
-                }
-
-                switch (requiredIf.if) {
-                    case 'checked':
-                        rule.required = !!this.filterValue(
-                            pickValue(targetField, this.dataSource as DataSource, ''),
-                            targetFieldRule.type,
-                            targetFieldRule.filters
-                        );
-                        break;
-
-                    case 'notChecked':
-                        rule.required = !this.filterValue(
-                            pickValue(targetField, this.dataSource as DataSource, ''),
-                            targetFieldRule.type,
-                            targetFieldRule.filters
-                        );
-                        break;
-
-                    case 'equals':
-                        rule.required = this.filterValue(
-                            pickValue(targetField, this.dataSource as DataSource, ''),
-                            targetFieldRule.type,
-                            targetFieldRule.filters
-                        ) === requiredIf.value;
-                        break;
-
-                    case 'notEquals':
-                        rule.required = this.filterValue(
-                            pickValue(targetField, this.dataSource as DataSource, ''),
-                            targetFieldRule.type,
-                            targetFieldRule.filters
-                        ) !== requiredIf.value;
-                        break;
-                }
+                rule.required = this.resolveConditionalIf(requiredIf);
             }
         }
         return rules;
@@ -618,6 +643,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
             defaultValue: pickValue('defaultValue', rule, undefined),
             hint: pickValue('hint', rule, `${field} is required`),
             requiredIf: pickValue('requiredIf', rule, undefined),
+            overrideIf: pickValue('overrideIf', rule, undefined),
             options: pickObject('options', rule),
             filters: pickObject('filters', rule),
             checks: makeArray(rule.checks as DBCheck[]),
@@ -775,10 +801,11 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
      *
      * @param validateOnDemand boolean value indicating if it should only pick and validate
      * fields that were sent and whose rules are defined. perfect when performing data updates
-     * @param requredFields field or array of fields that must be included when validating on
+     * @param requiredFields field or array of fields that must be included when validating on
      * demand, even if they were not sent.
      */
-    async execute(validateOnDemand: boolean = false, requredFields: string[] | string = '') {
+    async execute(validateOnDemand: boolean = false,
+        requiredFields: string[] | string = []): Promise<boolean> {
 
         this.shouldExecute();
         this.executed = true;
@@ -786,9 +813,10 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
 
         this.resolvedRules = this.resolveRules(this.rules as Rules<Fields>);
         this.resolvedRules = this.resolveRequiredIf(this.resolvedRules);
+        this.resolveOverrideIf(this.resolvedRules);
 
         if (validateOnDemand) {
-            this.resolvedRules = this.filterRules(this.resolvedRules, requredFields);
+            this.resolvedRules = this.filterRules(this.resolvedRules, requiredFields);
         }
         this.categorizeRules(this.resolvedRules);
 
