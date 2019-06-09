@@ -1,4 +1,4 @@
-import { DataValue, RequiredIf, Filters, DBCheck, DataType } from '..';
+import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf } from '..';
 
 export declare interface ShouldMatchObject {
     /**
@@ -51,6 +51,11 @@ export default interface BaseRule {
      * becomes optional
      */
     requiredIf?: RequiredIf;
+
+    /**
+     * defines a condition which if satisfied, overrides the field's raw value
+     */
+    overrideIf?: OverrideIf;
 
     /**
      * defines a list of filteration operations to carry out on the field value(s)

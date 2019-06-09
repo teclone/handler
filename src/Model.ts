@@ -1,4 +1,4 @@
-import { expandProperty } from '@forensic-js/utils';
+import { expandProperty, applyCase } from '@forensic-js/utils';
 import Handler from './Handler';
 import { DefaultFields, Data } from './@types';
 
@@ -44,13 +44,22 @@ export default class Model<Fields extends string = DefaultFields, Exports = Data
 
     /**
      * exports the data to the given target
-     * @param target
+     * @param target model to export data to
+     * @param expandProperties boolean indicating if properties should be expanding
      */
-    export<T>(target: T = {} as T): T & Exports {
-        Object.keys(this.handler.data).forEach(field => {
-            if (!this.fieldsToSkip.includes(field)) {
-                const newName = this.fieldsToRename[field] || field;
-                expandProperty(target as any as object, newName, this.handler.data[field], undefined, this.handler.getDBCaseStyle());
+    export<T extends object>(target: T = {} as T, expandProperties: boolean = true): T & Exports {
+        const {handler, fieldsToSkip, fieldsToRename} = this;
+        Object.keys(handler.data).forEach(field => {
+            if (!fieldsToSkip.includes(field)) {
+                const newName = fieldsToRename[field] || field;
+                const value = handler.data[field];
+
+                if (expandProperties) {
+                    expandProperty(target, newName, value, undefined, handler.getDBCaseStyle());
+                }
+                else {
+                    target[applyCase(newName, handler.getDBCaseStyle())] = value;
+                }
             }
         });
         return target as T & Exports;

@@ -497,6 +497,74 @@ describe('Handler Module', function () {
         });
     });
 
+    describe(`overrideIf resolution`, function () {
+        it(`should resolve the overrideIf rule, overriding field value if condition is met`, function () {
+
+            const data = {
+                subscribe: 'false',
+                email: 'someone@example.com'
+            };
+
+            const rules: Rules<'subscribe' | 'email'> = {
+
+                subscribe: 'checkbox',
+
+                email: {
+                    type: 'email',
+                    requiredIf: {
+                        if: 'checked',
+                        field: 'subscribe'
+                    },
+                    overrideIf: {
+                        if: 'notChecked',
+                        field: 'subscribe',
+                        with: ''
+                    }
+                }
+            };
+
+            const handler = new Handler(data, undefined, rules);
+            return handler.execute().then(() => {
+                const resolvedRules = handler.getResolvedRules();
+                expect(resolvedRules.email.required).toBeFalsy();
+                expect(handler.data.email).toEqual('');
+            });
+        });
+
+        it(`should resolve the overrideIf rule, retaining field value if condition is not met`, function () {
+
+            const data = {
+                subscribe: 'true',
+                email: 'someone@example.com'
+            };
+
+            const rules: Rules<'subscribe' | 'email'> = {
+
+                subscribe: 'checkbox',
+
+                email: {
+                    type: 'email',
+                    requiredIf: {
+                        if: 'checked',
+                        field: 'subscribe'
+                    },
+                    overrideIf: {
+                        if: 'notChecked',
+                        field: 'subscribe',
+                        with: ''
+                    }
+                }
+            };
+
+            const handler = new Handler(data, undefined, rules);
+            return handler.execute().then(() => {
+                const resolvedRules = handler.getResolvedRules();
+                expect(resolvedRules.email.required).toBeTruthy();
+                expect(handler.data.email).toEqual('someone@example.com');
+            });
+        });
+    });
+
     describe(`Validate OnDemand Rule Filteration`, function () {
         it(`should filter rules, validating only fields that are sent, whose rules where defined`, function () {
 

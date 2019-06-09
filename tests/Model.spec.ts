@@ -71,7 +71,7 @@ describe('Model', function () {
         });
     });
 
-    describe(`#export(target: object = {}): target`, function () {
+    describe(`#export<T extends object>(target: T = {}, expandProperties: boolean = true): target`, function () {
         it(`should export all data into the given target object, expanding properties along the
         line and returns the result`, function () {
             const result = model.export();
@@ -81,6 +81,13 @@ describe('Model', function () {
                 user: true,
                 owner: false
             });
+        });
+
+        it(`should export all data into the given target object without expanding properties
+            if the expandProperties is set as false`, function () {
+            const result = model.export({}, false);
+            expect(result).toHaveProperty('firstName', 'Harrison');
+            expect(result).not.toHaveProperty('roles');
         });
     });
 

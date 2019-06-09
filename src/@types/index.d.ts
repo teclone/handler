@@ -76,6 +76,17 @@ export declare type RequiredIf = {
     value: string | boolean | number;
 }
 
+export declare type OverrideIf = {
+    if: 'checked' | 'notChecked',
+    field: string;
+    with: RawData;
+} | {
+    if: 'equals' | 'notEquals',
+    field: string;
+    value: string | boolean | number;
+    with: RawData;
+}
+
 export declare type FilterCallback = (value: string) => string | number | boolean;
 
 export declare interface Filters {
@@ -129,6 +140,8 @@ export declare interface ResolvedRule {
     defaultValue: RawData | undefined;
 
     requiredIf?: RequiredIf;
+
+    overrideIf?: OverrideIf;
 
     options: Options;
 
