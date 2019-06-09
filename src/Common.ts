@@ -1,11 +1,11 @@
-import { ErrorBag, DBCheck, Options } from './@types';
+import { ErrorBag, DBCheck, Options, DefaultFields } from './@types';
 import { isNumeric } from '@forensic-js/utils';
 import { replaceCallback } from '@forensic-js/regex';
 import StateException from './Exceptions/StateException';
 
-export default class Common {
+export default class Common<Fields extends string = DefaultFields> {
 
-    protected errors: ErrorBag = {};
+    protected errors: ErrorBag<Fields> = {} as ErrorBag<Fields>;
 
     private status: boolean = true;
 
@@ -68,7 +68,7 @@ export default class Common {
     /**
      * sets the error bag if given
      */
-    setErrorBag(errorBag: ErrorBag): this {
+    setErrorBag(errorBag: ErrorBag<Fields>): this {
         this.errors = errorBag;
         return this;
     }
@@ -76,7 +76,7 @@ export default class Common {
     /**
      * returns the errobag object containing all errors
      */
-    getErrorBag(): ErrorBag {
+    getErrorBag(): ErrorBag<Fields> {
         return this.errors;
     }
 

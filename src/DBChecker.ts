@@ -1,12 +1,12 @@
 import Common from './Common';
-import {DataValue, ModelDBCheck } from './@types';
+import {DataValue, ModelDBCheck, DefaultFields } from './@types';
 import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
 import { pickValue, camelCase, snakeCase } from '@forensic-js/utils';
 
-export default class DBChecker extends Common {
+export default class DBChecker<Fields extends string = DefaultFields> extends Common<Fields> {
 
     private dbModel: number;
-    private dbModelCaseStyle: number;
+    private dbCaseStyle: number;
     private query: object = {};
 
     /**
@@ -26,7 +26,7 @@ export default class DBChecker extends Common {
      * @param field
      */
     protected resolveFieldName(field: string) {
-        if (this.dbModelCaseStyle === DB_MODEL_CASE_STYLES.CAMEL_CASE) {
+        if (this.dbCaseStyle === DB_MODEL_CASE_STYLES.CAMEL_CASE) {
             return camelCase(field);
         }
         else {
@@ -72,8 +72,8 @@ export default class DBChecker extends Common {
      *
      * @param dbModel db model case style to use
      */
-    setDBModelCaseStyle(dbModelCaseStyle: number) {
-        this.dbModelCaseStyle = dbModelCaseStyle;
+    setDBCaseStyle(dbCaseStyle: number) {
+        this.dbCaseStyle = dbCaseStyle;
         return this;
     }
 

@@ -1,5 +1,5 @@
 import Common from './Common';
-import { ErrorBag, FilesSource, Options, Unit, DateConverter } from './@types';
+import { ErrorBag, FilesSource, Options, Unit, DateConverter, DefaultFields } from './@types';
 import CustomDate from './CustomDate';
 import {
     isUndefined, expandToNumeric, convertToMemoryUnit, pickValue, makeArray,
@@ -19,7 +19,7 @@ import * as path from 'path';
 import DirectoryNotFoundException from './Exceptions/DirectoryNotFoundException';
 import FileMoveException from './Exceptions/FileMoveException';
 
-export default class Validator extends Common {
+export default class Validator<Fields extends string = DefaultFields> extends Common<Fields> {
 
     private files: FilesSource = {};
 

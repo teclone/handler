@@ -19,7 +19,7 @@ describe('DBChecker', function() {
     });
 
     beforeEach(function() {
-        dbChecker = new DBChecker().setDBModel(DB_MODELS.NOSQL).setDBModelCaseStyle(
+        dbChecker = new DBChecker().setDBModel(DB_MODELS.NOSQL).setDBCaseStyle(
             DB_MODEL_CASE_STYLES.CAMEL_CASE
         );
     });
@@ -44,9 +44,9 @@ describe('DBChecker', function() {
         });
     });
 
-    describe('#setDBModelCaseStyle(dbModelCaseStyle: number)', function() {
+    describe('#setDBCaseStyle(dbModelCaseStyle: number)', function() {
         it(`should set the database model case style in use and return this`, function() {
-            expect(dbChecker.setDBModelCaseStyle(DB_MODEL_CASE_STYLES.CAMEL_CASE)).toStrictEqual(dbChecker);
+            expect(dbChecker.setDBCaseStyle(DB_MODEL_CASE_STYLES.CAMEL_CASE)).toStrictEqual(dbChecker);
         });
     });
 
@@ -186,7 +186,7 @@ describe('DBChecker', function() {
         });
 
         it(`should convert field to snake case format if case style is set as SNAKE_CASE`, function() {
-            dbChecker.setDBModelCaseStyle(DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            dbChecker.setDBCaseStyle(DB_MODEL_CASE_STYLES.SNAKE_CASE);
             return dbChecker.checkIfExists(true, 'last-name', 'Ifeanyichukwu', {
                 if: 'exists',
                 model: NoSqlUser,

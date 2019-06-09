@@ -1,6 +1,7 @@
 import {
     DataSource, FilesSource, Rules, ResolvedRules, ResolvedRule, Rule, DataType,
-    Filters, RawData, DataValue, Data, Options, ErrorBag, RequiredIf, DataTypeMethodMaps, DBCheckMethodMaps, DBCheck, CallbackDBCheck, ModelDBCheck
+    Filters, RawData, DataValue, Data, Options, ErrorBag, RequiredIf, DBCheck,
+    CallbackDBCheck, ModelDBCheck, DefaultFields, DBCheckType
 } from './@types';
 import { DB_MODELS, DB_MODEL_CASE_STYLES } from './Constants';
 import StateException from './Exceptions/StateException';
@@ -17,14 +18,16 @@ import Validator from './Validator';
 import CustomDate from './CustomDate';
 import DataProxy from './DataProxy';
 import DBChecker from './DBChecker';
+import Model from './Model';
 
 
 const globalConfig = {
     dbModel: DB_MODELS.NOSQL,
-    dbModelCaseStyle: DB_MODEL_CASE_STYLES.CAMEL_CASE
+    dbCaseStyle: DB_MODEL_CASE_STYLES.CAMEL_CASE
 };
 
-export default class Handler {
+
+export default class Handler<Fields extends string = DefaultFields, Exports = Data<Fields>> {
 
     /**
      * supported database models
@@ -46,10 +49,10 @@ export default class Handler {
 
     /**
      * globally sets the database model field case style to use
-     * @param dbModelCaseStyle
+     * @param dbCaseStyle
      */
-    static setDBModelCaseStyle(dbModelCaseStyle: number) {
-        globalConfig.dbModelCaseStyle = dbModelCaseStyle;
+    static setDBCaseStyle(dbCaseStyle: number) {
+        globalConfig.dbCaseStyle = dbCaseStyle;
     }
 
     private dataSource: DataSource | null = null;
@@ -58,9 +61,9 @@ export default class Handler {
 
     private addedFields: DataSource = {};
 
-    private rules: Rules | null = null;
+    private rules: Rules<Fields> | null = null;
 
-    private resolvedRules: ResolvedRules = {};
+    private resolvedRules: ResolvedRules<Fields> = {} as ResolvedRules<Fields>;
 
     private executed: boolean = false;
 
@@ -68,20 +71,16 @@ export default class Handler {
 
     private optionalFields: string[] = [];
 
-    private validator: Validator;
+    private validator: Validator<Fields>;
 
-    private dbChecker: DBChecker;
+    private dbChecker: DBChecker<Fields>;
 
     // database model in use
     private dbModel: number = globalConfig.dbModel;
 
-    private dbModelCaseStyle: number = globalConfig.dbModelCaseStyle;
+    private dbCaseStyle: number = globalConfig.dbCaseStyle;
 
-    private modelSkipFields: [] = [];
-
-    private modelRenameFields: [] = [];
-
-    private dataTypeToMethod: DataTypeMethodMaps = {
+    private dataTypeToMethod: {[P in DataType]: string} = {
 
         text: 'validateText',
         date: 'validateDate',
@@ -119,7 +118,7 @@ export default class Handler {
         password: 'validatePassword'
     };
 
-    private DBCheckTypesToMethod: DBCheckMethodMaps = {
+    private DBCheckTypesToMethod: {[P in DBCheckType]: string} = {
         //check if exist method map
         exists: 'checkIfExists',
 
@@ -127,16 +126,15 @@ export default class Handler {
         notExists: 'checkIfNotExists',
     };
 
-    public data: Data = new Proxy<Data>({}, DataProxy);
+    public data: Data<Fields> = new Proxy<Data<Fields>>({} as Data<Fields>, DataProxy);
 
-    public errors: ErrorBag = {};
+    public errors: ErrorBag<Fields> = {} as ErrorBag<Fields>;
 
-    constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules,
-        validator?: Validator, dbChecker?: DBChecker) {
+    constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules<Fields>,
+        validator?: Validator<Fields>, dbChecker?: DBChecker<Fields>) {
 
         this.setDataSource(dataSource).setFilesSource(filesSource).setRules(rules)
             .setValidator(validator || new Validator()).setDBChecker(dbChecker || new DBChecker());
-        //.setDBChecker(dbChecker).modelUseNoSql().modelUseCamelCaseStyle();
     }
 
     /**
@@ -280,7 +278,7 @@ export default class Handler {
                 value = fieldIsMissing ? defaultValue : (this.dataSource as DataSource)[field];
             }
 
-            this.data[field] = this.filterValue(value, this.resolvedRules[field].type, filters);
+            this.data[field] = this.filterValue(value as RawData, this.resolvedRules[field].type, filters);
         });
     }
 
@@ -388,7 +386,7 @@ export default class Handler {
      * extracts required fields and optional fields.
      * @param rules
      */
-    private categorizeRules(rules: ResolvedRules) {
+    private categorizeRules(rules: ResolvedRules<Fields>) {
         Object.keys(rules).forEach(field => {
             const rule = rules[field];
             if (rule.required) {
@@ -400,7 +398,7 @@ export default class Handler {
         });
     }
 
-    private filterRules(rules: ResolvedRules, requredFields: string | string[]): ResolvedRules {
+    private filterRules(rules: ResolvedRules<Fields>, requredFields: string | string[]): ResolvedRules<Fields> {
 
         requredFields = makeArray(requredFields || []);
 
@@ -418,7 +416,7 @@ export default class Handler {
                 result[field] = rule;
             }
             return result;
-        }, {});
+        }, {} as ResolvedRules<Fields>);
     }
 
     /**
@@ -553,9 +551,9 @@ export default class Handler {
     /**
      * resolves all requiredIf conditional rule
      */
-    private resolveRequiredIf(rules: ResolvedRules): ResolvedRules {
+    private resolveRequiredIf(rules: ResolvedRules<Fields>): ResolvedRules<Fields> {
 
-        for (const [, rule] of Object.entries(rules)) {
+        for (const [, rule] of Object.entries<ResolvedRule>(rules)) {
 
             const requiredIf = rule.requiredIf;
             if (isObject<RequiredIf>(requiredIf)) {
@@ -645,14 +643,14 @@ export default class Handler {
     /**
      * resolves the given rules
      */
-    private resolveRules(rules: Rules): ResolvedRules {
+    private resolveRules(rules: Rules<Fields>): ResolvedRules<Fields> {
 
         const fields = Object.keys(rules);
         const result = fields.reduce((result, field) => {
             const rule = rules[field];
             result[field] = this.resolveRule(field, rule);
             return result;
-        }, {});
+        }, {} as ResolvedRules<Fields>);
 
         //if there is a file field, and the user did not set the files object, throw
         if (isNull(this.filesSource) && fields.some(field => this.isFileDataType(result[field].type))) {
@@ -701,7 +699,7 @@ export default class Handler {
     /**
      * set rules
      */
-    setRules(rules?: Rules): this {
+    setRules(rules?: Rules<Fields>): this {
         if (rules) {
             this.rules = rules;
         }
@@ -711,7 +709,7 @@ export default class Handler {
     /**
      * sets the validator instance to use
      */
-    setValidator(validator: Validator): this {
+    setValidator(validator: Validator<Fields>): this {
         validator.setErrorBag(this.errors);
         this.validator = validator;
         return this;
@@ -721,7 +719,7 @@ export default class Handler {
      * sets the db checker instance to use
      * @param dbChecker
      */
-    setDBChecker(dbChecker: DBChecker): this {
+    setDBChecker(dbChecker: DBChecker<Fields>): this {
         dbChecker.setErrorBag(this.errors);
         this.dbChecker = dbChecker;
         return this;
@@ -737,10 +735,10 @@ export default class Handler {
 
     /**
      * sets the instance database model field case style to use
-     * @param dbModelCaseStyle
+     * @param dbCaseStyle
      */
-    setDBModelCaseStyle(dbModelCaseStyle: number) {
-        this.dbModelCaseStyle = dbModelCaseStyle;
+    setDBCaseStyle(dbCaseStyle: number) {
+        this.dbCaseStyle = dbCaseStyle;
     }
 
     /**
@@ -786,7 +784,7 @@ export default class Handler {
         this.executed = true;
         this.dataSource = copy({}, this.dataSource as DataSource, this.addedFields);
 
-        this.resolvedRules = this.resolveRules(this.rules as Rules);
+        this.resolvedRules = this.resolveRules(this.rules as Rules<Fields>);
         this.resolvedRules = this.resolveRequiredIf(this.resolvedRules);
 
         if (validateOnDemand) {
@@ -812,7 +810,7 @@ export default class Handler {
         await this.validateFields(this.optionalFields, false);
 
         if (this.succeeds()) {
-            this.dbChecker.setDBModel(this.dbModel).setDBModelCaseStyle(this.dbModelCaseStyle);
+            this.dbChecker.setDBModel(this.dbModel).setDBCaseStyle(this.dbCaseStyle);
             await this.validateDBChecks(this.requiredFields, true);
             await this.validateDBChecks(this.optionalFields, false);
         }
@@ -856,7 +854,14 @@ export default class Handler {
     /**
      * gets the instance current database model field case style in use
      */
-    getDBModelCaseStyle() {
-        return this.dbModelCaseStyle;
+    getDBCaseStyle() {
+        return this.dbCaseStyle;
+    }
+
+    /**
+     * creates and returns a model instance, that can be exported
+     */
+    model(): Model<Fields, Exports> {
+        return new Model<Fields, Exports>(this);
     }
 }
