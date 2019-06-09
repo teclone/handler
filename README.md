@@ -157,6 +157,8 @@ Validation rules are defined as JavaScript plain object keyed by the field names
 
 7. **requiredIf**: defines a conditional clause, which if satisfied, makes the field required, else the field becomes optional.
 
+8. **overrideIf**: defines a conditional clause, which if satisfied, will override a field's raw data value, else the field value is retained.
+
 To reference a validation principal, the convention used is to enclose the principal field name in curly braces within a string . '{field-name}'. The module will find and resolve such, replacing it with the field value.
 
 There are certain placeholder formats that can be used to refrence certain values. This includes **`{this}`** which references the current field value under validation; **`{_this}`** references the current field name under validation while **`{_index}`** references the current field value index position (in the case of validating array of fields).
