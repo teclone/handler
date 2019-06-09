@@ -15,14 +15,15 @@ import {
 
 
 export declare type RawData = string | string[];
-export declare interface DataSource {
+export declare type DataSource = {
     [field: string]: RawData;
 }
 
-
 export declare type DataValue = string | number | boolean | string[] | number[] | boolean[];
-export declare interface Data {
-    [field: string]: DataValue;
+export declare type DefaultFields = string;
+
+export declare type Data<F extends DefaultFields> = {
+    [P in F]: DataValue;
 }
 
 
@@ -47,59 +48,23 @@ export declare interface FilesSource {
 
 export declare type Unit = 'character' | 'number' | 'date' | 'file';
 
+
 export declare interface Regex {
     pattern: RegExp;
     err?: string;
 }
 
-export declare interface ErrorBag {
-    [field: string]: string;
+
+export declare type ErrorBag<F extends DefaultFields> = {
+    [P in F]: string;
 }
 
-
-export declare interface DataTypeMethodMaps {
-
-    // boolean rules
-    checkbox: string;
-    boolean: string;
-
-    //text rules
-    text: string;
-    email: string;
-    url: string;
-    password: string;
-
-    //number rules
-    int: string;
-    pInt: string;
-    nInt: string;
-    number: string;
-    nNumber: string;
-    pNumber: string;
-    money: string;
-    date: string;
-
-    //choice rules
-    range: string;
-    choice: string;
-
-    //file rules
-    file: string;
-    image: string;
-    audio: string;
-    video: string;
-    media: string;
-    document: string;
-    archive: string;
-}
-export declare type DataType = keyof DataTypeMethodMaps;
+export declare type DataType = 'checkbox' | 'boolean' | 'text' | 'email' | 'url' | 'password' |
+    'int' | 'pInt' | 'nInt' | 'number' | 'pNumber' | 'nNumber' | 'money' | 'date' | 'range' |
+    'choice' | 'file' | 'image' | 'audio' | 'video' | 'media' | 'document' | 'archive';
 
 
-export declare interface DBCheckMethodMaps {
-    exists: string;
-    notExists: string;
-}
-export declare type DBCheckType = keyof DBCheckMethodMaps;
+export declare type DBCheckType = 'exists' | 'notExists';
 
 
 export declare type RequiredIf = {
@@ -148,8 +113,8 @@ export declare type Rule = BooleanRule | CheckboxRule | TextRule | EmailRule | U
     | PasswordRule | IntegerRule | NIntegerRule | PIntegerRule | NumberRule | NNumberRule
     | PNumberRule | DateRule | RangeRule | ChoiceRule | FileRule | ImageFileRule | AudioFileRule
     | VideoFileRule | MediaFileRule | DocumentFileRule | ArchiveFileRule;
-export declare interface Rules {
-    [field: string]: DataType | Rule
+export declare type Rules<F extends DefaultFields = DefaultFields> = {
+    [P in F]: DataType | Rule
 }
 
 
@@ -176,8 +141,8 @@ export declare interface ResolvedRule {
      */
     postCompute?: (value: DataValue) => Promise<DataValue>;
 }
-export declare interface ResolvedRules {
-    [field: string]: ResolvedRule;
+export declare type ResolvedRules<F extends DefaultFields> = {
+    [P in F]: ResolvedRule;
 }
 
 

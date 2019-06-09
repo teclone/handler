@@ -6,15 +6,11 @@
 [![npm version](https://badge.fury.io/js/forensic-handler.svg)](https://badge.fury.io/js/forensic-handler)
 ![npm](https://img.shields.io/npm/dt/forensic-handler.svg)
 
-Handler is a **NodeJS** package that sits independently between the controller and the model, and asynchronously performs request data validation, conversion, serialization and integrity checks. It is easy to use and is independent of any framework or ORMs.
+**Handler** is a **NodeJS** package that sits independently between the controller and the model, and asynchronously performs request data validation, serialization and database integrity checks. It has excellent error reporting with wide range of validation rule types. It can be used with **relational and non-relational databases/ORMs**.
 
-It makes the validation process easy and requires you to just define the data validation rules which are written in plain **JavaScript** objects.
+All validation rules are defined in plain **JS** objects. When performing database integrity checks, **Handler** supports Mongoose Models by default when working with **non-relational** databases such as **MongoDB**. It also supports **Sequelize Models** by default when working with **relational** databases such as **Postgres, Mysql, etc**.
 
-The most interesting part is how easy it is to validate object of field data and files and the wide range of validation rule types that it affords by default. It is also extensible so that you can define more custom validation rules and types if the need be. See [How to Write Your Custom Validation Types](#how-to-define-custom-validation-types) for instructions.
-
-Regarding database integrity checks, It supports both **NOSQL** and **Relational Databases**, at least. It is extensible enough to leave the DBChecker implementation up to you by defining a base `DBChecker` class (like an interface). This makes it not tied to any framework or database ORMs. See [How To Define Custom DBChecker](#how-to-define-custom-dbchecker) for instructions.
-
-By default, it supports mongoose models when performing database integrity checks.
+It is also extensible, customizable so that you can define more custom validation rules and types if there is need for it. See [How to Write Your Custom Validation Types](#how-to-define-custom-validation-types) and [How To Define Custom DBChecker](#how-to-define-custom-dbchecker) for instructions.
 
 ## Table of Content
 
@@ -88,10 +84,10 @@ npm install --save forensic-handler
 
 **The Handler**:
 
-```javascript
-/* file UserHandler.js */
+```typescript
+/* file UserHandler.ts */
 import Handler from 'forensic-handler';
-import UserModel from '../models/UserModel.js';
+import UserModel from '../models/UserModel';
 import bcrypt from 'bcrypt';
 
 export default class UserHandler extends Handler {
@@ -99,54 +95,36 @@ export default class UserHandler extends Handler {
     async createUser() {
         /* define validation rules */
         const rules = {
-
             email: {
                 type: 'email',
-
-                hint: 'Enter account email address',
-
                 filters: {
-                    toLower: true,
+                    toLower: true
                 },
-
-                check: {
+                checks: {
                     if: 'exists',
                     model: UserModel,
-                    err: '{this} is already registered. Please login instead'
+                    err: 'email address already exists'
                 }
             },
-
-            password1: 'password',
-
+            password1: {
+                type: 'password',
+                postCompute: async function(password) {
+                    return await bcrypt.hash(password, Number.parseInt(process.env.SALT_ROUNDS));
+                }
+            },
             password2: {
                 type: 'password',
-                matchWith: {
-                    value: '{password1}',
-                    err: 'Passwords did not match'
-                },
+                shouldMatch: 'password1'
             }
         };
 
-        /* return immediately if error is found */
-        if (!(await this.execute()))
-            return false;
+        if (await this.setRules(rules).execute()) {
+            const data = this.skip('password2').rename('password1', 'password').export();
+            const user = await UserModel.create(data);
 
-        //proceed to create user account and return true
-        const password = await bcrypt.hash(
-            this.data.password1,
-            Number.parseInt(process.env.SALT_ROUNDS)
-        );
-        this.setData('password', password);
-
-        //skip password1 and password2 when mapping data to model
-        this.modelSkipFields(['password1', 'password2']);
-
-        //data will be {email: 'user email', password: 'hashed password'}
-        const data = this.mapDataToModel({});
-        const user = await UserModel.create(data);
-
-        this.setData('id', user.id);
-        return true;
+            this.data.id = user.id;
+        }
+        return this.succeeds();
     }
 }
 ```
@@ -154,15 +132,14 @@ export default class UserHandler extends Handler {
 **The Controller**:
 
 ```javascript
-//file UserController.js
+//file UserController.ts
 export default class UserController {
     setup(req, handler) {
         handler.setSource(req.body).setFiles(req.files);
     }
 
     createUser(req, res, handler) {
-        this.setup(req, handler);
-        return handler.createUser().then(status => {
+        return handler.setDataSource(req.data).setFiles(req.files).createUser().then(status => {
             if (status) {
                 return res.json({
                     status: 'success',
@@ -185,7 +162,7 @@ export default class UserController {
 **The Router**:
 
 ```javascript
-//file UserRoutes.js
+//file UserRoutes.ts
 import {Router} from 'r-server';
 import UserController from '../controllers/UserController';
 import UserHandler from '../handlers/UserHandler';

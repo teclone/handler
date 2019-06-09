@@ -10,12 +10,16 @@ node_js:
 services:
   - mongodb
   - mysql
+before_install:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
 script:
   - npm run test
 jobs:
   include:
     - stage: release
       node_js: "10"
+      before_install:
+        - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
       script:
         - npm run test
         - npm run build

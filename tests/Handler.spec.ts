@@ -13,6 +13,7 @@ import { createFile, createFileCollection, noSqlConnect, noSqlPopulate, noSqlDep
 import { ShouldMatchObject } from '../src/@types/rules/BaseRule';
 import DBChecker from '../src/DBChecker';
 import NoSqlUser from './helpers/nosql/models/User';
+import Model from '../src/Model';
 
 class CustomValidator extends Validator { }
 
@@ -37,21 +38,23 @@ describe('Handler Module', function () {
         });
     });
 
-    describe('static setDBModelCaseStyle(dbModel: number)', function () {
+    describe('static setDBCaseStyle(dbModel: number)', function () {
         it(`should set the global database model case style to use for all created instances`, function () {
-            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
-            Handler.setDBModelCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            Handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
             handler = new Handler();
-            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
 
-            Handler.setDBModelCaseStyle(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            Handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
         });
     });
 
-    describe(`#constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules,
-        validator?: Validator, dbChecker?: DBChecker)`, function () {
+    describe(`#constructor<Fields = DefaultFields, Exports = Data<Fields>>(
+        dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules, validator?: Validator,
+        dbChecker?: DBChecker)`, function () {
+
         it(`should create an instance with empty argument, defaulting the validator to the
-        internal validator`, function () {
+            internal validator`, function () {
                 expect(new Handler()).toBeInstanceOf(Handler);
             });
 
@@ -76,19 +79,19 @@ describe('Handler Module', function () {
         });
     });
 
-    describe(`#setRules(rules?: Rules): this`, function () {
+    describe(`#setRules(rules?: Rules<Fields>): this`, function () {
         it(`should set the given field rules if given, returning the this object`, function () {
             expect(handler.setRules({})).toEqual(handler);
         });
     });
 
-    describe(`#setValidator(validator: Validator): this`, function () {
+    describe(`#setValidator(validator: Validator<Fields>): this`, function () {
         it(`should set the given validator as instance validator module, returning itself`, function () {
             expect(handler.setValidator(new CustomValidator)).toEqual(handler);
         });
     });
 
-    describe(`#setDBChecker(dbChecker: DBChecker): this`, function () {
+    describe(`#setDBChecker(dbChecker: DBChecker<Fields>): this`, function () {
         it(`should set the given database integrity checker as instance dbChecker module,
             returning itself`, function () {
                 expect(handler.setDBChecker(new CustomDBChecker)).toEqual(handler);
@@ -110,15 +113,15 @@ describe('Handler Module', function () {
         });
     });
 
-    describe('#setDBModelCaseStyle(dbModel: number)', function () {
+    describe('#setDBCaseStyle(dbModel: number)', function () {
         it(`should override the instance database model case style to use`, function () {
-            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
-            handler.setDBModelCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
-            expect(handler.getDBModelCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+            handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+            expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
         });
     });
 
-    describe(`#getResolvedRules(): ResolvedRules`, function () {
+    describe(`#getResolvedRules(): ResolvedRules<Fields>`, function () {
         it(`should return the resolved rules object`, function () {
             expect(handler.getResolvedRules()).toEqual({});
         });
@@ -199,6 +202,7 @@ describe('Handler Module', function () {
                     }
                 }
             });
+
             return handler.execute().then(() => {
                 const resolvedRules = handler.getResolvedRules();
                 expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
@@ -209,33 +213,33 @@ describe('Handler Module', function () {
     describe(`rule type resolution`, function () {
         it(`should resolve rule type, puting the type inside an object if it is specified as
         string`, function () {
-                const handler = new Handler({}, undefined, {
-                    password: 'password'
-                });
-                return handler.execute().then(() => {
-                    const resolvedRules = handler.getResolvedRules();
-                    expect(resolvedRules.password.type).toEqual('password');
-                });
+            const handler = new Handler({}, undefined, {
+                password: 'password'
             });
+            return handler.execute().then(() => {
+                const resolvedRules = handler.getResolvedRules();
+                expect(resolvedRules.password.type).toEqual('password');
+            });
+        });
 
         it(`should resolve shouldMatch rule option, adding begining and enclosing brackets if not
         present`, function () {
-                const handler = new Handler({}, undefined, {
-                    password1: 'password',
-                    password2: {
-                        type: 'password',
-                        options: {
-                            shouldMatch: {
-                                target: 'password1'
-                            }
+            const handler = new Handler({}, undefined, {
+                password1: 'password',
+                password2: {
+                    type: 'password',
+                    options: {
+                        shouldMatch: {
+                            target: 'password1'
                         }
                     }
-                });
-                return handler.execute().then(() => {
-                    const resolvedRules = handler.getResolvedRules();
-                    expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
-                });
+                }
             });
+            return handler.execute().then(() => {
+                const resolvedRules = handler.getResolvedRules();
+                expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
+            });
+        });
 
         it(`should set checkbox rule type as optional`, function () {
             const handler = new Handler({}, undefined, {
@@ -360,7 +364,9 @@ describe('Handler Module', function () {
             };
 
             const rules: Rules = {
+
                 isCurrentWork: 'checkbox',
+
                 startMonth: {
                     type: 'choice',
                     options: {
@@ -385,7 +391,9 @@ describe('Handler Module', function () {
                 subscribe: 'true'
             };
             const rules: Rules = {
+
                 subscribe: 'checkbox',
+
                 email: {
                     type: 'email',
                     requiredIf: {
@@ -407,12 +415,14 @@ describe('Handler Module', function () {
                 country: 'ng'
             };
             const rules: Rules = {
+
                 country: {
                     type: 'choice',
                     options: {
                         choices: countries
                     }
                 },
+
                 /** tell us your salary demand if you are a nigerian */
                 salary: {
                     type: 'money',
@@ -709,7 +719,7 @@ describe('Handler Module', function () {
                     num2: nonNumericText
                 };
 
-                const rules: Rules = {
+                const rules = {
                     num1: {
                         filters: {
                             toNumeric: true
@@ -781,7 +791,7 @@ describe('Handler Module', function () {
                 names: names.map(name => name.toUpperCase())
             };
 
-            const rules: Rules = {
+            const rules: Rules<'names'> = {
                 names: {
                     filters: {
                         capitalize: true
@@ -1109,6 +1119,13 @@ describe('Handler Module', function () {
         it(`should return true if the handler has not been executed and or its execution was unsuccessful`, function () {
             const handler = new Handler({}, {}, {});
             expect(handler.fails()).toBeTruthy();
+        });
+    });
+
+    describe(`#model(): Model<Fields, Exports>`, function () {
+        it(`should create a model instance and return it`, function () {
+            const handler = new Handler({}, {}, {});
+            expect(handler.model()).toBeInstanceOf(Model);
         });
     });
 });
