@@ -706,8 +706,22 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
      * sets the data source object if given
      */
     setDataSource(dataSource?: DataSource): this {
+
+        const resolveData = (arg: Array<string> | string) => {
+            if (isArray(arg)) {
+                return arg.map(current => resolveData(current));
+            }
+            else {
+                return arg.toString();
+            }
+        };
+
         if (dataSource) {
-            this.dataSource = dataSource;
+            const resolvedDataSource = Object.keys(dataSource).reduce((result, key) => {
+                result[key] = resolveData(dataSource[key]);
+                return result;
+            }, {});
+            this.dataSource = resolvedDataSource;
         }
         return this;
     }
