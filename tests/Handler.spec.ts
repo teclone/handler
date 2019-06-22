@@ -272,7 +272,7 @@ describe('Handler Module', function () {
             const data = {
                 date: '2018-01-01'
             };
-            const rules: Rules = {
+            const rules: Rules<'date'> = {
                 date: {
                     type: 'date',
                     hint: '{_this} is required',
@@ -292,7 +292,7 @@ describe('Handler Module', function () {
             const data = {
                 year: '2018'
             };
-            const rules: Rules = {
+            const rules: Rules<'year'> = {
                 year: {
                     type: 'int',
                     options: {
@@ -311,7 +311,7 @@ describe('Handler Module', function () {
             const data = {
                 time: '201810101001'
             };
-            const rules: Rules = {
+            const rules: Rules<'time'> = {
                 time: {
                     type: 'int',
                     options: {
@@ -331,7 +331,7 @@ describe('Handler Module', function () {
                 time: '201810101001',
                 country: 'Ng'
             };
-            const rules: Rules = {
+            const rules: Rules<'time' | 'country'> = {
                 time: {
                     type: 'int',
                     options: {
@@ -363,7 +363,7 @@ describe('Handler Module', function () {
                 isCurrentWork: 'false'
             };
 
-            const rules: Rules = {
+            const rules: Rules<'isCurrentWork' | 'startMonth'> = {
 
                 isCurrentWork: 'checkbox',
 
@@ -390,7 +390,7 @@ describe('Handler Module', function () {
             const data = {
                 subscribe: 'true'
             };
-            const rules: Rules = {
+            const rules: Rules<'subscribe' | 'email'> = {
 
                 subscribe: 'checkbox',
 
@@ -414,7 +414,7 @@ describe('Handler Module', function () {
             const data = {
                 country: 'ng'
             };
-            const rules: Rules = {
+            const rules: Rules<'country' | 'salary'> = {
 
                 country: {
                     type: 'choice',
@@ -445,7 +445,7 @@ describe('Handler Module', function () {
             const data = {
                 country: 'pl'
             };
-            const rules: Rules = {
+            const rules: Rules<'country' | 'salary'> = {
                 country: {
                     type: 'choice',
                     options: {
@@ -474,7 +474,7 @@ describe('Handler Module', function () {
             const data = {
                 country: 'pl'
             };
-            const rules: Rules = {
+            const rules: Rules<'salary'> = {
                 /** tell us your salary demand if you are not a nigerian */
                 salary: {
                     type: 'money',
@@ -577,7 +577,7 @@ describe('Handler Module', function () {
                 email: 'example.com',
             };
 
-            const rules: Rules = {
+            const rules: Rules<'firstName' | 'lastName' | 'email' | 'dateOfBirth' | 'cv'> = {
                 firstName: 'text',
                 lastName: 'text',
                 email: 'email',
@@ -596,7 +596,7 @@ describe('Handler Module', function () {
         it(`should pick up rules for extra required fields even when there data are not
             sent`, function () {
 
-                const rules: Rules = {
+                const rules: Rules<'firstName' | 'lastName' | 'email' | 'dateOfBirth'> = {
                     firstName: 'text',
                     lastName: 'text',
                     email: 'email',
@@ -624,7 +624,7 @@ describe('Handler Module', function () {
                 subscribe: 'false',
                 'roles.isAdmin': '1'
             };
-            const rules: Rules = {
+            const rules: Rules<'subscribe' | 'roles.isAdmin'> = {
                 subscribe: 'checkbox',
                 'roles.isAdmin': 'boolean'
             }
@@ -647,7 +647,7 @@ describe('Handler Module', function () {
                     name3: encodedName
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'name1' | 'name2' | 'name3'> = {
                     name1: 'text',
                     name2: {
                         filters: {
@@ -681,7 +681,7 @@ describe('Handler Module', function () {
                     text3: text
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'text1' | 'text2' | 'text3'> = {
                     text1: 'text',
                     text2: {
                         filters: {
@@ -712,7 +712,7 @@ describe('Handler Module', function () {
                     text1: text,
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'text1'> = {
                     text1: {
                         filters: {
                             stripTags: true,
@@ -737,7 +737,7 @@ describe('Handler Module', function () {
                     text1: text,
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'text1'> = {
                     text1: {
                         filters: {
                             minimize: true
@@ -760,7 +760,7 @@ describe('Handler Module', function () {
                 text2: text
             };
 
-            const rules: Rules = {
+            const rules: Rules<'text1' | 'text2'> = {
                 text1: 'text',
                 text2: {
                     filters: {
@@ -815,7 +815,7 @@ describe('Handler Module', function () {
                 names
             };
 
-            const rules: Rules = {
+            const rules: Rules<'names'> = {
                 names: {
                     filters: {
                         toUpper: true
@@ -837,7 +837,7 @@ describe('Handler Module', function () {
                 names: names.map(name => name.toUpperCase())
             };
 
-            const rules: Rules = {
+            const rules: Rules<'names'> = {
                 names: {
                     filters: {
                         toLower: true
@@ -883,7 +883,7 @@ describe('Handler Module', function () {
                 email
             };
 
-            const rules: Rules = {
+            const rules: Rules<'email'> = {
                 email: 'email'
             }
 
@@ -901,7 +901,7 @@ describe('Handler Module', function () {
                 url
             };
 
-            const rules: Rules = {
+            const rules: Rules<'url'> = {
                 url: 'url'
             }
 
@@ -923,7 +923,7 @@ describe('Handler Module', function () {
                     num4: nonNumericValue
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'num1' | 'num2' | 'num3' | 'num4'> = {
                     num1: 'int',
                     num2: 'pInt',
                     num3: 'nInt',
@@ -951,7 +951,7 @@ describe('Handler Module', function () {
                     num4: nonNumericValue
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'num1' | 'num2' | 'num3' | 'num4'> = {
                     num1: 'number',
                     num2: 'pNumber',
                     num3: 'nNumber',
@@ -975,7 +975,7 @@ describe('Handler Module', function () {
                     text: 'abcd'
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'text'> = {
                     text: {
                         filters: {
                             callback
@@ -1002,7 +1002,7 @@ describe('Handler Module', function () {
 
             const files: FilesSource = {};
 
-            const rules: Rules = {
+            const rules: Rules<'languages' | 'firstName' | 'email' | 'image'> = {
                 languages: 'text',
                 firstName: 'text',
                 email: 'email',
@@ -1030,7 +1030,7 @@ describe('Handler Module', function () {
 
             const files: FilesSource = {};
 
-            const rules: Rules = {
+            const rules: Rules<'languages' | 'firstName' | 'image'> = {
                 languages: 'text',
                 firstName: {
                     required: false
@@ -1062,7 +1062,7 @@ describe('Handler Module', function () {
                     cvs: createFileCollection()
                 };
 
-                const rules: Rules = {
+                const rules: Rules<'languages' | 'firstName' | 'image' | 'cv' | 'cvs'> = {
                     languages: {
                         defaultValue: ['english']
                     },
@@ -1162,7 +1162,7 @@ describe('Handler Module', function () {
                 firstName: 'Harrison',
                 email: 'someone@example.com'
             };
-            const rules: Rules = {
+            const rules: Rules<'firstName' | 'email'> = {
                 firstName: 'text',
                 email: {
                     postCompute: jest.fn(
@@ -1194,6 +1194,14 @@ describe('Handler Module', function () {
         it(`should create a model instance and return it`, function () {
             const handler = new Handler({}, {}, {});
             expect(handler.model()).toBeInstanceOf(Model);
+        });
+    });
+
+    describe(`#setCustomData(name: string, value: any)`, function () {
+        it(`should set custom data when called`, function () {
+            const handler = new Handler({}, {}, {});
+            handler.setCustomData('name', 'name-value');
+            expect(handler.getCustomData('name')).toEqual('name-value');
         });
     });
 });

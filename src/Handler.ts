@@ -1,7 +1,7 @@
 import {
     DataSource, FilesSource, Rules, ResolvedRules, ResolvedRule, Rule, DataType,
-    Filters, RawData, DataValue, Data, Options, ErrorBag, RequiredIf, DBCheck,
-    CallbackDBCheck, ModelDBCheck, DefaultFields, DBCheckType, OverrideIf
+    Filters, RawData, DataValue, Options, ErrorBag, RequiredIf, DBCheck,
+    CallbackDBCheck, ModelDBCheck, DBCheckType, OverrideIf, Data,
 } from './@types';
 import { DB_MODELS} from './Constants';
 import StateException from './Exceptions/StateException';
@@ -27,7 +27,7 @@ const globalConfig = {
 };
 
 
-export default class Handler<Fields extends string = DefaultFields, Exports = Data<Fields>> {
+export default class Handler<F extends string = string, Exports = Data<F>> {
 
     /**
      * supported database models
@@ -61,9 +61,9 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
 
     private addedFields: DataSource = {};
 
-    private rules: Rules<Fields> | null = null;
+    private rules: Rules<F> | null = null;
 
-    private resolvedRules: ResolvedRules<Fields> = {} as ResolvedRules<Fields>;
+    private resolvedRules: ResolvedRules<F> = {} as ResolvedRules<F>;
 
     private executed: boolean = false;
 
@@ -71,9 +71,9 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
 
     private optionalFields: string[] = [];
 
-    private validator: Validator<Fields>;
+    private validator: Validator<F>;
 
-    private dbChecker: DBChecker<Fields>;
+    private dbChecker: DBChecker<F>;
 
     // database model in use
     private dbModel: number = globalConfig.dbModel;
@@ -126,12 +126,14 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
         notExists: 'checkIfNotExists',
     };
 
-    public data: Data<Fields> = new Proxy<Data<Fields>>({} as Data<Fields>, DataProxy);
+    private customData: {[p: string]: any} = {};
 
-    public errors: ErrorBag<Fields> = {} as ErrorBag<Fields>;
+    public data: Data<F> = new Proxy<Data<F>>({} as Data<F>, DataProxy);
 
-    constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules<Fields>,
-        validator?: Validator<Fields>, dbChecker?: DBChecker<Fields>) {
+    public errors: ErrorBag<F> = {} as ErrorBag<F>;
+
+    constructor(dataSource?: DataSource, filesSource?: FilesSource, rules?: Rules<F>,
+        validator?: Validator<F>, dbChecker?: DBChecker<F>) {
 
         this.setDataSource(dataSource).setFilesSource(filesSource).setRules(rules)
             .setValidator(validator || new Validator()).setDBChecker(dbChecker || new DBChecker());
@@ -386,7 +388,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
      * extracts required fields and optional fields.
      * @param rules
      */
-    private categorizeRules(rules: ResolvedRules<Fields>) {
+    private categorizeRules(rules: ResolvedRules<F>) {
         Object.keys(rules).forEach(field => {
             const rule = rules[field];
             if (rule.required) {
@@ -398,7 +400,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
         });
     }
 
-    private filterRules(rules: ResolvedRules<Fields>, requredFields: string | string[]): ResolvedRules<Fields> {
+    private filterRules(rules: ResolvedRules<F>, requredFields: string | string[]): ResolvedRules<F> {
 
         requredFields = makeArray(requredFields);
 
@@ -416,7 +418,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
                 result[field] = rule;
             }
             return result;
-        }, {} as ResolvedRules<Fields>);
+        }, {} as ResolvedRules<F>);
     }
 
     /**
@@ -600,7 +602,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * resolves all overrideIf conditional rule
      */
-    private resolveOverrideIf(rules: ResolvedRules<Fields>): ResolvedRules<Fields> {
+    private resolveOverrideIf(rules: ResolvedRules<F>): ResolvedRules<F> {
         for (const [field, rule] of Object.entries<ResolvedRule>(rules)) {
 
             const overrideIf = rule.overrideIf;
@@ -616,7 +618,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * resolves all requiredIf conditional rule
      */
-    private resolveRequiredIf(rules: ResolvedRules<Fields>): ResolvedRules<Fields> {
+    private resolveRequiredIf(rules: ResolvedRules<F>): ResolvedRules<F> {
 
         for (const [, rule] of Object.entries<ResolvedRule>(rules)) {
 
@@ -669,14 +671,14 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * resolves the given rules
      */
-    private resolveRules(rules: Rules<Fields>): ResolvedRules<Fields> {
+    private resolveRules(rules: Rules<F>): ResolvedRules<F> {
 
         const fields = Object.keys(rules);
         const result = fields.reduce((result, field) => {
             const rule = rules[field];
             result[field] = this.resolveRule(field, rule);
             return result;
-        }, {} as ResolvedRules<Fields>);
+        }, {} as ResolvedRules<F>);
 
         //if there is a file field, and the user did not set the files object, throw
         if (isNull(this.filesSource) && fields.some(field => this.isFileDataType(result[field].type))) {
@@ -739,7 +741,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * set rules
      */
-    setRules(rules?: Rules<Fields>): this {
+    setRules(rules?: Rules<F>): this {
         if (rules) {
             this.rules = rules;
         }
@@ -749,7 +751,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * sets the validator instance to use
      */
-    setValidator(validator: Validator<Fields>): this {
+    setValidator(validator: Validator<F>): this {
         validator.setErrorBag(this.errors);
         this.validator = validator;
         return this;
@@ -759,7 +761,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
      * sets the db checker instance to use
      * @param dbChecker
      */
-    setDBChecker(dbChecker: DBChecker<Fields>): this {
+    setDBChecker(dbChecker: DBChecker<F>): this {
         dbChecker.setErrorBag(this.errors);
         this.dbChecker = dbChecker;
         return this;
@@ -825,7 +827,7 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
         this.executed = true;
         this.dataSource = copy({}, this.dataSource as DataSource, this.addedFields);
 
-        this.resolvedRules = this.resolveRules(this.rules as Rules<Fields>);
+        this.resolvedRules = this.resolveRules(this.rules as Rules<F>);
         this.resolvedRules = this.resolveRequiredIf(this.resolvedRules);
         this.resolveOverrideIf(this.resolvedRules);
 
@@ -903,7 +905,25 @@ export default class Handler<Fields extends string = DefaultFields, Exports = Da
     /**
      * creates and returns a model instance, that can be exported
      */
-    model(): Model<Fields, Exports> {
-        return new Model<Fields, Exports>(this);
+    model(): Model<F, Exports> {
+        return new Model<F, Exports>(this);
+    }
+
+    /**
+     * sets custom data by the given name
+     * @param name custom data name
+     * @param value custom data value
+     */
+    setCustomData(name: string, value: any) {
+        this.customData[name] = value;
+        return this;
+    }
+
+    /**
+     * gets an already set custom data
+     * @param name custom data name
+     */
+    getCustomData<T = any>(name: string): T {
+        return this.customData[name];
     }
 }

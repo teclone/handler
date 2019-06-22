@@ -1,16 +1,16 @@
 import { expandProperty, applyCase } from '@forensic-js/utils';
 import Handler from './Handler';
-import { DefaultFields, Data } from './@types';
+import { Data } from './@types';
 
-export default class Model<Fields extends string = DefaultFields, Exports = Data<Fields>> {
+export default class Model<F extends string = string, Exports = Data<F>> {
 
-    private handler: Handler<Fields, Exports>
+    private handler: Handler<F>
 
     private fieldsToSkip: string[] = [];
 
     private fieldsToRename: {[old: string]: string} = {};
 
-    constructor(handler: Handler<Fields, Exports>) {
+    constructor(handler: Handler<F, Exports>) {
         this.handler = handler;
     }
 

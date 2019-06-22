@@ -1,9 +1,9 @@
 import Common from './Common';
-import {DataValue, ModelDBCheck, DefaultFields } from './@types';
+import {DataValue, ModelDBCheck} from './@types';
 import { DB_MODELS } from './Constants';
 import { pickValue, applyCase } from '@forensic-js/utils';
 
-export default class DBChecker<Fields extends string = DefaultFields> extends Common<Fields> {
+export default class DBChecker<F extends string = string> extends Common<F> {
 
     private dbModel: number;
     private dbCaseStyle: number;

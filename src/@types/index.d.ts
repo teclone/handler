@@ -13,17 +13,24 @@ import {
     DocumentFileRule, ArchiveFileRule
 } from './rules/FilesRule';
 
-
 export declare type RawData = string | string[];
+
 export declare type DataSource = {
     [field: string]: RawData;
 }
 
 export declare type DataValue = string | number | boolean | string[] | number[] | boolean[];
-export declare type DefaultFields = string;
 
-export declare type Data<F extends DefaultFields> = {
+export declare type Data<F extends string> = {
     [P in F]: DataValue;
+}
+
+export declare interface CustomData {
+    [P: string]: any;
+}
+
+export declare type ErrorBag<F extends string> = {
+    [P in F]: string;
 }
 
 
@@ -54,10 +61,6 @@ export declare interface Regex {
     err?: string;
 }
 
-
-export declare type ErrorBag<F extends DefaultFields> = {
-    [P in F]: string;
-}
 
 export declare type DataType = 'checkbox' | 'boolean' | 'text' | 'email' | 'url' | 'password' |
     'int' | 'pInt' | 'nInt' | 'number' | 'pNumber' | 'nNumber' | 'money' | 'date' | 'range' |
@@ -124,8 +127,9 @@ export declare type Rule = BooleanRule | CheckboxRule | TextRule | EmailRule | U
     | PasswordRule | IntegerRule | NIntegerRule | PIntegerRule | NumberRule | NNumberRule
     | PNumberRule | DateRule | RangeRule | ChoiceRule | FileRule | ImageFileRule | AudioFileRule
     | VideoFileRule | MediaFileRule | DocumentFileRule | ArchiveFileRule;
-export declare type Rules<F extends DefaultFields = DefaultFields> = {
-    [P in F]: DataType | Rule
+
+export declare type Rules<F extends string> = {
+    [P in F]: DataType | Rule;
 }
 
 
@@ -154,7 +158,7 @@ export declare interface ResolvedRule {
      */
     postCompute?: (value: DataValue) => Promise<DataValue>;
 }
-export declare type ResolvedRules<F extends DefaultFields> = {
+export declare type ResolvedRules<F extends string> = {
     [P in F]: ResolvedRule;
 }
 
