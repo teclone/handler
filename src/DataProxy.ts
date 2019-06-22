@@ -9,6 +9,9 @@ export default {
         if (prop in target) {
             return target[prop];
         }
+        else if (prop === 'toJSON' || prop === 'toObject') {
+            return undefined;
+        }
         else {
             throw new FieldDataNotFoundException('no data found for the given field: ' + prop);
         }
