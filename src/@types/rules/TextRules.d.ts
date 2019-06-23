@@ -62,7 +62,7 @@ export declare interface PasswordOptions extends TextOptions {
     preValidate?: boolean;
 }
 
-declare interface BaseTextRule extends BaseRule {
+declare interface BaseTextRule<F extends string> extends BaseRule<F> {
     /**
      * defines text related field type validation options, such as text, email, password and url
      */
@@ -70,15 +70,15 @@ declare interface BaseTextRule extends BaseRule {
 }
 
 //text rules
-declare interface TextRule extends BaseTextRule {
+declare interface TextRule<F extends string> extends BaseTextRule<F> {
     type?: 'text'
 }
 
-declare interface EmailRule extends BaseTextRule {
+declare interface EmailRule<F extends string> extends BaseTextRule<F> {
     type: 'email';
 }
 
-declare interface URLRule extends BaseTextRule {
+declare interface URLRule<F extends string> extends BaseTextRule<F> {
     type: 'url';
     /**
      * defines url field type validation options
@@ -86,7 +86,7 @@ declare interface URLRule extends BaseTextRule {
     options?: URLOptions;
 }
 
-declare interface PasswordRule extends BaseTextRule {
+declare interface PasswordRule<F extends string> extends BaseTextRule<F> {
     type: 'password';
     /**
      * defines password field type validation options

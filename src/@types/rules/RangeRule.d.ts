@@ -33,7 +33,7 @@ declare interface NumberRangeOptions extends BaseOptions {
 export declare type RangeOptions = TextRangeOptions | NumberRangeOptions;
 
 //range rule
-export default interface RangeRule extends BaseRule {
+export default interface RangeRule<F extends string> extends BaseRule<F> {
     type: 'range';
     /**
      * defines validation options to be used for range ield type validations

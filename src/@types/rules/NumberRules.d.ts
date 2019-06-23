@@ -38,7 +38,7 @@ export declare interface NumberOptions extends BaseOptions {
     ltErr?: string;
 }
 
-declare interface BaseNumberRule extends BaseRule {
+declare interface BaseNumberRule<F extends string> extends BaseRule<F> {
     /**
      * defines validation options to be used for number related field type validations
      * such as ints, numbers and dates
@@ -47,30 +47,30 @@ declare interface BaseNumberRule extends BaseRule {
 }
 
 //number rules
-export declare interface IntegerRule extends BaseNumberRule {
+export declare interface IntegerRule<F extends string> extends BaseNumberRule<F> {
     type: 'int';
 }
 
-export declare interface NIntegerRule extends BaseNumberRule {
+export declare interface NIntegerRule<F extends string> extends BaseNumberRule<F> {
     type: 'nInt';
 }
 
-export declare interface PIntegerRule extends BaseNumberRule {
+export declare interface PIntegerRule<F extends string> extends BaseNumberRule<F> {
     type: 'pInt';
 }
 
-export declare interface NumberRule extends BaseNumberRule {
+export declare interface NumberRule<F extends string> extends BaseNumberRule<F> {
     type: 'number' | 'money';
 }
 
-export declare interface NNumberRule extends BaseNumberRule {
+export declare interface NNumberRule<F extends string> extends BaseNumberRule<F> {
     type: 'nNumber';
 }
 
-export declare interface PNumberRule extends BaseNumberRule {
+export declare interface PNumberRule<F extends string> extends BaseNumberRule<F> {
     type: 'pNumber';
 }
 
-export declare interface DateRule extends BaseNumberRule {
+export declare interface DateRule<F extends string> extends BaseNumberRule<F> {
     type: 'date';
 }

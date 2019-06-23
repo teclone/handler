@@ -123,17 +123,18 @@ export declare interface CallbackDBCheck {
 export declare type DBCheck = CallbackDBCheck | ModelDBCheck;
 
 
-export declare type Rule = BooleanRule | CheckboxRule | TextRule | EmailRule | URLRule
-    | PasswordRule | IntegerRule | NIntegerRule | PIntegerRule | NumberRule | NNumberRule
-    | PNumberRule | DateRule | RangeRule | ChoiceRule | FileRule | ImageFileRule | AudioFileRule
-    | VideoFileRule | MediaFileRule | DocumentFileRule | ArchiveFileRule;
+export declare type Rule<F extends string> = BooleanRule<F> | CheckboxRule<F> | TextRule<F>
+    | EmailRule<F> | URLRule<F> | PasswordRule<F> | IntegerRule<F> | NIntegerRule<F>
+    | PIntegerRule<F> | NumberRule<F> | NNumberRule<F> | PNumberRule<F> | DateRule<F>
+    | RangeRule<F> | ChoiceRule<F> | FileRule<F> | ImageFileRule<F> | AudioFileRule<F>
+    | VideoFileRule<F> | MediaFileRule<F> | DocumentFileRule<F> | ArchiveFileRule<F>;
 
 export declare type Rules<F extends string> = {
-    [P in F]: DataType | Rule;
+    [P in F]: DataType | Rule<F>;
 }
 
 
-export declare interface ResolvedRule {
+export declare interface ResolvedRule<F extends string> {
 
     type: DataType;
 
@@ -154,12 +155,19 @@ export declare interface ResolvedRule {
     checks: DBCheck[];
 
     /**
-     * computes field value after all validations succeeds
+     * computes and return a new value for the field. it accepts two arguments
+     * field value, and data object
      */
-    postCompute?: (value: DataValue) => Promise<DataValue>;
+    postCompute?: (value: DataValue, data: Data<F>) => Promise<DataValue>;
+
+    /**
+     * runs a post validation process on the field. returns true if validation succeeds or returns
+     * error message if validation fails
+     */
+    postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string>;
 }
 export declare type ResolvedRules<F extends string> = {
-    [P in F]: ResolvedRule;
+    [P in F]: ResolvedRule<F>;
 }
 
 

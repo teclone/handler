@@ -284,7 +284,7 @@ describe('Handler Module', function () {
             const handler = new Handler(data, null, rules);
             return handler.execute().then(() => {
                 const resolvedRules = handler.getResolvedRules();
-                expect((resolvedRules.date as DateRule).options.gt).toEqual(new CustomDate() + '');
+                expect((resolvedRules.date as DateRule<'date'>).options.gt).toEqual(new CustomDate() + '');
             });
         });
 
@@ -303,7 +303,7 @@ describe('Handler Module', function () {
             const handler = new Handler(data, null, rules);
             return handler.execute().then(() => {
                 const resolvedRules = handler.getResolvedRules();
-                expect((resolvedRules.year as NumberRule).options.gt).toEqual(new CustomDate().getFullYear() + '');
+                expect((resolvedRules.year as NumberRule<'year'>).options.gt).toEqual(new CustomDate().getFullYear() + '');
             });
         });
 
@@ -322,7 +322,7 @@ describe('Handler Module', function () {
             const handler = new Handler(data, null, rules);
             return handler.execute().then(() => {
                 const resolvedRules = handler.getResolvedRules();
-                expect(Number.parseInt((resolvedRules.time as NumberRule).options.gt as string)).toBeLessThanOrEqual(new CustomDate().getTime() * 1000);
+                expect(Number.parseInt((resolvedRules.time as NumberRule<'time'>).options.gt as string)).toBeLessThanOrEqual(new CustomDate().getTime() * 1000);
             });
         });
 
@@ -348,7 +348,7 @@ describe('Handler Module', function () {
             const handler = new Handler(data, null, rules);
             return handler.execute().then(() => {
                 const resolvedRules = handler.getResolvedRules();
-                expect((resolvedRules.time as NumberRule).options.gt).toEqual(2000);
+                expect((resolvedRules.time as NumberRule<'time' | 'country'>).options.gt).toEqual(2000);
             });
         });
     });
@@ -1155,23 +1155,57 @@ describe('Handler Module', function () {
         });
     });
 
-    describe(`Data PostComputation`, function() {
-        it(`should call the postCompute callback if defined, after all validations
-            has succeeded`, function() {
-            const dataSource: DataSource = {
-                firstName: 'Harrison',
-                email: 'someone@example.com'
-            };
-            const rules: Rules<'firstName' | 'email'> = {
-                firstName: 'text',
-                email: {
-                    postCompute: jest.fn(
-                        (value: DataValue) => Promise.resolve(value.toString().toUpperCase())
-                    )
-                }
-            };
-            return handler.setDataSource(dataSource).setRules(rules).execute().then(() => {
-                expect(handler.data.email).toEqual('SOMEONE@EXAMPLE.COM');
+    describe(`Post processes`, function() {
+        describe(`postValidate`, function() {
+
+            it(`should call the postValidate callback, passing in field value, and data object as
+            second parameter. It should validate as true if the async callback resolves to true`, function() {
+
+                const dataSource: DataSource = {
+                    firstName: 'Harrison',
+                    email: 'someone@example.com'
+                };
+                const rules: Rules<'firstName' | 'email'> = {
+                    firstName: {
+                        postValidate: jest.fn((value, data) => {
+                            return Promise.resolve(value === data.email? true : 'error');
+                        }),
+                    },
+                    email: {
+                        type: 'email',
+
+                        postValidate: jest.fn((value, data) => {
+                            return Promise.resolve(value === data.email? true : 'error');
+                        }),
+                    }
+                };
+                const handler = new Handler(dataSource, {}, rules);
+                return handler.execute().then(() => {
+                    expect(handler.errors.firstName).toEqual('error');
+                    expect(handler.errors.email).toBeUndefined();
+                });
+            });
+        });
+
+        describe(`postCompute`, function() {
+            it(`should call the postCompute callback if defined, after all validations
+                has succeeded`, function() {
+                const dataSource: DataSource = {
+                    firstName: 'Harrison',
+                    email: 'someone@example.com'
+                };
+                const rules: Rules<'firstName' | 'email'> = {
+                    firstName: 'text',
+                    email: {
+                        postCompute: jest.fn(
+                            (value: DataValue) => Promise.resolve(value.toString().toUpperCase())
+                        )
+                    }
+                };
+                const handler = new Handler(dataSource, {}, rules);
+                return handler.execute().then(() => {
+                    expect(handler.data.email).toEqual('SOMEONE@EXAMPLE.COM');
+                });
             });
         });
     });

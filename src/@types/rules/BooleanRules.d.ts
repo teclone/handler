@@ -1,7 +1,7 @@
 import BaseRule, {BaseOptions} from './BaseRule';
 
 // boolean rules
-export declare interface BooleanRule extends BaseRule {
+export declare interface BooleanRule<F extends string> extends BaseRule<F> {
     type: 'boolean';
     /**
      * defines validation options to perform on the boolean field
@@ -9,7 +9,7 @@ export declare interface BooleanRule extends BaseRule {
     options?: BaseOptions;
 }
 
-export declare interface CheckboxRule extends BaseRule {
+export declare interface CheckboxRule<F extends string> extends BaseRule<F> {
     type: 'checkbox';
     /**
      * defines validation options to perform on the checkbox field

@@ -161,13 +161,19 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     }
 
     /**
-     * runs data post validation computations
+     * run
      */
-    private async postComputeDataValues() {
+    private async runPostProcesses() {
         for (const field of Object.keys(this.resolvedRules)) {
-            const rule = this.resolvedRules[field];
+            const rule = this.resolvedRules[field] as ResolvedRule<F>;
             if (isCallable(rule.postCompute)) {
-                this.data[field] = await rule.postCompute(this.data[field]);
+                this.data[field] = await rule.postCompute(this.data[field], this.data);
+            }
+            if (isCallable(rule.postValidate)) {
+                const result = await rule.postValidate(this.data[field], this.data);
+                if (isString(result)) {
+                    this.setError(field, result);
+                }
             }
         }
     }
@@ -377,7 +383,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     /**
      * resolves the specific target objects within all resolved rules
      */
-    private resolveOptions(target: keyof ResolvedRule) {
+    private resolveOptions(target: keyof ResolvedRule<F>) {
         Object.keys(this.resolvedRules).forEach(field => {
             const rule = this.resolvedRules[field];
             rule[target] = this.resolveOption(field, rule[target]);
@@ -603,7 +609,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
      * resolves all overrideIf conditional rule
      */
     private resolveOverrideIf(rules: ResolvedRules<F>): ResolvedRules<F> {
-        for (const [field, rule] of Object.entries<ResolvedRule>(rules)) {
+        for (const [field, rule] of Object.entries<ResolvedRule<F>>(rules)) {
 
             const overrideIf = rule.overrideIf;
             if (isObject<OverrideIf>(overrideIf)) {
@@ -620,7 +626,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
      */
     private resolveRequiredIf(rules: ResolvedRules<F>): ResolvedRules<F> {
 
-        for (const [, rule] of Object.entries<ResolvedRule>(rules)) {
+        for (const [, rule] of Object.entries<ResolvedRule<F>>(rules)) {
 
             const requiredIf = rule.requiredIf;
             if (isObject<RequiredIf>(requiredIf)) {
@@ -633,13 +639,13 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     /**
      * resolves the rule and returns the result
      */
-    private resolveRule(field, rule: Rule | DataType): ResolvedRule {
+    private resolveRule(field, rule: Rule<F> | DataType): ResolvedRule<F> {
 
         if (isString(rule)) {
-            rule = { type: rule } as Rule;
+            rule = { type: rule } as Rule<F>;
         }
 
-        const result: ResolvedRule = {
+        const result: ResolvedRule<F> = {
             type: pickValue('type', rule, 'text'),
             required: pickValue('required', rule, true),
             defaultValue: pickValue('defaultValue', rule, undefined),
@@ -649,7 +655,8 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
             options: pickObject('options', rule),
             filters: pickObject('filters', rule),
             checks: makeArray(rule.checks as DBCheck[]),
-            postCompute: pickValue('postCompute', rule, undefined)
+            postCompute: pickValue('postCompute', rule, undefined),
+            postValidate: pickValue('postValidate', rule, undefined)
         };
 
         //enclose the target field if it is not enclosed
@@ -860,7 +867,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         }
 
         if (this.succeeds()) {
-            await this.postComputeDataValues();
+            await this.runPostProcesses();
         }
 
         return this.succeeds();

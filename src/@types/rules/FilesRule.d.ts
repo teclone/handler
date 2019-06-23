@@ -15,7 +15,7 @@ export declare interface FileOptions extends NumberOptions {
     moveTo?: string;
 }
 
-export declare interface BaseFileRule extends BaseRule {
+export declare interface BaseFileRule<F extends string> extends BaseRule<F> {
     /**
      * defines validation options to be used for file related field type validations
      * such as file, image, audio, video, media, archive, and document
@@ -24,30 +24,30 @@ export declare interface BaseFileRule extends BaseRule {
 }
 
 //file rules
-export declare interface FileRule extends BaseFileRule {
+export declare interface FileRule<F extends string> extends BaseFileRule<F> {
     type: 'file';
 }
 
-export declare interface ImageFileRule extends BaseFileRule {
+export declare interface ImageFileRule<F extends string> extends BaseFileRule<F> {
     type: 'image';
 }
 
-export declare interface AudioFileRule extends BaseFileRule {
+export declare interface AudioFileRule<F extends string> extends BaseFileRule<F> {
     type: 'audio';
 }
 
-export declare interface VideoFileRule extends BaseFileRule {
+export declare interface VideoFileRule<F extends string> extends BaseFileRule<F> {
     type: 'video';
 }
 
-export declare interface MediaFileRule extends BaseFileRule {
+export declare interface MediaFileRule<F extends string> extends BaseFileRule<F> {
     type: 'media';
 }
 
-export declare interface DocumentFileRule extends BaseFileRule {
+export declare interface DocumentFileRule<F extends string> extends BaseFileRule<F> {
     type: 'document';
 }
 
-export declare interface ArchiveFileRule extends BaseFileRule {
+export declare interface ArchiveFileRule<F extends string> extends BaseFileRule<F> {
     type: 'archive';
 }

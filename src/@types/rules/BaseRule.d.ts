@@ -1,4 +1,4 @@
-import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf } from '..';
+import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf, Data } from '..';
 
 export declare interface ShouldMatchObject {
     /**
@@ -24,7 +24,7 @@ export declare interface BaseOptions {
     err?: string;
 }
 
-export default interface BaseRule {
+export default interface BaseRule<F extends string> {
 
     /**
      * field type. determines the kind of validations to perform on the field value(s)
@@ -68,7 +68,14 @@ export default interface BaseRule {
     checks?: DBCheck | DBCheck[];
 
     /**
-     * computes field value after all validations succeeds
+     * computes and return a new value for the field. it accepts two arguments
+     * field value, and data object
      */
-    postCompute?: (value: DataValue) => Promise<DataValue>;
+    postCompute?: (value: DataValue, data: Data<F>) => Promise<DataValue>;
+
+    /**
+     * runs a post validation process on the field. returns true if validation succeeds or returns
+     * error message if validation fails
+     */
+    postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string>;
 }
