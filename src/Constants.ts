@@ -1,7 +1,7 @@
 /** supported database models */
 export const DB_MODELS = {
-    NOSQL: 1,
-    RELATIONAL: 2
+  NOSQL: 1,
+  RELATIONAL: 2,
 };
 
 /** supported date format */
@@ -9,8 +9,19 @@ export const DATE_FORMAT = /^([0-9]{4})([-._:|/\s])?([0-9]{1,2})\2?([0-9]{1,2})$
 
 /** supported url schemes */
 export const URL_SCHEMES = [
-    'http', 'https', 'ssh', 'ftp', 'smtp', 'telnet', 'imap', 'ip',
-    'ssl', 'pop3', 'sip','ws', 'wss'
+  'http',
+  'https',
+  'ssh',
+  'ftp',
+  'smtp',
+  'telnet',
+  'imap',
+  'ip',
+  'ssl',
+  'pop3',
+  'sip',
+  'ws',
+  'wss',
 ];
 
 /** default password min length */
