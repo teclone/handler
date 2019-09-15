@@ -1,9 +1,9 @@
 import Common from './Common';
-import { ErrorBag, FilesSource, Options, Unit, DateConverter } from './@types';
+import { FilesSource, Options, Unit, DateConverter, RegexObject, Regex } from './@types';
 import CustomDate from './CustomDate';
 import {
     isUndefined, expandToNumeric, convertToMemoryUnit, pickValue, makeArray,
-    range, isString, isNull, isObject
+    range, isString, isNull, isObject, isRegex
 } from '@forensic-js/utils';
 import { DATE_FORMAT, URL_SCHEMES, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, DEFAULT_DOCUMENT_FILES, DEFAULT_ARCHIVE_FILES } from './Constants';
 import { dateConverter } from './Util';
@@ -66,12 +66,28 @@ export default class Validator<F extends string = string> extends Common<F> {
     }
 
     /**
+     * resolves regex, returning a regex object
+     * @param regex
+     */
+    private resolveRegex(regex: Regex): RegexObject {
+        if (isRegex(regex)) {
+            return {
+                pattern: regex
+            }
+        }
+        else {
+            return regex;
+        }
+    }
+
+    /**
      * validates regex check none rules
      */
     protected regexCheckNone(value: string, options: TextOptions) {
         if (this.succeeds() && options.regexNone) {
             const regexes = makeArray(options.regexNone);
-            for (const regex of regexes) {
+            for (const current of regexes) {
+                const regex = this.resolveRegex(current);
                 if (regex.pattern.test(value)) {
                     this.setError(
                         pickValue('err', regex, '{this} is not a valid {_this}'),
@@ -104,7 +120,8 @@ export default class Validator<F extends string = string> extends Common<F> {
      */
     protected regexCheckAll(value: string, options: TextOptions) {
         if (this.succeeds() && options.regexAll) {
-            for (const regex of options.regexAll) {
+            for (const current of options.regexAll) {
+                const regex = this.resolveRegex(current);
                 if (!regex.pattern.test(value)) {
                     this.setError(
                         pickValue('err', regex, '{this} is not a valid {_this}'),
@@ -122,9 +139,10 @@ export default class Validator<F extends string = string> extends Common<F> {
     */
     protected regexCheck(value: string, options: TextOptions) {
         if (this.succeeds() && options.regex) {
-            if (!options.regex.pattern.test(value)) {
+            const regex = this.resolveRegex(options.regex);
+            if (!regex.pattern.test(value)) {
                 this.setError(
-                    pickValue('err', options.regex, '{this} is not a valid {_this}'),
+                    pickValue('err', regex, '{this} is not a valid {_this}'),
                     value
                 );
             }

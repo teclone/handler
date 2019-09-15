@@ -4,93 +4,95 @@ import { replaceCallback } from '@forensic-js/regex';
 import StateException from './Exceptions/StateException';
 
 export default class Common<F extends string = string> {
+  protected errors: ErrorBag<F> = {} as ErrorBag<F>;
 
-    protected errors: ErrorBag<F> = {} as ErrorBag<F>;
+  private status: boolean = true;
 
-    private status: boolean = true;
+  protected field: string = '';
 
-    protected field: string = '';
+  protected options: Options | DBCheck = {};
 
-    protected options: Options | DBCheck = {};
+  protected index: number = 0;
 
-    protected index: number = 0;
+  protected shouldProceed: boolean = true;
 
-    protected shouldProceed: boolean = true;
+  /**
+   * resets the instance and makes it ready for the next validation process
+   *
+   * @param field next field to validate
+   * @param options validation options
+   * @param index field value index
+   */
+  reset(field: string, options: Options | DBCheck, index: number): this {
+    this.field = field;
+    this.options = options;
+    this.index = index;
 
-    /**
-     * resets the instance and makes it ready for the next validation process
-     *
-     * @param field next field to validate
-     * @param options validation options
-     * @param index field value index
-     */
-    reset(field: string, options: Options | DBCheck, index: number): this {
+    this.shouldProceed = true;
+    this.status = true;
 
-        this.field = field;
-        this.options = options;
-        this.index = index;
+    return this;
+  }
 
-        this.shouldProceed = true;
-        this.status = true;
-
-        return this;
+  /**
+   * sets the given error message
+   */
+  setError(errorMessage: string, value: string): false {
+    if (this.status === false) {
+      throw new StateException('cant set errors twice, did you forget to reset validator?');
+    }
+    if (!isNumeric(value)) {
+      value = `"${value}"`;
     }
 
-    /**
-     * sets the given error message
-    */
-    setError(errorMessage: string, value: string): false {
-        if (this.status === false) {
-            throw new StateException('cant set errors twice, did you forget to reset validator?');
+    this.errors[this.field] = replaceCallback(
+      /\{([^}]+)\}/,
+      matches => {
+        switch (matches[1].toLowerCase()) {
+          case 'this':
+            return value;
+
+          case '_this':
+            return this.field;
+
+          case '_index':
+            return (this.index + 1).toString();
+          default:
+            return matches[0];
         }
-        if (!isNumeric(value)) {
-            value = `"${value}"`;
-        }
+      },
+      errorMessage
+    );
 
-        this.errors[this.field] = replaceCallback(/\{([^}]+)\}/, (matches) => {
-            switch(matches[1].toLowerCase()) {
-                case 'this':
-                    return value;
+    return (this.status = false);
+  }
 
-                case '_this':
-                    return this.field;
+  /**
+   * sets the error bag if given
+   */
+  setErrorBag(errorBag: ErrorBag<F>): this {
+    this.errors = errorBag;
+    return this;
+  }
 
-                case '_index':
-                    return (this.index + 1).toString();
-                default:
-                    return matches[0];
-            }
-        }, errorMessage);
+  /**
+   * returns the errobag object containing all errors
+   */
+  getErrorBag(): ErrorBag<F> {
+    return this.errors;
+  }
 
-        return this.status = false;
-    }
+  /**
+   * returns true if the last validation succeeded
+   */
+  succeeds(): boolean {
+    return this.status;
+  }
 
-    /**
-     * sets the error bag if given
-     */
-    setErrorBag(errorBag: ErrorBag<F>): this {
-        this.errors = errorBag;
-        return this;
-    }
-
-    /**
-     * returns the errobag object containing all errors
-     */
-    getErrorBag(): ErrorBag<F> {
-        return this.errors;
-    }
-
-    /**
-     * returns true if the last validation succeeded
-     */
-    succeeds(): boolean {
-        return this.status;
-    }
-
-    /**
-     * returns true if the last validation failed
-     */
-    fails(): boolean {
-        return !this.succeeds();
-    }
+  /**
+   * returns true if the last validation failed
+   */
+  fails(): boolean {
+    return !this.succeeds();
+  }
 }

@@ -1,11 +1,11 @@
 module.exports = {
-    srcDir: 'src',
+  srcDir: 'src',
 
-    mainModuleFileName: 'Handler.ts',
+  mainModuleFileName: 'Handler.ts',
 
-    mainModuleName: 'Handler',
+  mainModuleName: 'Handler',
 
-    libConfig: {
-        enabled: true,
-    }
-}
+  libConfig: {
+    enabled: true,
+  },
+};
