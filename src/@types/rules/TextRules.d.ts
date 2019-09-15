@@ -59,6 +59,18 @@ export declare interface PasswordOptions extends TextOptions {
   preValidate?: boolean;
 }
 
+export declare interface PhoneNumberOptions extends TextOptions {
+  /**
+   * if given, the phone number is validated against this country.
+   */
+  country?: string;
+
+  /**
+   * boolean indicating if non-geographical numbers should not be accepted. defaults to true.
+   */
+  enforceCountry?: boolean;
+}
+
 declare interface BaseTextRule<F extends string> extends BaseRule<F> {
   /**
    * defines text related field type validation options, such as text, email, password and url
@@ -89,4 +101,12 @@ declare interface PasswordRule<F extends string> extends BaseTextRule<F> {
    * defines password field type validation options
    */
   options?: PasswordOptions;
+}
+
+declare interface PhoneNumberRule<F extends string> extends BaseTextRule<F> {
+  type: 'phoneNumber';
+  /**
+   * defines phoneNumber type validation options
+   */
+  options?: PhoneNumberOptions;
 }

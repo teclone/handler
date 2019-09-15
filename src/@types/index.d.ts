@@ -1,6 +1,15 @@
 import CustomDate from '../CustomDate';
 import { BooleanRule, CheckboxRule } from './rules/BooleanRules';
-import { TextRule, EmailRule, URLRule, PasswordRule, TextOptions } from './rules/TextRules';
+import {
+  TextRule,
+  EmailRule,
+  URLRule,
+  PasswordRule,
+  TextOptions,
+  PhoneNumberRule,
+  PhoneNumberOptions,
+  PasswordOptions,
+} from './rules/TextRules';
 import {
   IntegerRule,
   NIntegerRule,
@@ -22,6 +31,7 @@ import {
   MediaFileRule,
   DocumentFileRule,
   ArchiveFileRule,
+  FileOptions,
 } from './rules/FilesRule';
 
 export declare type RawData = string | string[];
@@ -76,6 +86,7 @@ export declare type DataType =
   | 'text'
   | 'email'
   | 'url'
+  | 'phoneNumber'
   | 'password'
   | 'int'
   | 'pInt'
@@ -136,7 +147,15 @@ export declare interface Filters {
   callback?: FilterCallback;
 }
 
-export declare type Options = BaseOptions | NumberOptions | TextOptions | RangeOptions | ChoiceOptions;
+export declare type Options =
+  | BaseOptions
+  | NumberOptions
+  | TextOptions
+  | RangeOptions
+  | ChoiceOptions
+  | FileOptions
+  | PhoneNumberOptions
+  | PasswordOptions;
 
 export declare interface ModelDBCheck {
   if: DBCheckType;
@@ -159,6 +178,7 @@ export declare type Rule<F extends string> =
   | EmailRule<F>
   | URLRule<F>
   | PasswordRule<F>
+  | PhoneNumberRule<F>
   | IntegerRule<F>
   | NIntegerRule<F>
   | PIntegerRule<F>
@@ -203,13 +223,13 @@ export declare interface ResolvedRule<F extends string> {
    * computes and return a new value for the field. it accepts two arguments
    * field value, and data object
    */
-  postCompute?: (value: DataValue, data: Data<F>) => Promise<DataValue>;
+  postCompute?: (value: DataValue, data: Data<F>) => Promise<DataValue> | DataValue;
 
   /**
    * runs a post validation process on the field. returns true if validation succeeds or returns
    * error message if validation fails
    */
-  postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string>;
+  postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string> | true | string;
 }
 export declare type ResolvedRules<F extends string> = {
   [P in F]: ResolvedRule<F>;

@@ -48,6 +48,9 @@ import DataProxy from './DataProxy';
 import DBChecker from './DBChecker';
 import Model from './Model';
 
+import { parsePhoneNumberFromString, PhoneNumber, CountryCode } from 'libphonenumber-js';
+import { PhoneNumberOptions } from './@types/rules/TextRules';
+
 const globalConfig = {
   dbModel: DB_MODELS.NOSQL,
   dbCaseStyle: CASE_STYLES.CAMEL_CASE,
@@ -140,6 +143,9 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
     //password validation
     password: 'validatePassword',
+
+    //phone number validation
+    phoneNumber: 'validatePhoneNumber',
   };
 
   private DBCheckTypesToMethod: { [P in DBCheckType]: string } = {
@@ -700,6 +706,24 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     if (result.type === 'checkbox' || typeof result.defaultValue !== 'undefined') {
       result.required = false;
     }
+
+    if (result.type === 'phoneNumber') {
+      const postCompute = result.postCompute;
+      const options = result.options as PhoneNumberOptions;
+
+      result.postCompute = (value: string, data) => {
+        const newValue = (parsePhoneNumberFromString(
+          value,
+          options.country ? (options.country.substring(0, 2).toUpperCase() as CountryCode) : undefined
+        ) as PhoneNumber).number;
+
+        if (postCompute) {
+          return postCompute(newValue as DataValue, data);
+        } else {
+          return newValue as DataValue;
+        }
+      };
+    }
     return result;
   }
 
@@ -712,6 +736,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       (result, field) => {
         const rule = rules[field];
         result[field] = this.resolveRule(field, rule);
+
         return result;
       },
       {} as ResolvedRules<F>
