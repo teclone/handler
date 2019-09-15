@@ -42,6 +42,8 @@ It is also extensible, customizable so that you can define more custom validatio
 
   - [URL Validation](#url-validation)
 
+  - [Phone Number Validation](#phone-number-validation)
+
   - [Numeric Validation](#numeric-validation)
 
   - [Password Validation](#password-validation)
@@ -99,51 +101,57 @@ import bcrypt from 'bcrypt';
 const app = Server.create(); // create server instance
 
 app.post('/signup', async (req, res) => {
-    const handler = new Handler(req.data, req.files, {
-        email: {
-            type: 'email',
-            checks: {
-                if: 'exists',
-                model: UserModel,
-                err: 'email address already exists'
-            }
-        },
-        password1: {
-            type: 'password',
-            postCompute: async function(password) {
-                return await bcrypt.hash(password, Number.parseInt(process.env.SALT_ROUNDS));
-            }
-        },
-        password2: {
-            type: 'password',
-            shouldMatch: 'password1'
-        }
+  const handler = new Handler(req.data, req.files, {
+    email: {
+      type: 'email',
+      checks: {
+        if: 'exists',
+        model: UserModel,
+        err: 'email address already exists',
+      },
+    },
+    password1: {
+      type: 'password',
+      postCompute: async function(password) {
+        return await bcrypt.hash(password, Number.parseInt(process.env.SALT_ROUNDS));
+      },
+    },
+    password2: {
+      type: 'password',
+      shouldMatch: 'password1',
+    },
+  });
+
+  if (await handler.execute()) {
+    const data = handler
+      .model()
+      .skipFields('password2')
+      .renameField('password1', 'password')
+      .export();
+    const user = await UserModel.create(data);
+    handler.data.id = user.id;
+  }
+
+  if (handler.succeeds()) {
+    return res.json({
+      status: 'success',
+      data: {
+        id: handler.data.id,
+      },
     });
-
-    if (await handler.execute()) {
-        const data = handler.model().skipFields('password2').renameField('password1', 'password').export();
-        const user = await UserModel.create(data);
-        handler.data.id = user.id;
-    }
-
-    if (handler.succeeds()) {
-        return res.json({
-            status: 'success',
-            data: {
-                id: handler.data.id
-            }
-        });
-    }
-    else {
-        return res.json({
-            status: 'failed',
-            errors: handler.errors
-        }, 400);
-    }
+  } else {
+    return res.json(
+      {
+        status: 'failed',
+        errors: handler.errors,
+      },
+      400
+    );
+  }
 });
 
 app.listen(null, () => {
-    console.log('listening');
+  console.log('listening');
 });
 ```
 
@@ -177,58 +185,58 @@ Moreover, there is the **`{CURRENT_DATE}`**, **`{CURRENT_YEAR}`**, and **`{CURRE
 
 ```typescript
 const rules = {
-    //validate first name. should be at least 3 characters
-    'first-name': {
-        options: {
-            min: 3,
-            minErr: '{_this} should be at least 3 charaters length'
-        }
+  //validate first name. should be at least 3 characters
+  'first-name': {
+    options: {
+      min: 3,
+      minErr: '{_this} should be at least 3 charaters length',
     },
+  },
 
-    //validate last name. should be at least 3 characters
-    'last-name': {
-        options: {
-            min: 3,
-            minErr: '{_this} should be at least 3 charaters length'
-        }
+  //validate last name. should be at least 3 characters
+  'last-name': {
+    options: {
+      min: 3,
+      minErr: '{_this} should be at least 3 charaters length',
     },
+  },
 
-    //validate middle name. should be at least 3 characters. it is optional
-    'middle-name': {
-        required: false,
-        options: {
-            min: 3,
-            minErr: '{_this} should be at least 3 charaters length'
-        }
+  //validate middle name. should be at least 3 characters. it is optional
+  'middle-name': {
+    required: false,
+    options: {
+      min: 3,
+      minErr: '{_this} should be at least 3 charaters length',
     },
+  },
 
-    //we are expecting an array of favorite colors
-    'favorite-colors': {
-        type: 'choice',
-        filters: {
-            //convert the colors to lowercase
-            toLower: true,
-            /** we can also supply a callback function*/
-            callback: value => value.toLowerCase()
-        },
-        options: {
-            choices: ['green', 'white', 'blue', 'red', 'violet', 'purple'],
-            err: 'color {_index} is not a valid color'
-        }
+  //we are expecting an array of favorite colors
+  'favorite-colors': {
+    type: 'choice',
+    filters: {
+      //convert the colors to lowercase
+      toLower: true,
+      /** we can also supply a callback function*/
+      callback: value => value.toLowerCase(),
     },
+    options: {
+      choices: ['green', 'white', 'blue', 'red', 'violet', 'purple'],
+      err: 'color {_index} is not a valid color',
+    },
+  },
 
-    // this is a checkbox type
-    'subscribe-newsletter': 'checkbox',
+  // this is a checkbox type
+  'subscribe-newsletter': 'checkbox',
 
-    //email is required if user checks the subscribe checkbox,
-    email: {
-        type: 'email',
-        err: '{this} is not a valid email address',
-        requiredIf: {
-            if: 'checked',
-            field: 'subscribe-newsletter'
-        }
-    }
+  //email is required if user checks the subscribe checkbox,
+  email: {
+    type: 'email',
+    err: '{this} is not a valid email address',
+    requiredIf: {
+      if: 'checked',
+      field: 'subscribe-newsletter',
+    },
+  },
 };
 ```
 
@@ -317,69 +325,68 @@ It is quite easy to carry out different flavours of regex rule tests on field va
 For **regex** test, it must match the test, otherwise it is flagged as error. For **regexAny**, at least one of the tests must match. For **regexAll**, all regex tests must match. For **regexNone**, none of the regex tests should match.
 
 ```typescript
- const rules = {
-
-    'first-name': {
-        options: {
-            regexAll: [
-                //name must start with letter
-                {
-                    pattern: /^[a-z]/i,
-                    err: 'name must start with an alphabet'
-                },
-                //only aphabets, dash and apostrophe is allowed in name
-                {
-                    pattern: /^[-a-z']+$/,
-                    err: 'only alphabets, dash and apostrophe is allowed in names'
-                }
-            ]
-        }
-    },
-
-    country: {
-        options: {
-            regex: {
-                //we expect two letter country code.
-                pattern: /^[a-z]{2}$/,
-                err: '{this} is not a 2-letter country iso-code name'
-            }
-        }
-    },
-
-    'phone-number': {
-        options: {
-            regexAny: {
-                //array of tests, we are ok if any of the test matches, else flag error
-                patterns: [
-                    //phone number can match nigeria mobile number format
-                    /^0[0-9]{3}[-\s]?[0-9]{3}[-\s]?[0-9]{4}$/,
-
-                    //phone number can match uk mobile number format
-                    /^07[0-9]{3}[-\s]?[0-9]{6}$/
-                ],
-                err: 'only nigeria and uk number formats are accepted'
-            }
-        }
-    },
-
-    'favorite-colors': {
-        options: {
-            //we dont accept black nor white colors.
-            //note that we could combine the regex. just for example purposes.
-            regexNone: [
-                //we dont accept white as a color
-                {
-                    pattern: /^white$/i,
-                    err: '{this} is not an acceptable color'
-                },
-                //we dont accept black either
-                {
-                    pattern: /^black$/i,
-                    err: '{this} is not an acceptable color'
-                },
-            ],
+const rules = {
+  'first-name': {
+    options: {
+      regexAll: [
+        //name must start with letter
+        {
+          pattern: /^[a-z]/i,
+          err: 'name must start with an alphabet',
         },
+        //only aphabets, dash and apostrophe is allowed in name
+        {
+          pattern: /^[-a-z']+$/,
+          err: 'only alphabets, dash and apostrophe is allowed in names',
+        },
+      ],
     },
+  },
+
+  country: {
+    options: {
+      regex: {
+        //we expect two letter country code.
+        pattern: /^[a-z]{2}$/,
+        err: '{this} is not a 2-letter country iso-code name',
+      },
+    },
+  },
+
+  'phone-number': {
+    options: {
+      regexAny: {
+        //array of tests, we are ok if any of the test matches, else flag error
+        patterns: [
+          //phone number can match nigeria mobile number format
+          /^0[0-9]{3}[-\s]?[0-9]{3}[-\s]?[0-9]{4}$/,
+
+          //phone number can match uk mobile number format
+          /^07[0-9]{3}[-\s]?[0-9]{6}$/,
+        ],
+        err: 'only nigeria and uk number formats are accepted',
+      },
+    },
+  },
+
+  'favorite-colors': {
+    options: {
+      //we dont accept black nor white colors.
+      //note that we could combine the regex. just for example purposes.
+      regexNone: [
+        //we dont accept white as a color
+        {
+          pattern: /^white$/i,
+          err: '{this} is not an acceptable color',
+        },
+        //we dont accept black either
+        {
+          pattern: /^black$/i,
+          err: '{this} is not an acceptable color',
+        },
+      ],
+    },
+  },
 };
 ```
 
@@ -389,27 +396,27 @@ This rule is handy when you want to make sure that a field's value matches anoth
 
 ```typescript
 const rules = {
-    password1: 'password',
-    password2: {
-        type: 'password',
-        shouldMatch: 'password1'
-    },
+  password1: 'password',
+  password2: {
+    type: 'password',
+    shouldMatch: 'password1',
+  },
 };
 ```
 
 ### Date Validation
 
-To validate dates, set the type property to *'date'*. You can specify [limiting rules](#limiting-rule-validation) that validates if the date is within a given limited range.
+To validate dates, set the type property to _'date'_. You can specify [limiting rules](#limiting-rule-validation) that validates if the date is within a given limited range.
 
 ```typescript
 const rules = {
-    'date-of-birth': {
-        type: 'date',
-        options: {
-            min: '01-01-1990', //only interested in people born on or after 01-01-1990
-            max: '{CURRENT_DATE}'
-        }
+  'date-of-birth': {
+    type: 'date',
+    options: {
+      min: '01-01-1990', //only interested in people born on or after 01-01-1990
+      max: '{CURRENT_DATE}',
     },
+  },
 };
 ```
 
@@ -471,13 +478,13 @@ To validate field against a choice of options, set the type property to **choice
 
 ```typescript
 const rules = {
-    country: {
-        type: 'choice',
-        options: {
-            choices: ['ng', 'gb', 'us', 'ca', 'de'],// array of country codes,
-            err: '{this} is not a valid country code'
-        },
+  country: {
+    type: 'choice',
+    options: {
+      choices: ['ng', 'gb', 'us', 'ca', 'de'], // array of country codes,
+      err: '{this} is not a valid country code',
     },
+  },
 };
 ```
 
@@ -487,7 +494,7 @@ To validate email addresses, set the type property to `email`.
 
 ```typescript
 const rules = {
-    email: 'email',
+  email: 'email',
 };
 ```
 
@@ -497,13 +504,35 @@ To validate url, set the type property to `url`. the `schemes` option is optiona
 
 ```typescript
 const rules = {
-    website: {
-        type: 'url',
-        options: {
-            schemes: ['https', 'http'],
-            mustHaveScheme: true, //false by default
-        }
+  website: {
+    type: 'url',
+    options: {
+      schemes: ['https', 'http'],
+      mustHaveScheme: true, //false by default
     },
+  },
+};
+```
+
+### Phone Number Validation
+
+To validate phone numbers, set the type property to `number`. This project relies of [libphonenumber.js](https://www.npmjs.com/package/libphonenumber-js) for validating phone numbers
+
+```typescript
+const rules = {
+  country: {
+      type: 'choice',
+      options: {
+          choices: ['us', 'ng', 'de', 'ca', .....],
+      }
+  },
+  //we want the phone number to be a valid phone number for the selected country
+  phoneNumber: {
+    type: 'phone-number',
+    options: {
+        country: '{country}'
+    },
+  },
 };
 ```
 
@@ -513,9 +542,9 @@ To validate numeric values, whether floating or integers, there are nice validat
 
 ```typescript
 const rules = {
-    amount: 'money',
-    userId: 'pInt'
-}
+  amount: 'money',
+  userId: 'pInt',
+};
 ```
 
 ### Password Validation
@@ -526,10 +555,10 @@ The current implementation looks like below
 
 ```typescript
 const rules = {
-    password: {
-        type: 'password',
-        preValidate: false
-    }
+  password: {
+    type: 'password',
+    preValidate: false,
+  },
 };
 ```
 
@@ -541,12 +570,12 @@ Use of file memory units are recognised such as **kb**, **mb**, **gb** and **tb*
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'image',
-        options: {
-            min: '50kb'
-        }
-    }
+  picture: {
+    type: 'image',
+    options: {
+      min: '50kb',
+    },
+  },
 };
 ```
 
@@ -605,12 +634,12 @@ app.listen(null, () => {
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'image',
-        options: {
-            max: '400kb'
-        }
-    }
+  picture: {
+    type: 'image',
+    options: {
+      max: '400kb',
+    },
+  },
 };
 ```
 
@@ -618,12 +647,12 @@ const rules = {
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'audio',
-        options: {
-            max: '15mb'
-        }
-    }
+  picture: {
+    type: 'audio',
+    options: {
+      max: '15mb',
+    },
+  },
 };
 ```
 
@@ -631,12 +660,12 @@ const rules = {
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'video',
-        options: {
-            max: '400mb'
-        }
-    }
+  picture: {
+    type: 'video',
+    options: {
+      max: '400mb',
+    },
+  },
 };
 ```
 
@@ -646,12 +675,12 @@ Media files are one of **image**, **audio** and **video**.
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'media',
-        options: {
-            max: '400mb'
-        }
-    }
+  picture: {
+    type: 'media',
+    options: {
+      max: '400mb',
+    },
+  },
 };
 ```
 
@@ -659,12 +688,12 @@ const rules = {
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'document',
-        options: {
-            max: '50mb'
-        }
-    }
+  picture: {
+    type: 'document',
+    options: {
+      max: '50mb',
+    },
+  },
 };
 ```
 
@@ -674,12 +703,12 @@ examples of archives files are **.zip**, **.tar.gz** and **.rar** files.
 
 ```typescript
 const rules = {
-    picture: {
-        type: 'archive',
-        options: {
-            max: '100mb'
-        }
-    }
+  picture: {
+    type: 'archive',
+    options: {
+      max: '100mb',
+    },
+  },
 };
 ```
 
@@ -695,14 +724,14 @@ To specify accepted mimes, use the `mimes` options.
 
 ```javascript
 const rules = {
-    picture: {
-        type: 'file', //we could have used image, just for demonstration purposes
-        options: {
-            max: '400kb',
-            exts: ['jpeg', 'png'],
-            extErr: 'we only accept jpeg and png images'
-        }
-    }
+  picture: {
+    type: 'file', //we could have used image, just for demonstration purposes
+    options: {
+      max: '400kb',
+      exts: ['jpeg', 'png'],
+      extErr: 'we only accept jpeg and png images',
+    },
+  },
 };
 ```
 
@@ -712,87 +741,87 @@ We can conditionally make a field required or not required using the `requiredIf
 
 1. **If another field is checked or not checked:**
 
-    ```typescript
-    const rules = {
-        'is-current-work': 'checkbox',
+   ```typescript
+   const rules = {
+     'is-current-work': 'checkbox',
 
-        'work-end-month': {
-            type: 'range',
-            options: {
-                from: 1,
-                to: 12
-            },
-            //if this is not user's current work, require the work-end-month
-            requiredIf: {
-                if: 'notChecked',
-                field: 'is-current-work'
-            },
-            //if this is user's current work, override work-end-month and set it to empty string
-            overrideIf: {
-                if: 'checked',
-                field: 'is-current-work',
-                with: ''
-            }
-        },
+     'work-end-month': {
+       type: 'range',
+       options: {
+         from: 1,
+         to: 12,
+       },
+       //if this is not user's current work, require the work-end-month
+       requiredIf: {
+         if: 'notChecked',
+         field: 'is-current-work',
+       },
+       //if this is user's current work, override work-end-month and set it to empty string
+       overrideIf: {
+         if: 'checked',
+         field: 'is-current-work',
+         with: '',
+       },
+     },
 
-        'subscribe-newsletter': 'checkbox',
+     'subscribe-newsletter': 'checkbox',
 
-        email: {
-            type: 'email',
-            //if user decides to subscribe to our newsletter, require user email
-            requiredIf: {
-                if: 'checked',
-                field: 'subscribe-newsletter'
-            },
-            //if not, we override the email to empty string or null, even if email is supplied,
-            //it will not be picked
-            overrideIf: {
-                if: 'notChecked',
-                field: 'subscribe-newsletter',
-                with: ''
-            }
-        }
-    }
-    ```
+     email: {
+       type: 'email',
+       //if user decides to subscribe to our newsletter, require user email
+       requiredIf: {
+         if: 'checked',
+         field: 'subscribe-newsletter',
+       },
+       //if not, we override the email to empty string or null, even if email is supplied,
+       //it will not be picked
+       overrideIf: {
+         if: 'notChecked',
+         field: 'subscribe-newsletter',
+         with: '',
+       },
+     },
+   };
+   ```
 
 2. **If another field equals or not equals a given value:**
 
-    ```typescript
-    const rules = {
-        country: {
-            type: 'choice',
-            options: {
-                choices: ['ng', 'us', 'gb', 'ca', 'gh'],
-            }
-        },
+   ```typescript
+   const rules = {
+       country: {
+           type: 'choice',
+           options: {
+               choices: ['ng', 'us', 'gb', 'ca', 'gh'],
+           }
+       },
 
-        //if your country is not Nigeria, tell us your country calling code
-        countryCode: {
-            requiredIf: {
-                if: 'notEquals',
-                field: 'country'
-                value: 'ng',
-            }
-        },
+       //if your country is not Nigeria, tell us your country calling code
+       countryCode: {
+           requiredIf: {
+               if: 'notEquals',
+               field: 'country'
+               value: 'ng',
+           }
+       },
 
-        //if you are in Nigeria, you must tell us your salary demand, other countries
-        //are paid a fixed $60,000 per annum
-        salaryDemand: {
-            type: 'money',
-            requireIf: {
-                condition: 'equals',
-                field: 'country',
-                value: 'ng',
-            },
-            overrideIf: {
-                condition: 'notEquals',
-                field: 'country',
-                value: 'ng',
-                with: '60000'
-            }
-        }
-    };
-    ```
+       //if you are in Nigeria, you must tell us your salary demand, other countries
+       //are paid a fixed $60,000 per annum
+       salaryDemand: {
+           type: 'money',
+           requireIf: {
+               condition: 'equals',
+               field: 'country',
+               value: 'ng',
+           },
+           overrideIf: {
+               condition: 'notEquals',
+               field: 'country',
+               value: 'ng',
+               with: '60000'
+           }
+       }
+   };
+   ```
 
 ## Ondemand Data Validation and Update
 
