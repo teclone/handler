@@ -1024,14 +1024,16 @@ describe('Handler Module', function () {
         it(`should not flag fields as missing if they are declared optional`, function () {
 
             const data = {
+                phoneNumber: '+2348132083437',
                 languages: ['fr', 'en-US', 'en-UK'],
                 firstName: ''
             };
 
             const files: FilesSource = {};
 
-            const rules: Rules<'languages' | 'firstName' | 'image'> = {
+            const rules: Rules<'languages' | 'firstName' | 'image' | 'phoneNumber'> = {
                 languages: 'text',
+                phoneNumber: 'phoneNumber',
                 firstName: {
                     required: false
                 },
@@ -1191,11 +1193,19 @@ describe('Handler Module', function () {
             it(`should call the postCompute callback if defined, after all validations
                 has succeeded`, function() {
                 const dataSource: DataSource = {
+                    phoneNumber: '08132083437',
                     firstName: 'Harrison',
                     email: 'someone@example.com'
                 };
-                const rules: Rules<'firstName' | 'email'> = {
+                const rules: Rules<'firstName' | 'email' | 'phoneNumber'> = {
                     firstName: 'text',
+                    phoneNumber: {
+                        type: 'phoneNumber',
+                        options: {
+                            country: 'ng',
+                        },
+                        postCompute: jest.fn((value: DataValue) => value)
+                    },
                     email: {
                         postCompute: jest.fn(
                             (value: DataValue) => Promise.resolve(value.toString().toUpperCase())
