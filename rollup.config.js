@@ -19,4 +19,10 @@ const plugins = [
   }),
 ];
 
-export default rollupAll.getExports(uglify(), plugins);
+export default rollupAll.getExports(uglify(), plugins, {
+  entryFile: 'Handler.ts',
+  moduleName: 'ForensicHandler',
+  libConfig: {
+    enabled: true,
+  },
+});

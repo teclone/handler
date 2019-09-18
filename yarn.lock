@@ -706,6 +706,11 @@
   resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-2.0.0.tgz#de684ed92047772864c8fa464bc222964ae697a6"
   integrity sha512-Ajm5oyjMS19YIfPmYc3XcQegLZz5qrr5UJ1TUvk43aogb0rQF4j0wuKKjQj8iBBmZZ+42tSZs8fWqD2CeqXBEQ==
 
+"@forensic-js/utils@2.7.0":
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-2.7.0.tgz#6fd3d883db1b1868bc32f11b498385a0683a691c"
+  integrity sha512-ZfTr3PTRm2uJjrtknyq+g3GiliMzrfL6AQ5zKDh187JOx81vJdEQRiNY/DuhgoP6D+78xZ4tmeOC8BXETrUXGw==
+
 "@forensic-js/utils@2.8.1":
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-2.8.1.tgz#621ffdf4d4490e20304b7cc011fe9254ebcaf205"
@@ -7655,14 +7660,15 @@ rimraf@2.6.2:
   dependencies:
     glob "^7.0.5"
 
-rollup-all@1.6.9:
-  version "1.6.9"
-  resolved "https://registry.yarnpkg.com/rollup-all/-/rollup-all-1.6.9.tgz#6e0d05a688475f8e50eaa8241697428b51ca0f07"
-  integrity sha512-ywXWRKJSt7fKD0rp9zmYvEkEn+XgvpZYOkhTJ8z1sZ4on9QZs0RyDMEWNK2GlDMkEHvL9RvmXnqb6CKbzLphsQ==
+rollup-all@1.6.16:
+  version "1.6.16"
+  resolved "https://registry.yarnpkg.com/rollup-all/-/rollup-all-1.6.16.tgz#8462df0565357b4deb4bcba0e81ab7c73f1dd813"
+  integrity sha512-/LHEx7TUBYSPNymOibTvOZMY8FRNLUqcDGWskp9zYZWxJFDf/8VYzAj25UtosN0nlrtDz+ZQnp76ef63hK+mXw==
   dependencies:
     "@babel/plugin-transform-runtime" "7.4.3"
     "@babel/runtime" "7.4.3"
     "@forensic-js/node-utils" "1.0.0"
+    "@forensic-js/utils" "2.7.0"
 
 rollup-plugin-babel@4.3.2:
   version "4.3.2"

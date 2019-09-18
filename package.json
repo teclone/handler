@@ -37,7 +37,7 @@
     "mysql2": "1.6.5",
     "rimraf": "2.6.2",
     "rollup": "0.66.6",
-    "rollup-all": "1.6.9",
+    "rollup-all": "1.6.16",
     "rollup-plugin-babel": "4.3.2",
     "rollup-plugin-commonjs": "9.3.4",
     "rollup-plugin-node-resolve": "3.4.0",
