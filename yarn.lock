@@ -711,10 +711,10 @@
   resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-2.7.0.tgz#6fd3d883db1b1868bc32f11b498385a0683a691c"
   integrity sha512-ZfTr3PTRm2uJjrtknyq+g3GiliMzrfL6AQ5zKDh187JOx81vJdEQRiNY/DuhgoP6D+78xZ4tmeOC8BXETrUXGw==
 
-"@forensic-js/utils@2.8.1":
-  version "2.8.1"
-  resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-2.8.1.tgz#621ffdf4d4490e20304b7cc011fe9254ebcaf205"
-  integrity sha512-okCsSvvTnc9FlAKcpKz92JZW/DXevuntYl4QQiFAQh/tmMnw9/k1+c5MvtFdtrkbuMUa4eBBUveQJxkttBYMPw==
+"@forensic-js/utils@2.8.2":
+  version "2.8.2"
+  resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-2.8.2.tgz#9c914dc46842684ddf782b4b022657bbaff81070"
+  integrity sha512-GE7nMJgOabOap9jpa2gGuycaHdUTeHYoEINWRL/EAgTEiw4Kfg44R5IpGRQGh6e4gEDS48phIDa3YbgrdalA8A==
 
 "@jest/console@^24.7.1", "@jest/console@^24.9.0":
   version "24.9.0"

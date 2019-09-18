@@ -470,6 +470,74 @@ describe('Handler Module', function () {
             });
         });
 
+        it(`should resolve the requiredIf in rule, making field required if condition is met`, function () {
+            const data = {
+                'employmentTypes': ['1', '2', '3'],
+            };
+            const rules: Rules<'employmentTypes' | 'salary'> = {
+
+                employmentTypes: {
+                    type: 'choice',
+                    filters: {
+                        toNumeric: true,
+                    },
+                    options: {
+                        choices: [1, 2, 3],
+                    }
+                },
+
+                /** tell us your salary demand if you are you choose full time employment type */
+                salary: {
+                    type: 'money',
+                    requiredIf: {
+                        if: 'in',
+                        field: 'employmentTypes',
+                        value: 1
+                    }
+                }
+            };
+
+            const handler = new Handler(data, undefined, rules);
+            return handler.execute().then(() => {
+                const resolvedRules = handler.getResolvedRules();
+                expect(resolvedRules.salary.required).toBeTruthy();
+            });
+        });
+
+        it(`should resolve the requiredIf notIn rule, making field not required if condition is met`, function () {
+            const data = {
+                'employmentTypes': ['1', '3'],
+            };
+            const rules: Rules<'employmentTypes' | 'salary'> = {
+
+                employmentTypes: {
+                    type: 'choice',
+                    filters: {
+                        toNumeric: true,
+                    },
+                    options: {
+                        choices: [1, 2, 3],
+                    }
+                },
+
+                /** tell us your salary demand if you did not select contract work as your employment type */
+                salary: {
+                    type: 'money',
+                    requiredIf: {
+                        if: 'notIn',
+                        field: 'employmentTypes',
+                        value: 2
+                    }
+                }
+            };
+
+            const handler = new Handler(data, undefined, rules);
+            return handler.execute().then(() => {
+                const resolvedRules = handler.getResolvedRules();
+                expect(resolvedRules.salary.required).toBeTruthy();
+            });
+        });
+
         it(`should throw error if the requiredIf target field rule is not defined`, async function (done) {
             const data = {
                 country: 'pl'

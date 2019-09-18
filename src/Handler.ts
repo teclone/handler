@@ -640,6 +640,25 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
             targetFieldRule.filters
           ) !== conditionalIf.value;
         break;
+
+      case 'in':
+        status = makeArray(
+          this.filterValue(
+            pickValue(targetField, this.dataSource as DataSource, ''),
+            targetFieldRule.type,
+            targetFieldRule.filters
+          )
+        ).includes(conditionalIf.value);
+        break;
+      case 'notIn':
+        status = !makeArray(
+          this.filterValue(
+            pickValue(targetField, this.dataSource as DataSource, ''),
+            targetFieldRule.type,
+            targetFieldRule.filters
+          )
+        ).includes(conditionalIf.value);
+        break;
     }
     return status;
   }

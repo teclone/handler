@@ -114,7 +114,7 @@ export declare type RequiredIf =
       field: string;
     }
   | {
-      if: 'equals' | 'notEquals';
+      if: 'equals' | 'notEquals' | 'in' | 'notIn';
       field: string;
       value: string | boolean | number;
     };
@@ -126,7 +126,7 @@ export declare type OverrideIf =
       with: RawData;
     }
   | {
-      if: 'equals' | 'notEquals';
+      if: 'equals' | 'notEquals' | 'in' | 'notIn';
       field: string;
       value: string | boolean | number;
       with: RawData;
