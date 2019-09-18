@@ -38,6 +38,7 @@ import {
   isNull,
   isTypeOf,
   isCallable,
+  uniqueArray,
 } from '@forensic-js/utils';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import FieldRuleNotFoundException from './Exceptions/FieldRuleNotFoundException';
@@ -198,7 +199,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   }
 
   /**
-   * run
+   * run post processes
    */
   private async runPostProcesses() {
     for (const field of Object.keys(this.resolvedRules)) {
@@ -586,7 +587,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     };
 
     if (isArray(value)) {
-      return value.map(current => performFilter(current.toString(), type, filters)) as DataValue;
+      return uniqueArray(value).map(current => performFilter(current.toString(), type, filters)) as DataValue;
     } else {
       return performFilter(value.toString(), type, filters);
     }
