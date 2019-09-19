@@ -231,6 +231,7 @@ export declare interface ResolvedRule<F extends string> {
    */
   postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string> | true | string;
 }
+
 export declare type ResolvedRules<F extends string> = {
   [P in F]: ResolvedRule<F>;
 };

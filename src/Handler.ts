@@ -642,7 +642,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         break;
 
       case 'in':
-        status = makeArray(
+        status = makeArray<DataValue>(
           this.filterValue(
             pickValue(targetField, this.dataSource as DataSource, ''),
             targetFieldRule.type,
@@ -651,7 +651,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         ).includes(conditionalIf.value);
         break;
       case 'notIn':
-        status = !makeArray(
+        status = !makeArray<DataValue>(
           this.filterValue(
             pickValue(targetField, this.dataSource as DataSource, ''),
             targetFieldRule.type,
