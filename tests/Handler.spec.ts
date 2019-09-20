@@ -479,6 +479,7 @@ describe('Handler Module', function () {
                 employmentTypes: {
                     type: 'choice',
                     filters: {
+                        toArray: true,
                         toNumeric: true,
                     },
                     options: {

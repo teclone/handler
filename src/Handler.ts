@@ -586,6 +586,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       return result;
     };
 
+    if (filters.toArray) {
+      value = makeArray(value);
+    }
+
     if (isArray(value)) {
       return uniqueArray(value).map(current => performFilter(current.toString(), type, filters)) as DataValue;
     } else {

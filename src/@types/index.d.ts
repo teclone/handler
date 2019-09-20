@@ -136,6 +136,7 @@ export declare type FilterCallback = (value: string) => string | number | boolea
 
 export declare interface Filters {
   decode?: boolean;
+  toArray?: boolean;
   stripTags?: boolean;
   stripTagsIgnore?: string | string[];
   minimize?: boolean;
