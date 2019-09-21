@@ -223,17 +223,17 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     for (const check of checks) {
       if (isTypeOf<CallbackDBCheck>('callback', check)) {
         if (await check.callback(field, value, index)) {
-          this.setError(field, pickValue('err', check, 'condition not satisfied'));
-          break;
+          return this.setError(field, pickValue('err', check, 'condition not satisfied'));
         }
       } else {
         const method = this.DBCheckTypesToMethod[check.if];
         await this.dbChecker[method](required, field, value, check as ModelDBCheck, index);
         if (this.dbChecker.fails()) {
-          break;
+          return false;
         }
       }
     }
+    return true;
   }
 
   /**
@@ -246,11 +246,14 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     for (const field of fields) {
       const { checks } = this.resolvedRules[field];
       if (checks.length > 0) {
-        const values = makeArray<string | boolean | number>(this.data[field]);
+        const values = makeArray<DataValue>(this.data[field]);
 
         const len = values.length;
         let i = -1;
-        while (++i < len && (await this.runDBCheck(required, field, values[i], checks, i)));
+        while (++i < len) {
+          const value = values[i];
+          await this.runDBCheck(required, field, value === null ? '' : value.toString(), checks, i);
+        }
       }
     }
   }

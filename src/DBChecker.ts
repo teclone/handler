@@ -69,11 +69,11 @@ export default class DBChecker<F extends string = string> extends Common<F> {
    * @param check check options
    * @param index current field value index under check
    */
-  async checkIfExists(required: boolean, field: string, value: DataValue, check: ModelDBCheck, index: number) {
+  async checkIfExists(required: boolean, field: string, value: string, check: ModelDBCheck, index: number) {
     if (this.setup(required, field, value, check, index)) {
       const count = await this.execute(check.model, this.query);
       if (count > 0) {
-        this.setError(pickValue('err', check, '{_this}:{this} already exists'), value.toString());
+        this.setError(pickValue('err', check, '{_this}:{this} already exists'), value);
       }
     }
     return this.succeeds();
@@ -88,11 +88,11 @@ export default class DBChecker<F extends string = string> extends Common<F> {
    * @param check check options
    * @param index current field value index under check
    */
-  async checkIfNotExists(required: boolean, field: string, value: DataValue, check: ModelDBCheck, index: number) {
+  async checkIfNotExists(required: boolean, field: string, value: string, check: ModelDBCheck, index: number) {
     if (this.setup(required, field, value, check, index)) {
       const count = await this.execute(check.model, this.query);
       if (count === 0) {
-        this.setError(pickValue('err', check, '{_this}:{this} does not exist'), value.toString());
+        this.setError(pickValue('err', check, '{_this}:{this} does not exist'), value);
       }
     }
     return this.succeeds();
