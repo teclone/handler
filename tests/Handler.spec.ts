@@ -596,7 +596,7 @@ describe('Handler Module', function () {
             return handler.execute().then(() => {
                 const resolvedRules = handler.getResolvedRules();
                 expect(resolvedRules.email.required).toBeFalsy();
-                expect(handler.data.email).toEqual('');
+                expect(handler.data.email).toEqual(null);
             });
         });
 

@@ -40,7 +40,7 @@ export declare type DataSource = {
   [field: string]: RawData;
 };
 
-export declare type DataValue = string | number | boolean | string[] | number[] | boolean[];
+export declare type DataValue = null | string | number | boolean | string[] | number[] | boolean[];
 
 export declare type Data<F extends string> = {
   [P in F]: DataValue;

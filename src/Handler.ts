@@ -274,11 +274,12 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         const newFileName = validator.getFileName();
         const data = this.data[field];
 
-        if (isArray<string | number | boolean>(data)) {
+        if (isArray(data)) {
           data.splice(index, 1, newFileName);
         } else {
           this.data[field] = newFileName;
         }
+        return validator.succeeds();
       }
     }
   }
@@ -292,12 +293,17 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   private async validateFields(fields: string[], required: boolean) {
     for (const field of fields) {
       const { options, type } = this.resolvedRules[field];
-      const values = makeArray<string | boolean | number>(this.data[field]);
+      const values = makeArray<DataValue>(this.data[field]);
 
       const len = values.length;
       let i = -1;
 
-      while (++i < len && (await this.runValidation(required, field, type, values[i].toString(), options, i)));
+      while (++i < len) {
+        const value = values[i];
+        if (!(await this.runValidation(required, field, type, value === null ? '' : value.toString(), options, i))) {
+          break;
+        }
+      }
     }
   }
 
@@ -312,7 +318,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       const isFileField = this.isFileField(field);
       const fieldIsMissing = this.fieldIsMissing(field);
 
-      let value: RawData | DataValue = '';
+      let value: RawData = '';
       if (isFileField) {
         value = fieldIsMissing ? defaultValue : (this.filesSource as FilesSource)[field].name;
       } else {
@@ -585,6 +591,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
       return result;
     };
+
+    if (value === '') {
+      return filters.toArray ? [] : null;
+    }
 
     if (filters.toArray) {
       value = makeArray(value);
