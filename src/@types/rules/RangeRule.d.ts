@@ -30,7 +30,7 @@ declare interface NumberRangeOptions extends BaseOptions {
   step?: number;
 }
 
-export declare type RangeOptions = TextRangeOptions | NumberRangeOptions;
+export type RangeOptions = TextRangeOptions | NumberRangeOptions;
 
 //range rule
 export default interface RangeRule<F extends string> extends BaseRule<F> {

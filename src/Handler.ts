@@ -41,7 +41,6 @@ import {
   uniqueArray,
 } from '@forensic-js/utils';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
-import FieldRuleNotFoundException from './Exceptions/FieldRuleNotFoundException';
 import { replaceCallback, replace } from '@forensic-js/regex';
 import Validator from './Validator';
 import CustomDate from './CustomDate';
@@ -614,13 +613,9 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    * performs the conditional if resolution
    * @param conditionalIf
    */
-  private resolveConditionalIf(conditionalIf: RequiredIf | OverrideIf): boolean {
+  private resolveConditionalIf(conditionalIf: RequiredIf<F> | OverrideIf<F>): boolean {
     const targetField = conditionalIf.field;
     const targetFieldRule = this.resolvedRules[targetField];
-
-    if (isUndefined(targetFieldRule)) {
-      throw new FieldRuleNotFoundException(targetField);
-    }
 
     let status = false;
     switch (conditionalIf.if) {
@@ -686,9 +681,15 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   private resolveOverrideIf(rules: ResolvedRules<F>): ResolvedRules<F> {
     for (const [field, rule] of Object.entries<ResolvedRule<F>>(rules)) {
       const overrideIf = rule.overrideIf;
-      if (isObject<OverrideIf>(overrideIf)) {
+      const requiredIf = rule.requiredIf;
+
+      if (isObject<OverrideIf<F>>(overrideIf)) {
         if (this.resolveConditionalIf(overrideIf)) {
           (this.dataSource as DataSource)[field] = overrideIf.with;
+        }
+      } else if (isObject<RequiredIf<F>>(requiredIf) && requiredIf.drop !== false) {
+        if (!this.resolveConditionalIf(requiredIf)) {
+          (this.dataSource as DataSource)[field] = '';
         }
       }
     }
@@ -701,7 +702,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   private resolveRequiredIf(rules: ResolvedRules<F>): ResolvedRules<F> {
     for (const [, rule] of Object.entries<ResolvedRule<F>>(rules)) {
       const requiredIf = rule.requiredIf;
-      if (isObject<RequiredIf>(requiredIf)) {
+      if (isObject<RequiredIf<F>>(requiredIf)) {
         rule.required = this.resolveConditionalIf(requiredIf);
       }
     }

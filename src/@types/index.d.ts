@@ -34,45 +34,45 @@ import {
   FileOptions,
 } from './rules/FilesRule';
 
-export declare type RawData = string | string[];
+export type RawData = string | string[];
 
-export declare type DataSource = {
+export type DataSource = {
   [field: string]: RawData;
 };
 
-export declare type DataValue = null | string | number | boolean | string[] | number[] | boolean[];
+export type DataValue = null | string | number | boolean | string[] | number[] | boolean[];
 
-export declare type Data<F extends string> = {
+export type Data<F extends string> = {
   [P in F]: DataValue;
 };
 
-export declare interface CustomData {
+export interface CustomData {
   [P: string]: any;
 }
 
-export declare type ErrorBag<F extends string> = {
+export type ErrorBag<F extends string> = {
   [P in F]: string;
 };
 
-export declare interface File {
+export interface File {
   name: string;
   tmpName: string;
   path: string;
   size: number;
   type: string;
 }
-export declare interface FileCollection {
+export interface FileCollection {
   name: string[];
   tmpName: string[];
   path: string[];
   size: number[];
   type: string[];
 }
-export declare interface FilesSource {
+export interface FilesSource {
   [fieldName: string]: File | FileCollection;
 }
 
-export declare type Unit = 'character' | 'number' | 'date' | 'file';
+export type Unit = 'character' | 'number' | 'date' | 'file';
 
 export interface RegexObject {
   pattern: RegExp;
@@ -80,7 +80,7 @@ export interface RegexObject {
 }
 export type Regex = RegExp | RegexObject;
 
-export declare type DataType =
+export type DataType =
   | 'checkbox'
   | 'boolean'
   | 'text'
@@ -106,35 +106,43 @@ export declare type DataType =
   | 'document'
   | 'archive';
 
-export declare type DBCheckType = 'exists' | 'notExists';
+export type DBCheckType = 'exists' | 'notExists';
 
-export declare type RequiredIf =
+export type RequiredIf<F extends string> =
   | {
       if: 'checked' | 'notChecked';
-      field: string;
+      field: F;
+      /**
+       * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
+       */
+      drop?: boolean;
     }
   | {
       if: 'equals' | 'notEquals' | 'in' | 'notIn';
-      field: string;
+      field: F;
       value: string | boolean | number;
+      /**
+       * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
+       */
+      drop?: boolean;
     };
 
-export declare type OverrideIf =
+export type OverrideIf<F extends string> =
   | {
       if: 'checked' | 'notChecked';
-      field: string;
+      field: F;
       with: RawData;
     }
   | {
       if: 'equals' | 'notEquals' | 'in' | 'notIn';
-      field: string;
+      field: F;
       value: string | boolean | number;
       with: RawData;
     };
 
-export declare type FilterCallback = (value: string) => string | number | boolean;
+export type FilterCallback = (value: string) => string | number | boolean;
 
-export declare interface Filters {
+export interface Filters {
   decode?: boolean;
   toArray?: boolean;
   stripTags?: boolean;
@@ -148,7 +156,7 @@ export declare interface Filters {
   callback?: FilterCallback;
 }
 
-export declare type Options =
+export type Options =
   | BaseOptions
   | NumberOptions
   | TextOptions
@@ -158,21 +166,21 @@ export declare type Options =
   | PhoneNumberOptions
   | PasswordOptions;
 
-export declare interface ModelDBCheck {
+export interface ModelDBCheck {
   if: DBCheckType;
   model: object;
   field?: string;
   query?: object;
   err?: string;
 }
-export declare interface CallbackDBCheck {
+export interface CallbackDBCheck {
   if: DBCheckType;
   callback: (fieldName: string, fieldValue: DataValue, fieldIndex: number) => Promise<boolean>;
   err?: string;
 }
-export declare type DBCheck = CallbackDBCheck | ModelDBCheck;
+export type DBCheck = CallbackDBCheck | ModelDBCheck;
 
-export declare type Rule<F extends string> =
+export type Rule<F extends string> =
   | BooleanRule<F>
   | CheckboxRule<F>
   | TextRule<F>
@@ -197,11 +205,11 @@ export declare type Rule<F extends string> =
   | DocumentFileRule<F>
   | ArchiveFileRule<F>;
 
-export declare type Rules<F extends string> = {
+export type Rules<F extends string> = {
   [P in F]: DataType | Rule<F>;
 };
 
-export declare interface ResolvedRule<F extends string> {
+export interface ResolvedRule<F extends string> {
   type: DataType;
 
   required: boolean;
@@ -210,9 +218,9 @@ export declare interface ResolvedRule<F extends string> {
 
   defaultValue: RawData | undefined;
 
-  requiredIf?: RequiredIf;
+  requiredIf?: RequiredIf<F>;
 
-  overrideIf?: OverrideIf;
+  overrideIf?: OverrideIf<F>;
 
   options: Options;
 
@@ -233,8 +241,8 @@ export declare interface ResolvedRule<F extends string> {
   postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string> | true | string;
 }
 
-export declare type ResolvedRules<F extends string> = {
+export type ResolvedRules<F extends string> = {
   [P in F]: ResolvedRule<F>;
 };
 
-export declare type DateConverter = (value: string) => CustomDate;
+export type DateConverter = (value: string) => CustomDate;

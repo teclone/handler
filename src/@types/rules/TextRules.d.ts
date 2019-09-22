@@ -2,7 +2,7 @@ import BaseRule from './BaseRule';
 import { Regex } from '..';
 import { NumberOptions } from './NumberRules';
 
-export declare interface TextOptions extends NumberOptions {
+export interface TextOptions extends NumberOptions {
   /**
    * defines regex pattern that field value(s) must match
    */
@@ -34,7 +34,7 @@ export declare interface TextOptions extends NumberOptions {
   regexNone?: Regex | Regex[];
 }
 
-export declare interface URLOptions extends TextOptions {
+export interface URLOptions extends TextOptions {
   /**
    * defines accepted uri schemes or protocols. case insensitive
    */
@@ -47,7 +47,7 @@ export declare interface URLOptions extends TextOptions {
   mustHaveScheme?: boolean;
 }
 
-export declare interface PasswordOptions extends TextOptions {
+export interface PasswordOptions extends TextOptions {
   /**
    * boolean value indicating if the default internal password pre-validations should be
    * applied. default value is true. the default password pre-validation checks that the
@@ -59,7 +59,7 @@ export declare interface PasswordOptions extends TextOptions {
   preValidate?: boolean;
 }
 
-export declare interface PhoneNumberOptions extends TextOptions {
+export interface PhoneNumberOptions extends TextOptions {
   /**
    * if given, the phone number is validated against this country.
    */

@@ -1,6 +1,6 @@
 import BaseRule, { BaseOptions } from './BaseRule';
 
-export declare interface ChoiceOptions extends BaseOptions {
+export interface ChoiceOptions extends BaseOptions {
   /**
    * array of choice options
    */

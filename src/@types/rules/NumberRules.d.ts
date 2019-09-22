@@ -1,6 +1,6 @@
 import BaseRule, { BaseOptions } from './BaseRule';
 
-export declare interface NumberOptions extends BaseOptions {
+export interface NumberOptions extends BaseOptions {
   /**
    * the minimum accepted value or length
    */
@@ -47,30 +47,30 @@ declare interface BaseNumberRule<F extends string> extends BaseRule<F> {
 }
 
 //number rules
-export declare interface IntegerRule<F extends string> extends BaseNumberRule<F> {
+export interface IntegerRule<F extends string> extends BaseNumberRule<F> {
   type: 'int';
 }
 
-export declare interface NIntegerRule<F extends string> extends BaseNumberRule<F> {
+export interface NIntegerRule<F extends string> extends BaseNumberRule<F> {
   type: 'nInt';
 }
 
-export declare interface PIntegerRule<F extends string> extends BaseNumberRule<F> {
+export interface PIntegerRule<F extends string> extends BaseNumberRule<F> {
   type: 'pInt';
 }
 
-export declare interface NumberRule<F extends string> extends BaseNumberRule<F> {
+export interface NumberRule<F extends string> extends BaseNumberRule<F> {
   type: 'number' | 'money';
 }
 
-export declare interface NNumberRule<F extends string> extends BaseNumberRule<F> {
+export interface NNumberRule<F extends string> extends BaseNumberRule<F> {
   type: 'nNumber';
 }
 
-export declare interface PNumberRule<F extends string> extends BaseNumberRule<F> {
+export interface PNumberRule<F extends string> extends BaseNumberRule<F> {
   type: 'pNumber';
 }
 
-export declare interface DateRule<F extends string> extends BaseNumberRule<F> {
+export interface DateRule<F extends string> extends BaseNumberRule<F> {
   type: 'date';
 }

@@ -1,6 +1,6 @@
 import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf, Data } from '..';
 
-export declare interface ShouldMatchObject {
+export interface ShouldMatchObject {
   /**
    * the target field
    */
@@ -12,7 +12,7 @@ export declare interface ShouldMatchObject {
   err?: string;
 }
 
-export declare interface BaseOptions {
+export interface BaseOptions {
   /**
    * defines a target field that this field value must match
    */
@@ -49,12 +49,12 @@ export default interface BaseRule<F extends string> {
    * defines a condition which if satisfied, makes the field required, otherwise, the field
    * becomes optional
    */
-  requiredIf?: RequiredIf;
+  requiredIf?: RequiredIf<F>;
 
   /**
    * defines a condition which if satisfied, overrides the field's raw value
    */
-  overrideIf?: OverrideIf;
+  overrideIf?: OverrideIf<F>;
 
   /**
    * defines a list of filteration operations to carry out on the field value(s)
