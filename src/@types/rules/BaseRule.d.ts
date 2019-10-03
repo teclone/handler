@@ -1,4 +1,5 @@
 import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf, Data } from '..';
+import Handler from '../../Handler';
 
 export interface ShouldMatchObject {
   /**
@@ -70,11 +71,11 @@ export default interface BaseRule<F extends string> {
    * computes and return a new value for the field. it accepts two arguments
    * field value, and data object
    */
-  postCompute?: (value: DataValue, data: Data<F>) => Promise<DataValue> | DataValue;
+  postCompute?: (value: DataValue, data: Data<F>, handler: Handler<F>) => Promise<DataValue> | DataValue;
 
   /**
    * runs a post validation process on the field. returns true if validation succeeds or returns
    * error message if validation fails
    */
-  postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string> | true | string;
+  postValidate?: (value: DataValue, data: Data<F>, handler: Handler<F>) => Promise<true | string> | true | string;
 }
