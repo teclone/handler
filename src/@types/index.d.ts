@@ -33,6 +33,7 @@ import {
   ArchiveFileRule,
   FileOptions,
 } from './rules/FilesRule';
+import Handler from '../Handler';
 
 export type RawData = string | string[];
 
@@ -232,13 +233,13 @@ export interface ResolvedRule<F extends string> {
    * computes and return a new value for the field. it accepts two arguments
    * field value, and data object
    */
-  postCompute?: (value: DataValue, data: Data<F>) => Promise<DataValue> | DataValue;
+  postCompute?: (value: DataValue, data: Data<F>, handler: Handler<F>) => Promise<DataValue> | DataValue;
 
   /**
    * runs a post validation process on the field. returns true if validation succeeds or returns
    * error message if validation fails
    */
-  postValidate?: (value: DataValue, data: Data<F>) => Promise<true | string> | true | string;
+  postValidate?: (value: DataValue, data: Data<F>, handler: Handler<F>) => Promise<true | string> | true | string;
 }
 
 export type ResolvedRules<F extends string> = {

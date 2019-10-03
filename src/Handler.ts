@@ -204,10 +204,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     for (const field of Object.keys(this.resolvedRules)) {
       const rule = this.resolvedRules[field] as ResolvedRule<F>;
       if (isCallable(rule.postCompute)) {
-        this.data[field] = await rule.postCompute(this.data[field], this.data);
+        this.data[field] = await rule.postCompute(this.data[field], this.data, this);
       }
       if (isCallable(rule.postValidate)) {
-        const result = await rule.postValidate(this.data[field], this.data);
+        const result = await rule.postValidate(this.data[field], this.data, this);
         if (isString(result)) {
           this.setError(field, result);
         }
@@ -756,7 +756,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         ) as PhoneNumber).number;
 
         if (postCompute) {
-          return postCompute(newValue as DataValue, data);
+          return postCompute(newValue as DataValue, data, this);
         } else {
           return newValue as DataValue;
         }
