@@ -6,7 +6,7 @@ export interface BooleanRule<F extends string> extends BaseRule<F> {
   /**
    * defines validation options to perform on the boolean field
    */
-  options?: BaseOptions;
+  options?: BaseOptions<F>;
 }
 
 export interface CheckboxRule<F extends string> extends BaseRule<F> {
@@ -14,5 +14,5 @@ export interface CheckboxRule<F extends string> extends BaseRule<F> {
   /**
    * defines validation options to perform on the checkbox field
    */
-  options?: BaseOptions;
+  options?: BaseOptions<F>;
 }

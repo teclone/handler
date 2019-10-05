@@ -9,6 +9,8 @@ export default {
       return target[prop];
     } else if (prop === 'toJSON' || prop === 'toObject') {
       return undefined;
+    } else if (typeof prop === 'symbol') {
+      return target;
     } else {
       throw new FieldDataNotFoundException('no data found for the given field: ' + prop);
     }

@@ -1,5 +1,5 @@
 import Common from './Common';
-import { FilesSource, Options, Unit, DateConverter, RegexObject, Regex } from './@types';
+import { Options, Unit, DateConverter, RegexObject, Regex, FileEntry } from './@types';
 import CustomDate from './CustomDate';
 import {
   isUndefined,
@@ -36,10 +36,6 @@ import FileMoveException from './Exceptions/FileMoveException';
 import { parsePhoneNumber, CountryCode } from 'libphonenumber-js';
 
 export default class Validator<F extends string = string> extends Common<F> {
-  private files: FilesSource = {};
-
-  private fileName: string = '';
-
   private phoneNumberErrors = {
     INVALID_COUNTRY: 'invalid phone number country code',
 
@@ -70,7 +66,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * validate match against rule
    */
-  private matchAgainst(value: string, options: Options, prefix: string) {
+  private matchAgainst(value: string, options: Options<F>, prefix: string) {
     const shouldMatch = options.shouldMatch;
     if (isObject(shouldMatch) && shouldMatch.target.toString() !== value) {
       this.setError(pickValue('err', shouldMatch, prefix + ' did not match'), value);
@@ -80,7 +76,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * runs post validation
    */
-  private postValidate(value: string, options: Options, prefix: string = '{_this}') {
+  private postValidate(value: string, options: Options<F>, prefix: string = '{_this}') {
     if (this.succeeds()) {
       this.matchAgainst(value, options, prefix);
     }
@@ -104,7 +100,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * validates regex check none rules
    */
-  protected regexCheckNone(value: string, options: TextOptions) {
+  protected regexCheckNone(value: string, options: TextOptions<F>) {
     if (this.succeeds() && options.regexNone) {
       const regexes = makeArray(options.regexNone);
       for (const current of regexes) {
@@ -121,7 +117,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * validates regex check any rules
    */
-  protected regexCheckAny(value: string, options: TextOptions) {
+  protected regexCheckAny(value: string, options: TextOptions<F>) {
     if (this.succeeds() && options.regexAny) {
       if (!options.regexAny.patterns.some(pattern => pattern.test(value))) {
         this.setError(pickValue('err', options.regexAny, '{this} is not a valid {_this}'), value);
@@ -133,7 +129,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * validates regex check all rules
    */
-  protected regexCheckAll(value: string, options: TextOptions) {
+  protected regexCheckAll(value: string, options: TextOptions<F>) {
     if (this.succeeds() && options.regexAll) {
       for (const current of options.regexAll) {
         const regex = this.resolveRegex(current);
@@ -149,7 +145,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * check if value matches a pattern
    */
-  protected regexCheck(value: string, options: TextOptions) {
+  protected regexCheck(value: string, options: TextOptions<F>) {
     if (this.succeeds() && options.regex) {
       const regex = this.resolveRegex(options.regex);
       if (!regex.pattern.test(value)) {
@@ -162,7 +158,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   /**
    * runs regex rule checks
    */
-  protected checkRegexRules(value: string, options: Options) {
+  protected checkRegexRules(value: string, options: Options<F>) {
     //check for regex rule
     this.regexCheck(value, options);
 
@@ -213,7 +209,7 @@ export default class Validator<F extends string = string> extends Common<F> {
   protected checkLimitingRules(
     value: string,
     length: number | CustomDate,
-    options: NumberOptions,
+    options: NumberOptions<F>,
     unit: Unit,
     dateConverter?: DateConverter,
     prefix: string = '{_this}'
@@ -272,52 +268,16 @@ export default class Validator<F extends string = string> extends Common<F> {
     return this.succeeds();
   }
 
-  protected setup(
-    required: boolean,
-    field: string,
-    value: string,
-    options: Options,
-    index: number,
-    isFile: boolean = false
-  ): boolean {
+  protected setup(required: boolean, field: string, value: string, options: Options<F>, index: number): boolean {
     this.reset(field, options, index);
-    this.fileName = '';
-
-    if (isFile) {
-      if (typeof this.files[field] !== 'undefined') {
-        return (this.shouldProceed = true);
-      } else {
-        if (required) {
-          this.setError('{_this} is required', value);
-        }
-        return (this.shouldProceed = false);
-      }
+    if (value !== '') {
+      return (this.shouldProceed = true);
     } else {
-      if (value !== '') {
-        return (this.shouldProceed = true);
-      } else {
-        if (required) {
-          this.setError('{_this} is required', value);
-        }
-        return (this.shouldProceed = false);
+      if (required) {
+        this.setError('{_this} is required', value);
       }
+      return (this.shouldProceed = false);
     }
-  }
-
-  /**
-   * sets the files source
-   */
-  setFiles(files: FilesSource) {
-    this.files = files;
-    return this;
-  }
-
-  /**
-   * returns the computed file name for the last file validation that involved a moveTo
-   * operation. Returns empty string if there is non
-   */
-  getFileName(): string {
-    return this.fileName;
   }
 
   /**
@@ -329,7 +289,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateText(required: boolean, field: string, value: string, options: TextOptions, index: number): boolean {
+  validateText(required: boolean, field: string, value: string, options: TextOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       this.checkLimitingRules(value, value.length, options, 'character');
 
@@ -349,14 +309,14 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateEmail(required: boolean, field: string, value: string, options: TextOptions, index: number): boolean {
+  validateEmail(required: boolean, field: string, value: string, options: TextOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       /*
        * email validation https://www.w3resource.com/javascript/form/email-validation.php
        * https://en.wikipedia.org/wiki/Domain_Name_System#Domain_name_syntax
        */
       const err = '{this} is not a valid email address';
-      const internalOptions: TextOptions = {
+      const internalOptions: TextOptions<F> = {
         regexAll: [
           //email must contain two parts; personal-info and domain part
           {
@@ -404,7 +364,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateURL(required: boolean, field: string, value: string, options: URLOptions, index: number): boolean {
+  validateURL(required: boolean, field: string, value: string, options: URLOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       /*
        * email validation https://www.w3resource.com/javascript/form/email-validation.php
@@ -412,7 +372,7 @@ export default class Validator<F extends string = string> extends Common<F> {
        */
       const schemes: string | string[] = pickValue('schemes', options, URL_SCHEMES);
       const err = '{this} is not a valid url';
-      const internalOptions: URLOptions = {
+      const internalOptions: URLOptions<F> = {
         regex: {
           /*
            * domain consists of optional scheme, and consists of labels that are each
@@ -456,7 +416,7 @@ export default class Validator<F extends string = string> extends Common<F> {
     required: boolean,
     field: string,
     value: string,
-    options: PhoneNumberOptions,
+    options: PhoneNumberOptions<F>,
     index: number
   ): boolean {
     if (this.setup(required, field, value, options, index)) {
@@ -498,10 +458,16 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validatePassword(required: boolean, field: string, value: string, options: PasswordOptions, index: number): boolean {
+  validatePassword(
+    required: boolean,
+    field: string,
+    value: string,
+    options: PasswordOptions<F>,
+    index: number
+  ): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (pickValue('preValidate', options, true)) {
-        const internalOptions: PasswordOptions = {
+        const internalOptions: PasswordOptions<F> = {
           min: MIN_PASSWORD_LENGTH,
           max: MAX_PASSWORD_LENGTH,
 
@@ -539,7 +505,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateDate(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validateDate(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (!DATE_FORMAT.test(value)) {
         return this.setError('{this} is not a correct date format', value);
@@ -566,7 +532,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateInt(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validateInt(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (/^[-+]?\d+$/.test(value)) {
         this.checkLimitingRules(value, parseInt(value), options, 'number');
@@ -586,7 +552,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validatePInt(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validatePInt(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (/^[+]?\d+$/.test(value)) {
         this.checkLimitingRules(value, parseInt(value), options, 'number');
@@ -606,7 +572,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateNInt(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validateNInt(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (/^-\d+$/.test(value)) {
         this.checkLimitingRules(value, parseInt(value), options, 'number');
@@ -626,7 +592,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateNumber(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validateNumber(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (/^(?:[-+]?\d+(\.\d+)?|\.\d+)$/.test(value)) {
         this.checkLimitingRules(value, parseFloat(value), options, 'number');
@@ -646,7 +612,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validatePNumber(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validatePNumber(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (/^(?:[+]?\d+(\.\d+)?|\.\d+)$/.test(value)) {
         this.checkLimitingRules(value, parseFloat(value), options, 'number');
@@ -666,7 +632,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateNNumber(required: boolean, field: string, value: string, options: NumberOptions, index: number): boolean {
+  validateNNumber(required: boolean, field: string, value: string, options: NumberOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       if (/^(?:[-]\d+(\.\d+)?|\.\d+)$/.test(value)) {
         this.checkLimitingRules(value, parseFloat(value), options, 'number');
@@ -686,7 +652,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateChoice(required: boolean, field: string, value: string, options: ChoiceOptions, index: number): boolean {
+  validateChoice(required: boolean, field: string, value: string, options: ChoiceOptions<F>, index: number): boolean {
     if (this.setup(required, field, value, options, index)) {
       const choices = options.choices as Array<string | number | boolean>;
       const exists = choices.some(current => current.toString() === value);
@@ -707,7 +673,7 @@ export default class Validator<F extends string = string> extends Common<F> {
    * @param options validation options
    * @param index field value index position
    */
-  validateRange(required: boolean, field: string, value: string, options: RangeOptions, index: number): boolean {
+  validateRange(required: boolean, field: string, value: string, options: RangeOptions<F>, index: number): boolean {
     let choices: string[] | number[] = [];
     if (isString(options.from)) {
       choices = range(options.from, options.to as string, options.step);
@@ -715,7 +681,7 @@ export default class Validator<F extends string = string> extends Common<F> {
       choices = range(options.from, options.to as number, options.step);
     }
 
-    const choiceOptions: ChoiceOptions = { choices };
+    const choiceOptions: ChoiceOptions<F> = { choices };
 
     choiceOptions.shouldMatch = options.shouldMatch;
     choiceOptions.err = options.err;
@@ -727,45 +693,42 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   async validateFile(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry | '',
+    options: FileOptions<F>,
     index: number,
     category?: string | string[],
     label?: string
   ): Promise<boolean> {
-    if (this.setup(required, field, value, options, index, true)) {
-      const file = this.files[field];
-      value = makeArray(file.name)[index];
-      this.fileName = value;
-
+    const value = isObject<FileEntry>(file) ? file.name : file;
+    if (this.setup(required, field, value, options, index) && isObject<FileEntry>(file)) {
       //check limiting rules
-      if (!this.checkLimitingRules(value, makeArray(file.size)[index], options, 'file')) {
+      if (!this.checkLimitingRules(file.name, file.size, options, 'file')) {
         return false;
       }
 
       //check extensions and file category
       const exts = makeArray(options.exts as string).map(ext => ext.replace(/^\./, '').toLowerCase());
-      const tempPath = makeArray(file.path)[index];
+      const tempPath = file.path;
       category = makeArray(category as string);
 
       const fileType = await this.getFileType(tempPath);
 
       /* istanbul ignore if */
       if (isNull(fileType)) {
-        return this.setError('{this} file extension could not be detected. Please check file', value);
+        return this.setError('{this} file extension could not be detected. Please check file', file.name);
       }
       if (category.length > 0 && !category.includes(fileType.mime.split('/')[0])) {
-        return this.setError(pickValue('err', options, `{this} is not ${label} file`), value);
+        return this.setError(pickValue('err', options, `{this} is not ${label} file`), file.name);
       }
       if (exts.length > 0 && !exts.includes(fileType.ext)) {
-        return this.setError(pickValue('extErr', options, `.${fileType.ext} files are not allowed`), value);
+        return this.setError(pickValue('extErr', options, `.${fileType.ext} files are not allowed`), file.name);
       }
 
       //move file to some location if given
@@ -776,7 +739,9 @@ export default class Validator<F extends string = string> extends Common<F> {
           const dest = path.join(destFolder, fileName);
           try {
             fs.renameSync(tempPath, dest);
-            this.fileName = fileName;
+
+            file.path = dest;
+            file.tmpName = fileName;
           } catch (ex) {
             throw new FileMoveException(ex.message);
           }
@@ -793,18 +758,18 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   validateImage(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry | '',
+    options: FileOptions<F>,
     index: number
   ): Promise<boolean> {
-    return this.validateFile(required, field, value, options, index, 'image', 'an image');
+    return this.validateFile(required, field, file, options, index, 'image', 'an image');
   }
 
   /**
@@ -812,18 +777,18 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   validateAudio(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry | '',
+    options: FileOptions<F>,
     index: number
   ): Promise<boolean> {
-    return this.validateFile(required, field, value, options, index, 'audio', 'an audio');
+    return this.validateFile(required, field, file, options, index, 'audio', 'an audio');
   }
 
   /**
@@ -831,18 +796,18 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   validateVideo(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry | '',
+    options: FileOptions<F>,
     index: number
   ): Promise<boolean> {
-    return this.validateFile(required, field, value, options, index, 'video', 'a video');
+    return this.validateFile(required, field, file, options, index, 'video', 'a video');
   }
 
   /**
@@ -850,18 +815,18 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   validateMedia(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry | '',
+    options: FileOptions<F>,
     index: number
   ): Promise<boolean> {
-    return this.validateFile(required, field, value, options, index, ['image', 'video', 'video'], 'a media');
+    return this.validateFile(required, field, file, options, index, ['image', 'video', 'video'], 'a media');
   }
 
   /**
@@ -869,19 +834,19 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   validateDocument(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry | '',
+    options: FileOptions<F>,
     index: number
   ): Promise<boolean> {
     options.exts = pickValue('exts', options, DEFAULT_DOCUMENT_FILES);
-    return this.validateFile(required, field, value, options, index);
+    return this.validateFile(required, field, file, options, index);
   }
 
   /**
@@ -889,18 +854,18 @@ export default class Validator<F extends string = string> extends Common<F> {
    *
    * @param required boolean indicating if field is required
    * @param field field name under validation
-   * @param value field value under validation
+   * @param file file under validation
    * @param options validation options
    * @param index field value index position
    */
   validateArchive(
     required: boolean,
     field: string,
-    value: string,
-    options: FileOptions,
+    file: FileEntry,
+    options: FileOptions<F>,
     index: number
   ): Promise<boolean> {
     options.exts = pickValue('exts', options, DEFAULT_ARCHIVE_FILES);
-    return this.validateFile(required, field, value, options, index);
+    return this.validateFile(required, field, file, options, index);
   }
 }

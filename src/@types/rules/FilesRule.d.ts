@@ -1,7 +1,8 @@
 import { NumberOptions } from './NumberRules';
 import BaseRule from './BaseRule';
+import { FileEntry, FileEntryCollection } from '..';
 
-export interface FileOptions extends NumberOptions {
+export interface FileOptions<F extends string> extends NumberOptions<F> {
   /**
    * defines the list of accepted file extensions. defaults to empty list. file extensions
    * should not include the dot character
@@ -20,7 +21,9 @@ export interface BaseFileRule<F extends string> extends BaseRule<F> {
    * defines validation options to be used for file related field type validations
    * such as file, image, audio, video, media, archive, and document
    */
-  options?: FileOptions;
+  options?: FileOptions<F>;
+
+  defaultValue?: FileEntry | FileEntryCollection;
 }
 
 //file rules

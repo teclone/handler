@@ -1,11 +1,11 @@
 import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf, Data } from '..';
 import Handler from '../../Handler';
 
-export interface ShouldMatchObject {
+export interface ShouldMatchObject<F extends string> {
   /**
    * the target field
    */
-  target: string;
+  target: F;
 
   /**
    * optional error message to use if values did not match
@@ -13,11 +13,11 @@ export interface ShouldMatchObject {
   err?: string;
 }
 
-export interface BaseOptions {
+export interface BaseOptions<F extends string> {
   /**
    * defines a target field that this field value must match
    */
-  shouldMatch?: ShouldMatchObject | string;
+  shouldMatch?: ShouldMatchObject<F> | F;
 
   /**
    * optional error message to use if field validation fails
@@ -86,4 +86,6 @@ export default interface BaseRule<F extends string> {
     data: Data<F>,
     handler: N
   ) => Promise<true | string> | true | string;
+
+  options?: BaseOptions<F>;
 }

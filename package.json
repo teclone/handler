@@ -58,7 +58,8 @@
     "@forensic-js/regex": "1.0.2",
     "@forensic-js/utils": "2.8.2",
     "file-type": "10.11.0",
-    "libphonenumber-js": "1.7.24"
+    "libphonenumber-js": "1.7.24",
+    "r-server": "2.7.1"
   },
   "repository": {
     "type": "git",

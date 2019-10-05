@@ -1,7 +1,7 @@
 import Model from '../src/Model';
 import Handler from '../src/Handler';
 
-declare interface Fields {
+interface Fields {
   firstName: string;
   last_name: string;
   'middle-name': string;
@@ -11,7 +11,7 @@ declare interface Fields {
   'roles.owner': boolean;
 }
 
-declare interface Data extends Fields {
+interface Data extends Fields {
   roles: object;
 }
 

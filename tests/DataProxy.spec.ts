@@ -31,4 +31,17 @@ describe('Data Proxy', function() {
       expect(JSON.stringify(proxy)).toEqual(JSON.stringify(target));
     });
   });
+
+  describe('inspection call', function() {
+    it(`should allow object to be inspected on, like console logged`, function() {
+      const target: { [p: string]: any } = {
+        name: 'Harrison',
+      };
+      const proxy = new Proxy<typeof target>(target, DataProxy);
+
+      expect(function() {
+        console.log(proxy);
+      }).not.toThrow();
+    });
+  });
 });

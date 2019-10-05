@@ -23,18 +23,6 @@ describe('Validator', function() {
     });
   });
 
-  describe('#setFiles(files: FilesSource)', function() {
-    it(`should set the files object, return this object`, function() {
-      expect(validator.setFiles({})).toEqual(validator);
-    });
-  });
-
-  describe('#getFileName()', function() {
-    it(`should return the last file validation name`, function() {
-      expect(validator.getFileName()).toEqual('');
-    });
-  });
-
   describe(`#validateText(required: boolean, field: string, value: string, options: TextOptions,
         index: number)`, function() {
     it(`should return true if field value is empty and optional`, function() {
@@ -587,10 +575,10 @@ describe('Validator', function() {
     });
   });
 
-  describe(`async #validateFile(required: boolean, field: string, value: string, options: FileOptions,
+  describe(`async #validateFile(required: boolean, field: string, file: FileEntry | '', options: FileOptions,
         index: number, category?: string | string[], label?: string)`, function() {
     it(`should return true if file is not sent but optional`, function() {
-      return validator.validateFile(false, 'file', 'somedefaultvalue.png', {}, 0).then(status => {
+      return validator.validateFile(false, 'file', '', {}, 0).then(status => {
         expect(status).toBeTruthy();
       });
     });
@@ -603,13 +591,12 @@ describe('Validator', function() {
 
     it(`should return false if file size did not meet size specifications`, function() {
       const file = createFile();
-      validator.setFiles({ file });
 
       return validator
         .validateFile(
           true,
           'file',
-          '',
+          file,
           {
             min: file.size + 1000000,
           },
@@ -622,13 +609,12 @@ describe('Validator', function() {
 
     it(`should return false if file extension is not allowed`, function() {
       const file = createFile();
-      validator.setFiles({ file });
 
       return validator
         .validateFile(
           true,
           'file',
-          '',
+          file,
           {
             exts: ['jpg', 'png'],
           },
@@ -643,26 +629,31 @@ describe('Validator', function() {
     it(`should move file after validation if the moveTo option is specified`, function() {
       const file = createFile();
       const moveTo = getFilesDirectory();
-      validator.setFiles({ file });
 
-      return validator.validateFile(true, 'file', '', { moveTo }, 0).then(status => {
-        const filename = validator.getFileName();
+      const clonedFile = {
+        ...file,
+      };
+
+      return validator.validateFile(true, 'file', clonedFile, { moveTo }, 0).then(status => {
+        expect(clonedFile.path).not.toEqual(file.path);
+        expect(clonedFile.tmpName).not.toEqual(file.tmpName);
+
+        expect(clonedFile.name).toEqual(file.name);
+
         expect(status).toBeTruthy();
 
-        const movedFile = path.resolve(moveTo, filename);
-        expect(fs.existsSync(movedFile)).toBeTruthy();
+        expect(fs.existsSync(clonedFile.path)).toBeTruthy();
 
-        fs.renameSync(movedFile, path.resolve(moveTo, file.name));
+        fs.renameSync(clonedFile.path, file.path);
       });
     });
 
     it(`should throw error if specified moveTo folder does not exist`, function() {
       const file = createFile();
       const moveTo = 'some/unknown/directory';
-      validator.setFiles({ file });
 
       return validator
-        .validateFile(true, 'file', '', { moveTo }, 0)
+        .validateFile(true, 'file', file, { moveTo }, 0)
         .catch(ex => ex)
         .then(ex => {
           expect(ex).toBeInstanceOf(DirectoryNotFoundException);
@@ -672,12 +663,11 @@ describe('Validator', function() {
     it(`should throw error if specified moveTo folder is not writable`, function() {
       const file = createFile();
       const moveTo = getFilesDirectory();
-      validator.setFiles({ file });
 
       //lock the files directory
       fs.chmodSync(moveTo, '0575');
       return validator
-        .validateFile(true, 'file', '', { moveTo }, 0)
+        .validateFile(true, 'file', file, { moveTo }, 0)
         .catch(ex => ex)
         .then(ex => {
           fs.chmodSync(moveTo, '0775');
@@ -689,10 +679,7 @@ describe('Validator', function() {
   describe(`async #validateImage(required: boolean, field: string, value: string, options: FileOptions,
         index: number)`, function() {
     it(`should validate image files`, function() {
-      validator.setFiles({
-        image: createFile(),
-      });
-      return validator.validateImage(true, 'image', '', {}, 0).then(status => {
+      return validator.validateImage(true, 'image', createFile(), {}, 0).then(status => {
         expect(status).toBeFalsy();
         expect(validator.getErrorBag().image).toEqual('"test.pdf" is not an image file');
       });
@@ -702,10 +689,7 @@ describe('Validator', function() {
   describe(`async #validateAudio(required: boolean, field: string, value: string, options: FileOptions,
         index: number)`, function() {
     it(`should validate audio files`, function() {
-      validator.setFiles({
-        audio: createFile(),
-      });
-      return validator.validateAudio(true, 'audio', '', {}, 0).then(status => {
+      return validator.validateAudio(true, 'audio', createFile(), {}, 0).then(status => {
         expect(status).toBeFalsy();
         expect(validator.getErrorBag().audio).toEqual('"test.pdf" is not an audio file');
       });
@@ -715,10 +699,7 @@ describe('Validator', function() {
   describe(`async #validateVideo(required: boolean, field: string, value: string, options: FileOptions,
         index: number)`, function() {
     it(`should validate video files`, function() {
-      validator.setFiles({
-        video: createFile(),
-      });
-      return validator.validateVideo(true, 'video', '', {}, 0).then(status => {
+      return validator.validateVideo(true, 'video', createFile(), {}, 0).then(status => {
         expect(status).toBeFalsy();
         expect(validator.getErrorBag().video).toEqual('"test.pdf" is not a video file');
       });
@@ -728,10 +709,7 @@ describe('Validator', function() {
   describe(`async #validateMedia(required: boolean, field: string, value: string, options: FileOptions,
         index: number)`, function() {
     it(`should validate media files`, function() {
-      validator.setFiles({
-        media: createFile(),
-      });
-      return validator.validateMedia(true, 'media', '', {}, 0).then(status => {
+      return validator.validateMedia(true, 'media', createFile(), {}, 0).then(status => {
         expect(status).toBeFalsy();
         expect(validator.getErrorBag().media).toEqual('"test.pdf" is not a media file');
       });
@@ -741,10 +719,7 @@ describe('Validator', function() {
   describe(`async #validateDocument(required: boolean, field: string, value: string, options: FileOptions,
         index: number)`, function() {
     it(`should validate document files`, function() {
-      validator.setFiles({
-        document: createFile(),
-      });
-      return validator.validateDocument(true, 'document', '', {}, 0).then(status => {
+      return validator.validateDocument(true, 'document', createFile(), {}, 0).then(status => {
         expect(status).toBeTruthy();
       });
     });
@@ -753,10 +728,7 @@ describe('Validator', function() {
   describe(`async #validateArchive(required: boolean, field: string, value: string, options: FileOptions,
         index: number)`, function() {
     it(`should validate archive files`, function() {
-      validator.setFiles({
-        archive: createFile(),
-      });
-      return validator.validateArchive(true, 'archive', '', {}, 0).then(status => {
+      return validator.validateArchive(true, 'archive', createFile(), {}, 0).then(status => {
         expect(status).toBeFalsy();
         expect(validator.getErrorBag().archive).toEqual('.pdf files are not allowed');
       });

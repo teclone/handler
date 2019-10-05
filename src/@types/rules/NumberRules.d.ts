@@ -1,6 +1,6 @@
 import BaseRule, { BaseOptions } from './BaseRule';
 
-export interface NumberOptions extends BaseOptions {
+export interface NumberOptions<F extends string> extends BaseOptions<F> {
   /**
    * the minimum accepted value or length
    */
@@ -38,12 +38,12 @@ export interface NumberOptions extends BaseOptions {
   ltErr?: string;
 }
 
-declare interface BaseNumberRule<F extends string> extends BaseRule<F> {
+interface BaseNumberRule<F extends string> extends BaseRule<F> {
   /**
    * defines validation options to be used for number related field type validations
    * such as ints, numbers and dates
    */
-  options?: NumberOptions;
+  options?: NumberOptions<F>;
 }
 
 //number rules

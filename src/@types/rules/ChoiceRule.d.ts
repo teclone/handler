@@ -1,6 +1,6 @@
 import BaseRule, { BaseOptions } from './BaseRule';
 
-export interface ChoiceOptions extends BaseOptions {
+export interface ChoiceOptions<F extends string> extends BaseOptions<F> {
   /**
    * array of choice options
    */
@@ -12,5 +12,5 @@ export default interface ChoiceRule<F extends string> extends BaseRule<F> {
   /**
    * defines validation options to be used for choice field type validations
    */
-  options: ChoiceOptions;
+  options: ChoiceOptions<F>;
 }

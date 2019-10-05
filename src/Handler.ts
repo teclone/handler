@@ -18,6 +18,8 @@ import {
   DBCheckType,
   OverrideIf,
   Data,
+  FileEntry,
+  FileEntryCollection,
 } from './@types';
 import { DB_MODELS } from './Constants';
 import StateException from './Exceptions/StateException';
@@ -198,13 +200,45 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   }
 
   /**
+   * turns the file into a file collection
+   * @param file
+   */
+  private makeFileCollection(file: FileEntry | FileEntryCollection): FileEntryCollection {
+    return Object.keys(file).reduce(
+      (result, key) => {
+        result[key] = makeArray(file[key]);
+        return result;
+      },
+      {} as FileEntryCollection
+    );
+  }
+
+  /**
+   * turns the file into a file collection
+   * @param file
+   */
+  private makeFileEntry(fileCollection: FileEntryCollection, index: number): FileEntry {
+    return Object.keys(fileCollection).reduce(
+      (result, key) => {
+        result[key] = fileCollection[key][index];
+        return result;
+      },
+      {} as FileEntry
+    );
+  }
+
+  /**
    * run post processes
    */
   private async runPostProcesses() {
     for (const field of Object.keys(this.resolvedRules)) {
       const rule = this.resolvedRules[field] as ResolvedRule<F>;
       if (isCallable(rule.postCompute)) {
-        this.data[field] = await rule.postCompute(this.data[field], this.data, this);
+        try {
+          this.data[field] = await rule.postCompute(this.data[field], this.data, this);
+        } catch (ex) {
+          this.setError(field, ex.message || 'error occured while executing field value post computation');
+        }
       }
       if (isCallable(rule.postValidate)) {
         const result = await rule.postValidate(this.data[field], this.data, this);
@@ -264,23 +298,27 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     required: boolean,
     field: string,
     type: DataType,
-    value: string,
-    options: Options,
+    value: string | FileEntry,
+    options: Options<F>,
     index: number
   ) {
     const validator = this.validator;
     const method = this.dataTypeToMethod[type];
     if (method !== '') {
       await validator[method](required, field, value, options, index);
-      if (this.isFileField(field)) {
-        const newFileName = validator.getFileName();
-        const data = this.data[field];
-
-        if (isArray(data)) {
-          data.splice(index, 1, newFileName);
+      if (isObject<FileEntry>(value)) {
+        let data = this.data[field] as FileEntry | FileEntryCollection;
+        const name = data.name;
+        if (typeof name === 'string') {
+          data = value;
+          this.data[field] = value;
         } else {
-          this.data[field] = newFileName;
+          Object.keys(value).forEach(key => {
+            (data as FileEntryCollection)[key][index] = value[key];
+          });
         }
+        this.data[field] = data;
+
         return validator.succeeds();
       }
     }
@@ -295,15 +333,29 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   private async validateFields(fields: string[], required: boolean) {
     for (const field of fields) {
       const { options, type } = this.resolvedRules[field];
-      const values = makeArray<DataValue>(this.data[field]);
+      const isFileDataType = this.isFileDataType(type);
 
-      const len = values.length;
-      let i = -1;
+      if (this.data[field] !== null && isFileDataType) {
+        const fileCollection = this.makeFileCollection(this.data[field]);
+        const len = fileCollection.name.length;
+        let i = -1;
 
-      while (++i < len) {
-        const value = values[i];
-        if (!(await this.runValidation(required, field, type, value === null ? '' : value.toString(), options, i))) {
-          break;
+        while (++i < len) {
+          const value = this.makeFileEntry(fileCollection, i);
+          if (!(await this.runValidation(required, field, type, value, options, i))) {
+            break;
+          }
+        }
+      } else {
+        const values = makeArray<DataValue>(this.data[field], true);
+        const len = values.length;
+        let i = -1;
+
+        while (++i < len) {
+          const value = values[i];
+          if (!(await this.runValidation(required, field, type, value === null ? '' : value.toString(), options, i))) {
+            break;
+          }
         }
       }
     }
@@ -314,20 +366,29 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   private getFields(fields: string[]) {
     fields.forEach(field => {
-      const filters = this.resolvedRules[field].filters;
-      const defaultValue = this.resolvedRules[field].defaultValue || '';
-
+      const filters = this.resolvedRules[field].filters as Filters;
       const isFileField = this.isFileField(field);
       const fieldIsMissing = this.fieldIsMissing(field);
 
-      let value: RawData = '';
-      if (isFileField) {
-        value = fieldIsMissing ? defaultValue : (this.filesSource as FilesSource)[field].name;
-      } else {
-        value = fieldIsMissing ? defaultValue : (this.dataSource as DataSource)[field];
+      const defaultValue = this.resolvedRules[field].defaultValue || '';
+
+      let value: DataValue = isFileField
+        ? (this.filesSource as FilesSource)[field]
+        : (this.dataSource as DataSource)[field];
+
+      if (fieldIsMissing) {
+        value = defaultValue;
       }
 
-      this.data[field] = this.filterValue(value as RawData, this.resolvedRules[field].type, filters);
+      // convert value to array
+      if (filters.toArray && value !== '') {
+        if (isFileField && typeof (value as FileEntry | FileEntryCollection).name === 'string') {
+          value = this.makeFileCollection(value as FileEntry);
+        } else if (!isFileField && !isArray(value)) {
+          value = [value] as string[];
+        }
+      }
+      this.data[field] = this.filterValue(value, this.resolvedRules[field].type, filters);
     });
   }
 
@@ -401,7 +462,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       );
     };
 
-    if (isObject<Options>(options)) {
+    if (isObject(options)) {
       for (const [key, value] of Object.entries(options)) {
         options[key] = this.resolveOption(field, value);
       }
@@ -507,8 +568,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   /**
    * runs defined filters on the given value and returns the result
    */
-  private filterValue(value: RawData, type: DataType, filters: Filters): DataValue {
-    const performFilter = (value: string, type: DataType, filters: Filters) => {
+  private filterValue(value: DataValue, type: DataType, filters: Filters): DataValue {
+    const isFileDataType = this.isFileDataType(type);
+
+    const performFilter = (value: string) => {
       let result: string | number | boolean = value;
 
       if (type === 'checkbox' || type === 'boolean') {
@@ -594,18 +657,30 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       return result;
     };
 
-    if (value === '') {
-      return filters.toArray ? [] : null;
+    if (value === '' || value === null) {
+      return filters.toArray
+        ? isFileDataType
+          ? {
+              size: [],
+              path: [],
+              name: [],
+              tmpName: [],
+              type: [],
+            }
+          : []
+        : null;
     }
 
-    if (filters.toArray) {
-      value = makeArray(value);
-    }
-
-    if (isArray(value)) {
-      return uniqueArray(value).map(current => performFilter(current.toString(), type, filters)) as DataValue;
+    if (isObject<FileEntry | FileEntryCollection>(value)) {
+      const name = value.name;
+      value.name = (isArray(name) ? name.map(current => performFilter(current)) : performFilter(name)) as string;
+      return value;
     } else {
-      return performFilter(value.toString(), type, filters);
+      if (isArray(value)) {
+        return uniqueArray(value as string[]).map(current => performFilter(current.toString())) as DataValue;
+      } else {
+        return performFilter(value.toString());
+      }
     }
   }
 
@@ -731,14 +806,12 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       postValidate: pickValue('postValidate', rule, undefined),
     };
 
-    //enclose the target field if it is not enclosed
+    //enclose the target field
     if (!isUndefined(result.options.shouldMatch)) {
       if (isString(result.options.shouldMatch)) {
         result.options.shouldMatch = { target: result.options.shouldMatch };
       }
-      if (result.options.shouldMatch.target.charAt(0) !== '{') {
-        result.options.shouldMatch.target = `{${result.options.shouldMatch.target}}`;
-      }
+      result.options.shouldMatch.target = `{${result.options.shouldMatch.target}}` as F;
     }
 
     if (result.type === 'checkbox' || typeof result.defaultValue !== 'undefined') {
@@ -747,7 +820,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
     if (result.type === 'phoneNumber') {
       const postCompute = result.postCompute;
-      const options = result.options as PhoneNumberOptions;
+      const options = result.options as PhoneNumberOptions<F>;
 
       result.postCompute = (value: string, data) => {
         const newValue = (parsePhoneNumberFromString(
@@ -945,7 +1018,6 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     this.resolveOptions('options');
     this.resolveOptions('checks');
 
-    this.validator.setFiles(this.filesSource || {});
     await this.validateFields(this.requiredFields, true);
     await this.validateFields(this.optionalFields, false);
 

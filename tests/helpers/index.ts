@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { File, FileCollection } from '../../src/@types';
+import { FileEntryCollection, FileEntry } from '../../src/@types';
 import * as fs from 'fs';
 import mongoose from 'mongoose';
 import NoSqlUser from './nosql/models/User';
@@ -10,7 +10,7 @@ export const getFilesDirectory = () => {
   return path.resolve(__dirname, 'files');
 };
 
-export const createFile = (filename: string = 'test.pdf'): File => {
+export const createFile = (filename: string = 'test.pdf'): FileEntry => {
   const link = path.resolve(__dirname, 'files', filename);
   const size = fs.statSync(link).size;
 
@@ -23,8 +23,8 @@ export const createFile = (filename: string = 'test.pdf'): File => {
   };
 };
 
-export const createFileCollection = (filenames: string[] = ['test.pdf']): FileCollection => {
-  const template: FileCollection = {
+export const createFileCollection = (filenames: string[] = ['test.pdf']): FileEntryCollection => {
+  const template: FileEntryCollection = {
     name: [],
     path: [],
     tmpName: [],

@@ -2,7 +2,7 @@ import BaseRule from './BaseRule';
 import { Regex } from '..';
 import { NumberOptions } from './NumberRules';
 
-export interface TextOptions extends NumberOptions {
+export interface TextOptions<F extends string> extends NumberOptions<F> {
   /**
    * defines regex pattern that field value(s) must match
    */
@@ -34,7 +34,7 @@ export interface TextOptions extends NumberOptions {
   regexNone?: Regex | Regex[];
 }
 
-export interface URLOptions extends TextOptions {
+export interface URLOptions<F extends string> extends TextOptions<F> {
   /**
    * defines accepted uri schemes or protocols. case insensitive
    */
@@ -47,7 +47,7 @@ export interface URLOptions extends TextOptions {
   mustHaveScheme?: boolean;
 }
 
-export interface PasswordOptions extends TextOptions {
+export interface PasswordOptions<F extends string> extends TextOptions<F> {
   /**
    * boolean value indicating if the default internal password pre-validations should be
    * applied. default value is true. the default password pre-validation checks that the
@@ -59,7 +59,7 @@ export interface PasswordOptions extends TextOptions {
   preValidate?: boolean;
 }
 
-export interface PhoneNumberOptions extends TextOptions {
+export interface PhoneNumberOptions<F extends string> extends TextOptions<F> {
   /**
    * if given, the phone number is validated against this country.
    */
@@ -71,42 +71,42 @@ export interface PhoneNumberOptions extends TextOptions {
   enforceCountry?: boolean;
 }
 
-declare interface BaseTextRule<F extends string> extends BaseRule<F> {
+interface BaseTextRule<F extends string> extends BaseRule<F> {
   /**
    * defines text related field type validation options, such as text, email, password and url
    */
-  options?: TextOptions;
+  options?: TextOptions<F>;
 }
 
 //text rules
-declare interface TextRule<F extends string> extends BaseTextRule<F> {
+interface TextRule<F extends string> extends BaseTextRule<F> {
   type?: 'text';
 }
 
-declare interface EmailRule<F extends string> extends BaseTextRule<F> {
+interface EmailRule<F extends string> extends BaseTextRule<F> {
   type: 'email';
 }
 
-declare interface URLRule<F extends string> extends BaseTextRule<F> {
+interface URLRule<F extends string> extends BaseTextRule<F> {
   type: 'url';
   /**
    * defines url field type validation options
    */
-  options?: URLOptions;
+  options?: URLOptions<F>;
 }
 
-declare interface PasswordRule<F extends string> extends BaseTextRule<F> {
+interface PasswordRule<F extends string> extends BaseTextRule<F> {
   type: 'password';
   /**
    * defines password field type validation options
    */
-  options?: PasswordOptions;
+  options?: PasswordOptions<F>;
 }
 
-declare interface PhoneNumberRule<F extends string> extends BaseTextRule<F> {
+interface PhoneNumberRule<F extends string> extends BaseTextRule<F> {
   type: 'phoneNumber';
   /**
    * defines phoneNumber type validation options
    */
-  options?: PhoneNumberOptions;
+  options?: PhoneNumberOptions<F>;
 }

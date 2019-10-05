@@ -4,7 +4,7 @@ import DataSourceNotSetException from '../src/Exceptions/DataSourceNotSetExcepti
 import RulesNotSetException from '../src/Exceptions/RulesNotSetException';
 import StateException from '../src/Exceptions/StateException';
 import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
-import { Rules, DataSource, FilesSource, DataValue } from '../src/@types';
+import { Rules, DataSource, FilesSource, DataValue, FileEntryCollection } from '../src/@types';
 import { range } from '@forensic-js/utils';
 import CustomDate from '../src/CustomDate';
 import { DateRule, NumberRule } from '../src/@types/rules/NumberRules';
@@ -16,7 +16,6 @@ import {
   noSqlDepopulate,
   noSqlDisconnect,
 } from './helpers';
-import { ShouldMatchObject } from '../src/@types/rules/BaseRule';
 import DBChecker from '../src/DBChecker';
 import NoSqlUser from './helpers/nosql/models/User';
 import Model from '../src/Model';
@@ -189,24 +188,6 @@ describe('Handler Module', function() {
         done();
       }
     });
-
-    it(`should resolve field rules prior to execution`, function() {
-      const handler = new Handler({}, undefined, {
-        firstName: 'text',
-        password1: 'password',
-        password2: {
-          type: 'password',
-          options: {
-            shouldMatch: '{password1}',
-          },
-        },
-      });
-
-      return handler.execute().then(() => {
-        const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
-      });
-    });
   });
 
   describe(`rule type resolution`, function() {
@@ -221,9 +202,24 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should resolve shouldMatch rule option, adding begining and enclosing brackets if not
-        present`, function() {
-      const handler = new Handler({}, undefined, {
+    it(`should resolve shouldMatch rule option, converting it to object if not given as object`, function() {
+      const handler = new Handler<'password1' | 'password2'>({}, undefined, {
+        password1: 'password',
+        password2: {
+          type: 'password',
+          options: {
+            shouldMatch: 'password1',
+          },
+        },
+      });
+      return handler.execute().then(() => {
+        const resolvedRules = handler.getResolvedRules();
+        expect((resolvedRules.password2.options.shouldMatch as any).target).toEqual('{password1}');
+      });
+    });
+
+    it(`should resolve shouldMatch rule option, adding begining and enclosing brackets if not present`, function() {
+      const handler = new Handler<'password1' | 'password2'>({}, undefined, {
         password1: 'password',
         password2: {
           type: 'password',
@@ -236,7 +232,7 @@ describe('Handler Module', function() {
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.password2.options.shouldMatch as ShouldMatchObject).target).toEqual('{password1}');
+        expect((resolvedRules.password2.options.shouldMatch as any).target).toEqual('{password1}');
       });
     });
 
@@ -672,8 +668,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should pick up rules for extra required fields even when there data are not
-            sent`, function() {
+    it(`should pick up rules for extra required fields even when there data are not sent`, function() {
       const rules: Rules<'firstName' | 'lastName' | 'email' | 'dateOfBirth'> = {
         firstName: 'text',
         lastName: 'text',
@@ -713,8 +708,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should decode data values by default unless the decode filter rule option is explicitly
-        set to false`, function() {
+    it(`should decode data values by default unless the decode filter rule option is explicitly set to false`, function() {
       const name = 'Harrison Ifeanyichukwu';
       const encodedName = encodeURIComponent(name);
 
@@ -746,8 +740,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should strip out html tags by default unless the stripTags filter rule option is
-            explicitly set to false`, function() {
+    it(`should strip out html tags by default unless the stripTags filter rule option is explicitly set to false`, function() {
       const name = 'Harrison Ifeanyichukwu';
       const text = `<p><i>${name}</i><br></p>`;
 
@@ -779,7 +772,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should not remove tags defined in the user defined stripTagsIgnore filter options`, function() {
+    it(`should not remove tags present in the user defined stripTagsIgnore filter options`, function() {
       const name = 'Harrison Ifeanyichukwu';
       const text = `<p><i>${name}</i><br></p>`;
 
@@ -802,8 +795,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should trim and remove empty lines if the minimize filter option is set to true
-            options`, function() {
+    it(`should trim and remove empty lines if the minimize filter option is set to true options`, function() {
       const text = `  This text enters new line
             which starts here`;
 
@@ -1056,6 +1048,36 @@ describe('Handler Module', function() {
         expect(handler.data.text).toEqual('ABCD');
       });
     });
+
+    it(`should convert value to array if toArray filter option is set to true`, function() {
+      const callback = jest.fn(value => value.toUpperCase());
+
+      const data: DataSource = {
+        text: 'abcd',
+      };
+
+      const rules: Rules<'text' | 'file'> = {
+        text: {
+          filters: {
+            toArray: true,
+          },
+        },
+        file: {
+          type: 'document',
+          filters: {
+            toArray: true,
+          },
+        },
+      };
+
+      const file = createFile();
+
+      const handler = new Handler(data, { file }, rules);
+      return handler.execute(true).then(() => {
+        expect(handler.data.text).toEqual(['abcd']);
+        expect((handler.data.file as FileEntryCollection).name).toEqual([file.name]);
+      });
+    });
   });
 
   describe('Missing fields', function() {
@@ -1136,8 +1158,8 @@ describe('Handler Module', function() {
           defaultValue: 'Mustermann',
         },
         image: {
-          type: 'image',
-          defaultValue: 'default-image.png',
+          type: 'document',
+          defaultValue: createFile(),
         },
         cv: 'document',
         cvs: 'document',
@@ -1274,6 +1296,30 @@ describe('Handler Module', function() {
         const handler = new Handler(dataSource, {}, rules);
         return handler.execute().then(() => {
           expect(handler.data.email).toEqual('SOMEONE@EXAMPLE.COM');
+        });
+      });
+
+      it(`should fail the execution if the post compute callback errors out, setting the error message as the error message`, function() {
+        const dataSource: DataSource = {
+          phoneNumber: '08132083437',
+          firstName: 'Harrison',
+        };
+        const rules: Rules<'firstName' | 'phoneNumber'> = {
+          firstName: 'text',
+          phoneNumber: {
+            type: 'phoneNumber',
+            options: {
+              country: 'ng',
+            },
+            postCompute: () => {
+              throw new Error('testing');
+            },
+          },
+        };
+        const handler = new Handler(dataSource, {}, rules);
+        return handler.execute().then(() => {
+          expect(handler.succeeds()).toBeFalsy();
+          expect(handler.errors.phoneNumber).toEqual('testing');
         });
       });
     });

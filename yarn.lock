@@ -694,12 +694,24 @@
     "@babel/plugin-transform-runtime" "7.4.3"
     "@babel/runtime" "7.4.3"
 
+"@forensic-js/regex@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@forensic-js/regex/-/regex-1.0.1.tgz#c5dc93052d98df982bc1371cb36b4033bdbac4ad"
+  integrity sha512-7r7qxuTNickv5+g3D3A/c68mSk+ev1qCu1Yyrh2+6oejC4d0nJ+RT4NvJpQGh7ecq8WkAi8gHWrpkGVJS6Ogcg==
+  dependencies:
+    "@forensic-js/utils" "1.5.2"
+
 "@forensic-js/regex@1.0.2":
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/@forensic-js/regex/-/regex-1.0.2.tgz#65aa2b81a7f0d9068037c2c8e8a0150cbff28f32"
   integrity sha512-FKvbR4vR+1YWE3TlLdIXOi6DaNuDpfWBo7slYXAWGb1D4+xeGn4W7hFowMtjqcXSZz6u4445jPr3tAg3aqQ5xQ==
   dependencies:
     "@forensic-js/utils" "2.0.0"
+
+"@forensic-js/utils@1.5.2":
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/@forensic-js/utils/-/utils-1.5.2.tgz#7909c21c0e8995f53b8354c62ce9195f94d356ef"
+  integrity sha512-Deyu0Qy/SsO+xjR3fM3XQqyk3l8sZ7HmG839qm6PPtsutoMhjGXslJV0qkcXtKsufN7Hox+5W453EHSOBcVIBg==
 
 "@forensic-js/utils@2.0.0":
   version "2.0.0"
@@ -5833,7 +5845,7 @@ mime-db@1.40.0:
   resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.40.0.tgz#a65057e998db090f732a68f6c276d387d4126c32"
   integrity sha512-jYdeOMPy9vnxEqFRRo6ZvTZ8d9oPb+k18PKoYNYUe2stVEBPPwsln/qWzdbmaIvnhZ9v2P+CuecK+fpUfsV2mA==
 
-mime-types@^2.1.12, mime-types@~2.1.19:
+mime-types@2.1.24, mime-types@^2.1.12, mime-types@~2.1.19:
   version "2.1.24"
   resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.24.tgz#b6f8d0b3e951efb77dedeca194cff6d16f676f81"
   integrity sha512-WaFHS3MCl5fapm3oLxU4eYDw77IQM2ACcxQ9RIxfaC3ooc6PFuBMGZZsYpvoXS5D5QTWPieo1jjLdAm3TBP3cQ==
@@ -7114,6 +7126,18 @@ qw@~1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/qw/-/qw-1.0.1.tgz#efbfdc740f9ad054304426acb183412cc8b996d4"
   integrity sha1-77/cdA+a0FQwRCassYNBLMi5ltQ=
+
+r-server@2.7.1:
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/r-server/-/r-server-2.7.1.tgz#b0ed10500fa8aec8a94fa43a7f67771a88543dcd"
+  integrity sha512-kzHgouM2MNpuIaegFfbijCKkg/W/wuWdViCzP7WlorxU+qZY2keGSmVSQee2Aeh2vJ6xDUBT93/KeXvoTD3r2w==
+  dependencies:
+    "@babel/plugin-transform-runtime" "7.4.3"
+    "@babel/runtime" "7.4.3"
+    "@forensic-js/node-utils" "1.0.0"
+    "@forensic-js/regex" "1.0.1"
+    "@forensic-js/utils" "2.0.0"
+    mime-types "2.1.24"
 
 rc@^1.0.1, rc@^1.1.6, rc@^1.2.7, rc@^1.2.8:
   version "1.2.8"

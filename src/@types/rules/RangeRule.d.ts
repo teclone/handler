@@ -1,6 +1,6 @@
 import BaseRule, { BaseOptions } from './BaseRule';
 
-declare interface TextRangeOptions extends BaseOptions {
+interface TextRangeOptions<F extends string> extends BaseOptions<F> {
   /**
    * range start alphabet
    */
@@ -15,7 +15,7 @@ declare interface TextRangeOptions extends BaseOptions {
   step?: number;
 }
 
-declare interface NumberRangeOptions extends BaseOptions {
+interface NumberRangeOptions<F extends string> extends BaseOptions<F> {
   /**
    * range start number
    */
@@ -30,7 +30,7 @@ declare interface NumberRangeOptions extends BaseOptions {
   step?: number;
 }
 
-export type RangeOptions = TextRangeOptions | NumberRangeOptions;
+export type RangeOptions<F extends string> = TextRangeOptions<F> | NumberRangeOptions<F>;
 
 //range rule
 export default interface RangeRule<F extends string> extends BaseRule<F> {
@@ -38,5 +38,5 @@ export default interface RangeRule<F extends string> extends BaseRule<F> {
   /**
    * defines validation options to be used for range ield type validations
    */
-  options: RangeOptions;
+  options: RangeOptions<F>;
 }

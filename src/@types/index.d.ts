@@ -35,13 +35,42 @@ import {
 } from './rules/FilesRule';
 import Handler from '../Handler';
 
+export interface FileEntry {
+  name: string;
+  tmpName: string;
+  path: string;
+  size: number;
+  type: string;
+}
+
+export interface FileEntryCollection {
+  name: string[];
+  tmpName: string[];
+  path: string[];
+  size: number[];
+  type: string[];
+}
+
 export type RawData = string | string[];
 
 export type DataSource = {
   [field: string]: RawData;
 };
 
-export type DataValue = null | string | number | boolean | string[] | number[] | boolean[];
+export interface FilesSource {
+  [fieldName: string]: FileEntry | FileEntryCollection;
+}
+
+export type DataValue =
+  | null
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | boolean[]
+  | FileEntry
+  | FileEntryCollection;
 
 export type Data<F extends string> = {
   [P in F]: DataValue;
@@ -55,30 +84,13 @@ export type ErrorBag<F extends string> = {
   [P in F]: string;
 };
 
-export interface File {
-  name: string;
-  tmpName: string;
-  path: string;
-  size: number;
-  type: string;
-}
-export interface FileCollection {
-  name: string[];
-  tmpName: string[];
-  path: string[];
-  size: number[];
-  type: string[];
-}
-export interface FilesSource {
-  [fieldName: string]: File | FileCollection;
-}
-
 export type Unit = 'character' | 'number' | 'date' | 'file';
 
 export interface RegexObject {
   pattern: RegExp;
   err?: string;
 }
+
 export type Regex = RegExp | RegexObject;
 
 export type DataType =
@@ -157,15 +169,15 @@ export interface Filters {
   callback?: FilterCallback;
 }
 
-export type Options =
-  | BaseOptions
-  | NumberOptions
-  | TextOptions
-  | RangeOptions
-  | ChoiceOptions
-  | FileOptions
-  | PhoneNumberOptions
-  | PasswordOptions;
+export type Options<F extends string> =
+  | BaseOptions<F>
+  | NumberOptions<F>
+  | TextOptions<F>
+  | RangeOptions<F>
+  | ChoiceOptions<F>
+  | FileOptions<F>
+  | PhoneNumberOptions<F>
+  | PasswordOptions<F>;
 
 export interface ModelDBCheck {
   if: DBCheckType;
@@ -223,7 +235,7 @@ export interface ResolvedRule<F extends string> {
 
   overrideIf?: OverrideIf<F>;
 
-  options: Options;
+  options: Options<F>;
 
   filters: Filters;
 
