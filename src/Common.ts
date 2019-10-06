@@ -10,7 +10,7 @@ export default class Common<F extends string = string> {
 
   protected field: string = '';
 
-  protected options: Options | DBCheck = {};
+  protected options: Options<F> | DBCheck = {};
 
   protected index: number = 0;
 
@@ -23,7 +23,7 @@ export default class Common<F extends string = string> {
    * @param options validation options
    * @param index field value index
    */
-  reset(field: string, options: Options | DBCheck, index: number): this {
+  reset(field: string, options: Options<F> | DBCheck, index: number): this {
     this.field = field;
     this.options = options;
     this.index = index;

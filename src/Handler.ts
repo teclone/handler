@@ -384,7 +384,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       if (filters.toArray && value !== '') {
         if (isFileField && typeof (value as FileEntry | FileEntryCollection).name === 'string') {
           value = this.makeFileCollection(value as FileEntry);
-        } else if (!isFileField && !isArray(value)) {
+        } else if (!isFileField && !isArray<DataValue>(value)) {
           value = [value] as string[];
         }
       }
@@ -676,7 +676,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       value.name = (isArray(name) ? name.map(current => performFilter(current)) : performFilter(name)) as string;
       return value;
     } else {
-      if (isArray(value)) {
+      if (isArray<DataValue>(value)) {
         return uniqueArray(value as string[]).map(current => performFilter(current.toString())) as DataValue;
       } else {
         return performFilter(value.toString());
