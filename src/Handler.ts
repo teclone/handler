@@ -664,7 +664,6 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
               size: [],
               path: [],
               name: [],
-              tmpName: [],
               type: [],
             }
           : []

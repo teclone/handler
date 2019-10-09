@@ -12,6 +12,7 @@ import {
   isNull,
   isObject,
   isRegex,
+  isCallable,
 } from '@forensic-js/utils';
 import {
   DATE_FORMAT,
@@ -29,10 +30,8 @@ import { RangeOptions } from './@types/rules/RangeRule';
 import { FileOptions } from './@types/rules/FilesRule';
 import FileType, { FileTypeResult } from 'file-type';
 import * as fs from 'fs';
-import * as crypto from 'crypto';
 import * as path from 'path';
-import DirectoryNotFoundException from './Exceptions/DirectoryNotFoundException';
-import FileMoveException from './Exceptions/FileMoveException';
+import FileException from './Exceptions/FileException';
 import { parsePhoneNumber, CountryCode } from 'libphonenumber-js';
 
 export default class Validator<F extends string = string> extends Common<F> {
@@ -715,10 +714,9 @@ export default class Validator<F extends string = string> extends Common<F> {
 
       //check extensions and file category
       const exts = makeArray(options.exts as string).map(ext => ext.replace(/^\./, '').toLowerCase());
-      const tempPath = file.path;
       category = makeArray(category as string);
 
-      const fileType = await this.getFileType(tempPath);
+      const fileType = await this.getFileType(file.path);
 
       /* istanbul ignore if */
       if (isNull(fileType)) {
@@ -731,22 +729,30 @@ export default class Validator<F extends string = string> extends Common<F> {
         return this.setError(pickValue('extErr', options, `.${fileType.ext} files are not allowed`), file.name);
       }
 
-      //move file to some location if given
-      if (options.moveTo) {
-        const destFolder = options.moveTo;
-        if (fs.existsSync(destFolder) && fs.statSync(destFolder).isDirectory()) {
-          const fileName = crypto.randomBytes(32).toString('hex') + '.' + fileType.ext;
-          const dest = path.join(destFolder, fileName);
-          try {
-            fs.renameSync(tempPath, dest);
+      file.type = fileType.mime;
+      const key = path.basename(file.path, path.extname(file.path)) + '.' + fileType.ext;
 
-            file.path = dest;
-            file.tmpName = fileName;
-          } catch (ex) {
-            throw new FileMoveException(ex.message);
-          }
-        } else {
-          throw new DirectoryNotFoundException(`${destFolder} moveTo path does not exist, or it is not a folder`);
+      //move file to some location if given
+      let result: true | string = '';
+      if (isCallable(options.moveTo)) {
+        try {
+          result = await options.moveTo(file, key);
+        } catch (ex) {
+          result = ex.message || ex;
+        }
+
+        if (isString(result)) {
+          this.setError(result, file.name);
+        }
+      } else if (isString(options.moveTo)) {
+        const dest = path.join(options.moveTo, key);
+        try {
+          fs.renameSync(file.path, dest);
+
+          file.path = dest;
+          file.type = fileType.mime;
+        } catch (ex) {
+          throw new FileException(ex.message);
         }
       }
     }

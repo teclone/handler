@@ -1,9 +1,7 @@
 import Validator from '../src/Validator';
 import { createFile, getFilesDirectory } from './helpers';
 import * as fs from 'fs';
-import * as path from 'path';
-import DirectoryNotFoundException from '../src/Exceptions/DirectoryNotFoundException';
-import FileMoveException from '../src/Exceptions/FileMoveException';
+import FileException from '../src/Exceptions/FileException';
 import Common from '../src/Common';
 
 describe('Validator', function() {
@@ -626,7 +624,7 @@ describe('Validator', function() {
         });
     });
 
-    it(`should move file after validation if the moveTo option is specified`, function() {
+    it(`should move file after validation if the moveTo option is specified and it is string`, function() {
       const file = createFile();
       const moveTo = getFilesDirectory();
 
@@ -635,11 +633,6 @@ describe('Validator', function() {
       };
 
       return validator.validateFile(true, 'file', clonedFile, { moveTo }, 0).then(status => {
-        expect(clonedFile.path).not.toEqual(file.path);
-        expect(clonedFile.tmpName).not.toEqual(file.tmpName);
-
-        expect(clonedFile.name).toEqual(file.name);
-
         expect(status).toBeTruthy();
 
         expect(fs.existsSync(clonedFile.path)).toBeTruthy();
@@ -648,7 +641,29 @@ describe('Validator', function() {
       });
     });
 
-    it(`should throw error if specified moveTo folder does not exist`, function() {
+    it(`should call the moveTo callback function if specified with the file object`, function() {
+      const callback = jest.fn<Promise<true | string>, any[]>(async value => {
+        return true;
+      });
+      const file = createFile();
+
+      return validator.validateFile(true, 'file', file, { moveTo: callback }, 0).then(status => {
+        expect(callback.mock.calls.length).toEqual(1);
+      });
+    });
+
+    it(`should set error if error occurs in moveTo callback`, function() {
+      const callback = jest.fn<Promise<true | string>, any[]>(async value => {
+        throw 'this is nonsense';
+      });
+      const file = createFile();
+
+      return validator.validateFile(true, 'file', file, { moveTo: callback }, 0).then(status => {
+        expect(validator.getErrorBag().file).toEqual('this is nonsense');
+      });
+    });
+
+    it(`should throw error if error occurs while moving file`, function() {
       const file = createFile();
       const moveTo = 'some/unknown/directory';
 
@@ -656,22 +671,7 @@ describe('Validator', function() {
         .validateFile(true, 'file', file, { moveTo }, 0)
         .catch(ex => ex)
         .then(ex => {
-          expect(ex).toBeInstanceOf(DirectoryNotFoundException);
-        });
-    });
-
-    it(`should throw error if specified moveTo folder is not writable`, function() {
-      const file = createFile();
-      const moveTo = getFilesDirectory();
-
-      //lock the files directory
-      fs.chmodSync(moveTo, '0575');
-      return validator
-        .validateFile(true, 'file', file, { moveTo }, 0)
-        .catch(ex => ex)
-        .then(ex => {
-          fs.chmodSync(moveTo, '0775');
-          expect(ex).toBeInstanceOf(FileMoveException);
+          expect(ex).toBeInstanceOf(FileException);
         });
     });
   });

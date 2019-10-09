@@ -1,6 +1,13 @@
 import { NumberOptions } from './NumberRules';
 import BaseRule from './BaseRule';
-import { FileEntry, FileEntryCollection } from '..';
+import { FileEntry, FileEntryCollection, Data } from '..';
+import Handler from '../../Handler';
+
+/**
+ * @param file the file object
+ * @param key resolved file with extension
+ */
+type MoveToCallback = (file: FileEntry, key: string) => Promise<true | string> | true | string;
 
 export interface FileOptions<F extends string> extends NumberOptions<F> {
   /**
@@ -13,7 +20,11 @@ export interface FileOptions<F extends string> extends NumberOptions<F> {
    */
   extErr?: string;
 
-  moveTo?: string;
+  /**
+   * move to destination or a callback function that takes the object and uploads the file to somewhere, the function should set the file.path
+   * value to the new resource location if upload succeeds
+   */
+  moveTo?: string | MoveToCallback;
 }
 
 export interface BaseFileRule<F extends string> extends BaseRule<F> {
