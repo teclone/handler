@@ -101,9 +101,14 @@ describe('Handler Module', function() {
     });
   });
 
-  describe(`#setError(field: string, errorMessage: string): this`, function() {
+  describe(`#setError(field: string, errorMessage: string | false): this`, function() {
     it(`should set the given error message for the given field name, returning the this object`, function() {
       expect(handler.setError('first-name', 'first name is not given')).toEqual(handler);
+    });
+
+    it(`should default error message to 'error occured' if passed in value is false`, function() {
+      handler.setError('first-name', false);
+      expect(handler.errors['first-name']).toEqual('error occured');
     });
   });
 

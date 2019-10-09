@@ -22,7 +22,7 @@ import {
 } from './rules/NumberRules';
 import RangeRule, { RangeOptions } from './rules/RangeRule';
 import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
-import BaseRule, { BaseOptions } from './rules/BaseRule';
+import BaseRule, { BaseOptions, SuccessOrErrorMessage } from './rules/BaseRule';
 import {
   FileRule,
   ImageFileRule,
@@ -257,7 +257,7 @@ export interface ResolvedRule<F extends string> {
     value: DataValue,
     data: Data<F>,
     handler: N
-  ) => Promise<true | string> | true | string;
+  ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 }
 
 export type ResolvedRules<F extends string> = {

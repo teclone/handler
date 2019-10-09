@@ -242,7 +242,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       }
       if (isCallable(rule.postValidate)) {
         const result = await rule.postValidate(this.data[field], this.data, this);
-        if (isString(result)) {
+        if (result !== true) {
           this.setError(field, result);
         }
       }
@@ -956,8 +956,8 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   /**
    * sets the error message
    */
-  setError(field: string, errorMessage: string): this {
-    this.errors[field] = errorMessage;
+  setError(field: string, errorMessage: string | false): this {
+    this.errors[field] = errorMessage ? errorMessage : 'error occured';
     return this;
   }
 

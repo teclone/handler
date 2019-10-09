@@ -1,6 +1,8 @@
 import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf, Data } from '..';
 import Handler from '../../Handler';
 
+export type SuccessOrErrorMessage = boolean | string;
+
 export interface ShouldMatchObject<F extends string> {
   /**
    * the target field
@@ -85,7 +87,7 @@ export default interface BaseRule<F extends string> {
     value: DataValue,
     data: Data<F>,
     handler: N
-  ) => Promise<true | string> | true | string;
+  ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 
   options?: BaseOptions<F>;
 }

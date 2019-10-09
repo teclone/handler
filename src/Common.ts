@@ -37,7 +37,9 @@ export default class Common<F extends string = string> {
   /**
    * sets the given error message
    */
-  setError(errorMessage: string, value: string): false {
+  setError(errorMessage: string | false, value: string): false {
+    errorMessage = errorMessage === false ? 'error occured' : errorMessage;
+
     if (this.status === false) {
       throw new StateException('cant set errors twice, did you forget to reset validator?');
     }

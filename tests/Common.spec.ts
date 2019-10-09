@@ -26,11 +26,17 @@ describe('Common Module', function() {
     });
   });
 
-  describe('#setError(errorMessage: string, value: string)', function() {
+  describe('#setError(errorMessage: string | false, value: string)', function() {
     it(`should set error message for the current field under validation, returning false`, function() {
       common.reset('field', {}, 0);
       expect(common.setError('field is required', '')).toBeFalsy();
       expect(common.getErrorBag().field).toEqual('field is required');
+    });
+
+    it(`should default error message to 'error occured' if passed in value is false`, function() {
+      common.reset('field', {}, 0);
+      expect(common.setError(false, '')).toBeFalsy();
+      expect(common.getErrorBag().field).toEqual('error occured');
     });
 
     it(`should throw exception if called twice for the same field under validation`, function() {

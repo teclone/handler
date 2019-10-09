@@ -33,6 +33,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import FileException from './Exceptions/FileException';
 import { parsePhoneNumber, CountryCode } from 'libphonenumber-js';
+import { SuccessOrErrorMessage } from './@types/rules/BaseRule';
 
 export default class Validator<F extends string = string> extends Common<F> {
   private phoneNumberErrors = {
@@ -733,7 +734,7 @@ export default class Validator<F extends string = string> extends Common<F> {
       const key = path.basename(file.path, path.extname(file.path)) + '.' + fileType.ext;
 
       //move file to some location if given
-      let result: true | string = '';
+      let result: SuccessOrErrorMessage = '';
       if (isCallable(options.moveTo)) {
         try {
           result = await options.moveTo(file, key);
@@ -741,7 +742,7 @@ export default class Validator<F extends string = string> extends Common<F> {
           result = ex.message || ex;
         }
 
-        if (isString(result)) {
+        if (result !== true) {
           this.setError(result, file.name);
         }
       } else if (isString(options.moveTo)) {

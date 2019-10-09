@@ -1,5 +1,5 @@
 import { NumberOptions } from './NumberRules';
-import BaseRule from './BaseRule';
+import BaseRule, { SuccessOrErrorMessage } from './BaseRule';
 import { FileEntry, FileEntryCollection, Data } from '..';
 import Handler from '../../Handler';
 
@@ -7,7 +7,7 @@ import Handler from '../../Handler';
  * @param file the file object
  * @param key resolved file with extension
  */
-type MoveToCallback = (file: FileEntry, key: string) => Promise<true | string> | true | string;
+type MoveToCallback = (file: FileEntry, key: string) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 
 export interface FileOptions<F extends string> extends NumberOptions<F> {
   /**
