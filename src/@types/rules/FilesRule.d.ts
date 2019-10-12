@@ -1,13 +1,13 @@
 import { NumberOptions } from './NumberRules';
 import BaseRule, { SuccessOrErrorMessage } from './BaseRule';
-import { FileEntry, FileEntryCollection, Data } from '..';
+import { Data } from '..';
 import Handler from '../../Handler';
+import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
 
 /**
  * @param file the file object
- * @param key resolved file with extension
  */
-type MoveToCallback = (file: FileEntry, key: string) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
+type MoveToCallback = (file: FileEntry) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 
 export interface FileOptions<F extends string> extends NumberOptions<F> {
   /**
@@ -22,7 +22,7 @@ export interface FileOptions<F extends string> extends NumberOptions<F> {
 
   /**
    * move to destination or a callback function that takes the object and uploads the file to somewhere, the function should set the file.path
-   * value to the new resource location if upload succeeds
+   * and file.key values respectively if the upload succeeds
    */
   moveTo?: string | MoveToCallback;
 }

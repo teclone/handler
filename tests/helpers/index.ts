@@ -1,10 +1,10 @@
 import * as path from 'path';
-import { FileEntryCollection, FileEntry } from '../../src/@types';
 import * as fs from 'fs';
 import mongoose from 'mongoose';
 import NoSqlUser from './nosql/models/User';
 import sequelize from './sql/sequelize';
 import SqlUser from './sql/models/User';
+import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
 
 export const getFilesDirectory = () => {
   return path.resolve(__dirname, 'files');
@@ -16,8 +16,8 @@ export const createFile = (filename: string = 'test.pdf'): FileEntry => {
 
   return {
     name: filename,
+    key: filename,
     path: link,
-    tmpName: filename,
     size,
     type: 'application/pdf',
   };
@@ -26,8 +26,8 @@ export const createFile = (filename: string = 'test.pdf'): FileEntry => {
 export const createFileCollection = (filenames: string[] = ['test.pdf']): FileEntryCollection => {
   const template: FileEntryCollection = {
     name: [],
+    key: [],
     path: [],
-    tmpName: [],
     size: [],
     type: [],
   };
@@ -36,8 +36,8 @@ export const createFileCollection = (filenames: string[] = ['test.pdf']): FileEn
     const stat = fs.statSync(link);
 
     result.name.push(filename);
+    result.key.push(filename);
     result.path.push(link);
-    result.tmpName.push(filename);
     result.size.push(stat.size);
     result.type.push('application/octet-stream');
 

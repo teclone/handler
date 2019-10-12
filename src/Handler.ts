@@ -18,8 +18,6 @@ import {
   DBCheckType,
   OverrideIf,
   Data,
-  FileEntry,
-  FileEntryCollection,
 } from './@types';
 import { DB_MODELS } from './Constants';
 import StateException from './Exceptions/StateException';
@@ -52,6 +50,7 @@ import Model from './Model';
 
 import { parsePhoneNumberFromString, PhoneNumber, CountryCode } from 'libphonenumber-js';
 import { PhoneNumberOptions } from './@types/rules/TextRules';
+import { Files, FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
 
 const globalConfig = {
   dbModel: DB_MODELS.NOSQL,
@@ -87,7 +86,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
   private dataSource: DataSource | null = null;
 
-  private filesSource: FilesSource | null = null;
+  private filesSource: Files | null = null;
 
   private addedFields: DataSource = {};
 
@@ -658,6 +657,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         ? isFileDataType
           ? {
               size: [],
+              key: [],
               path: [],
               name: [],
               type: [],

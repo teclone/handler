@@ -7127,10 +7127,10 @@ qw@~1.0.1:
   resolved "https://registry.yarnpkg.com/qw/-/qw-1.0.1.tgz#efbfdc740f9ad054304426acb183412cc8b996d4"
   integrity sha1-77/cdA+a0FQwRCassYNBLMi5ltQ=
 
-r-server@2.7.1:
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/r-server/-/r-server-2.7.1.tgz#b0ed10500fa8aec8a94fa43a7f67771a88543dcd"
-  integrity sha512-kzHgouM2MNpuIaegFfbijCKkg/W/wuWdViCzP7WlorxU+qZY2keGSmVSQee2Aeh2vJ6xDUBT93/KeXvoTD3r2w==
+r-server@2.8.0:
+  version "2.8.0"
+  resolved "https://registry.yarnpkg.com/r-server/-/r-server-2.8.0.tgz#5c4bf80f22b2b5f313ed0be475c82f7f64fbf2df"
+  integrity sha512-NmQfBo5OLlW4JWPbyMJ+E7bSXKjwxhc/2ZZI4S5w4wxQYaK6hPvijdtwjIupjPjAp9DcNEKQuRWHrFZxMSYIUA==
   dependencies:
     "@babel/plugin-transform-runtime" "7.4.3"
     "@babel/runtime" "7.4.3"
@@ -7138,6 +7138,7 @@ r-server@2.7.1:
     "@forensic-js/regex" "1.0.1"
     "@forensic-js/utils" "2.0.0"
     mime-types "2.1.24"
+    uuid "3.3.3"
 
 rc@^1.0.1, rc@^1.1.6, rc@^1.2.7, rc@^1.2.8:
   version "1.2.8"
@@ -8945,7 +8946,7 @@ util.promisify@^1.0.0, util.promisify@~1.0.0:
     define-properties "^1.1.2"
     object.getownpropertydescriptors "^2.0.3"
 
-uuid@^3.2.1, uuid@^3.3.2:
+uuid@3.3.3, uuid@^3.2.1, uuid@^3.3.2:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.3.tgz#4568f0216e78760ee1dbf3a4d2cf53e224112866"
   integrity sha512-pW0No1RGHgzlpHJO1nsVrHKpOEIxkGg1xB+v0ZmdNH5OAeAwzAVrCnI2/6Mtx+Uys6iaylxa+D3g4j63IKKjSQ==

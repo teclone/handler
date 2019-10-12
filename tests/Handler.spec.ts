@@ -4,7 +4,7 @@ import DataSourceNotSetException from '../src/Exceptions/DataSourceNotSetExcepti
 import RulesNotSetException from '../src/Exceptions/RulesNotSetException';
 import StateException from '../src/Exceptions/StateException';
 import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
-import { Rules, DataSource, FilesSource, DataValue, FileEntryCollection } from '../src/@types';
+import { Rules, DataSource, FilesSource, DataValue } from '../src/@types';
 import { range } from '@forensic-js/utils';
 import CustomDate from '../src/CustomDate';
 import { DateRule, NumberRule } from '../src/@types/rules/NumberRules';
@@ -19,6 +19,7 @@ import {
 import DBChecker from '../src/DBChecker';
 import NoSqlUser from './helpers/nosql/models/User';
 import Model from '../src/Model';
+import { FileEntryCollection } from 'r-server/lib/typings/@types';
 
 class CustomValidator extends Validator {}
 

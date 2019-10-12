@@ -34,20 +34,7 @@ import {
   FileOptions,
 } from './rules/FilesRule';
 import Handler from '../Handler';
-
-export interface FileEntry {
-  name: string;
-  path: string;
-  size: number;
-  type: string;
-}
-
-export interface FileEntryCollection {
-  name: string[];
-  path: string[];
-  size: number[];
-  type: string[];
-}
+import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
 
 export type RawData = string | string[];
 
