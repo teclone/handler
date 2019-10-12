@@ -1303,30 +1303,6 @@ describe('Handler Module', function() {
           expect(handler.data.email).toEqual('SOMEONE@EXAMPLE.COM');
         });
       });
-
-      it(`should fail the execution if the post compute callback errors out, setting the error message as the error message`, function() {
-        const dataSource: DataSource = {
-          phoneNumber: '08132083437',
-          firstName: 'Harrison',
-        };
-        const rules: Rules<'firstName' | 'phoneNumber'> = {
-          firstName: 'text',
-          phoneNumber: {
-            type: 'phoneNumber',
-            options: {
-              country: 'ng',
-            },
-            postCompute: () => {
-              throw new Error('testing');
-            },
-          },
-        };
-        const handler = new Handler(dataSource, {}, rules);
-        return handler.execute().then(() => {
-          expect(handler.succeeds()).toBeFalsy();
-          expect(handler.errors.phoneNumber).toEqual('testing');
-        });
-      });
     });
   });
 

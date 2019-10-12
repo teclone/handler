@@ -234,11 +234,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     for (const field of Object.keys(this.resolvedRules)) {
       const rule = this.resolvedRules[field] as ResolvedRule<F>;
       if (isCallable(rule.postCompute)) {
-        try {
-          this.data[field] = await rule.postCompute(this.data[field], this.data, this);
-        } catch (ex) {
-          this.setError(field, ex.message || 'error occured while executing field value post computation');
-        }
+        this.data[field] = await rule.postCompute(this.data[field], this.data, this);
       }
       if (isCallable(rule.postValidate)) {
         const result = await rule.postValidate(this.data[field], this.data, this);

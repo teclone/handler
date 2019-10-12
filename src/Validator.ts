@@ -736,12 +736,7 @@ export default class Validator<F extends string = string> extends Common<F> {
       //move file to some location if given
       let result: SuccessOrErrorMessage = '';
       if (isCallable(options.moveTo)) {
-        try {
-          result = await options.moveTo(file, key);
-        } catch (ex) {
-          result = ex.message || ex;
-        }
-
+        result = await options.moveTo(file, key);
         if (result !== true) {
           this.setError(result, file.name);
         }

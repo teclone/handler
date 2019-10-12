@@ -652,17 +652,6 @@ describe('Validator', function() {
       });
     });
 
-    it(`should set error if error occurs in moveTo callback`, function() {
-      const callback = jest.fn<Promise<true | string>, any[]>(async value => {
-        throw 'this is nonsense';
-      });
-      const file = createFile();
-
-      return validator.validateFile(true, 'file', file, { moveTo: callback }, 0).then(status => {
-        expect(validator.getErrorBag().file).toEqual('this is nonsense');
-      });
-    });
-
     it(`should throw error if error occurs while moving file`, function() {
       const file = createFile();
       const moveTo = 'some/unknown/directory';
