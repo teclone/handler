@@ -1,5 +1,5 @@
 import Common from './Common';
-import { Options, Unit, DateConverter, RegexObject, Regex, FileEntry } from './@types';
+import { Options, Unit, DateConverter, RegexObject, Regex } from './@types';
 import CustomDate from './CustomDate';
 import {
   isUndefined,
@@ -34,6 +34,7 @@ import * as path from 'path';
 import FileException from './Exceptions/FileException';
 import { parsePhoneNumber, CountryCode } from 'libphonenumber-js';
 import { SuccessOrErrorMessage } from './@types/rules/BaseRule';
+import { FileEntry } from 'r-server/lib/typings/@types';
 
 export default class Validator<F extends string = string> extends Common<F> {
   private phoneNumberErrors = {
@@ -731,17 +732,17 @@ export default class Validator<F extends string = string> extends Common<F> {
       }
 
       file.type = fileType.mime;
-      const key = path.basename(file.path, path.extname(file.path)) + '.' + fileType.ext;
+      file.key = path.basename(file.path, path.extname(file.path)) + '.' + fileType.ext;
 
       //move file to some location if given
       let result: SuccessOrErrorMessage = '';
       if (isCallable(options.moveTo)) {
-        result = await options.moveTo(file, key);
+        result = await options.moveTo(file);
         if (result !== true) {
           this.setError(result, file.name);
         }
       } else if (isString(options.moveTo)) {
-        const dest = path.join(options.moveTo, key);
+        const dest = path.join(options.moveTo, file.key);
         try {
           fs.renameSync(file.path, dest);
 
