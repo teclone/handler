@@ -546,7 +546,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       }
 
       // title
-      if (filters.titleize || type == 'title' || 'name') {
+      if (filters.titleize || type == 'title' || type === 'name') {
         result = titleize(result);
       }
       //capitalize
