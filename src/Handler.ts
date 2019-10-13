@@ -114,7 +114,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
     title: 'validateText',
 
-    name: 'validateName',
+    name: 'validateText',
 
     date: 'validateDate',
 
