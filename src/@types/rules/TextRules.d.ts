@@ -80,7 +80,7 @@ interface BaseTextRule<F extends string> extends BaseRule<F> {
 
 //text rules
 interface TextRule<F extends string> extends BaseTextRule<F> {
-  type?: 'text' | 'title';
+  type?: 'text' | 'title' | 'name';
 }
 
 interface EmailRule<F extends string> extends BaseTextRule<F> {

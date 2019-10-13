@@ -83,6 +83,7 @@ export type DataType =
   | 'boolean'
   | 'text'
   | 'title'
+  | 'name'
   | 'email'
   | 'url'
   | 'phoneNumber'

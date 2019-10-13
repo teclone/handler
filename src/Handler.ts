@@ -114,6 +114,8 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
     title: 'validateText',
 
+    name: 'validateName',
+
     date: 'validateDate',
 
     //integer validation methods
@@ -547,6 +549,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       if (filters.titleize || type == 'title') {
         result = titleize(result);
       }
+      //capitalize
+      else if (filters.capitalize || type === 'name') {
+        result = capitalize(result);
+      }
       // upper case
       else if (filters.uppercase) {
         result = (result as string).toUpperCase();
@@ -554,10 +560,6 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       //lower case
       else if (filters.lowercase) {
         result = (result as string).toLowerCase();
-      }
-      //capitalize
-      else if (filters.capitalize) {
-        result = capitalize(result);
       }
 
       if (filters.pluralize) {
