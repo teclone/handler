@@ -800,10 +800,11 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       rule = { type: rule } as Rule<F>;
     }
 
+    const type = pickValue('type', rule, 'text') as DataType;
     const result: ResolvedRule<F> = {
-      type: pickValue('type', rule, 'text'),
+      type,
       required: pickValue('required', rule, true),
-      array: pickValue('array', rule, pluralize(field) === field),
+      array: pickValue('array', rule, pluralize(field) === field && type !== 'boolean' && type !== 'checkbox'),
       defaultValue: pickValue('defaultValue', rule, ''),
       hint: pickValue('hint', rule, `${field} is required`),
       requiredIf: pickValue('requiredIf', rule, undefined),
