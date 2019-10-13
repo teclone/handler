@@ -546,11 +546,11 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       }
 
       // title
-      if (filters.titleize || type == 'title') {
+      if (filters.titleize || type == 'title' || 'name') {
         result = titleize(result);
       }
       //capitalize
-      else if (filters.capitalize || type === 'name') {
+      else if (filters.capitalize) {
         result = capitalize(result);
       }
       // upper case
