@@ -1,4 +1,4 @@
-import { DataValue, RequiredIf, Filters, DBCheck, DataType, OverrideIf, Data } from '..';
+import { DataValue, RequiredIf, Filters, DBCheck, DataType, Data } from '..';
 import Handler from '../../Handler';
 
 export type SuccessOrErrorMessage = boolean | string;
@@ -39,6 +39,12 @@ export default interface BaseRule<F extends string> {
   required?: boolean;
 
   /**
+   * indicates if field value should be an array. by default, fields whose names are in plural forms are considered to accept multiple
+   * values. if not specified as true, and field name is pluralized, array values are rejected
+   */
+  array?: boolean;
+
+  /**
    * optional error message to use if field is required but is missing
    */
   hint?: string;
@@ -53,11 +59,6 @@ export default interface BaseRule<F extends string> {
    * becomes optional
    */
   requiredIf?: RequiredIf<F>;
-
-  /**
-   * defines a condition which if satisfied, overrides the field's raw value
-   */
-  overrideIf?: OverrideIf<F>;
 
   /**
    * defines a list of filteration operations to carry out on the field value(s)

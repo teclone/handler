@@ -11,10 +11,6 @@ interface Fields {
   'roles.owner': boolean;
 }
 
-interface Data extends Fields {
-  roles: object;
-}
-
 describe('Model', function() {
   const dataSource = {
     firstName: 'Harrison',

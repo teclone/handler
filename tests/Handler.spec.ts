@@ -5,7 +5,7 @@ import RulesNotSetException from '../src/Exceptions/RulesNotSetException';
 import StateException from '../src/Exceptions/StateException';
 import FilesSourceNotSetException from '../src/Exceptions/FilesSourceNotSetException';
 import { Rules, DataSource, FilesSource, DataValue } from '../src/@types';
-import { range } from '@forensic-js/utils';
+import { range, makeArray } from '@forensic-js/utils';
 import CustomDate from '../src/CustomDate';
 import { DateRule, NumberRule } from '../src/@types/rules/NumberRules';
 import {
@@ -19,7 +19,6 @@ import {
 import DBChecker from '../src/DBChecker';
 import NoSqlUser from './helpers/nosql/models/User';
 import Model from '../src/Model';
-import { FileEntryCollection } from 'r-server/lib/typings/@types';
 
 class CustomValidator extends Validator {}
 
@@ -197,8 +196,7 @@ describe('Handler Module', function() {
   });
 
   describe(`rule type resolution`, function() {
-    it(`should resolve rule type, puting the type inside an object if it is specified as
-        string`, function() {
+    it(`should resolve rule type, puting the type inside an object if it is specified as string`, function() {
       const handler = new Handler({}, undefined, {
         password: 'password',
       });
@@ -251,6 +249,30 @@ describe('Handler Module', function() {
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect(resolvedRules.termsAndCondition.required).toBeFalsy();
+      });
+    });
+
+    it(`should default array option to true if not set and field name is pluralized`, function() {
+      const handler = new Handler({}, undefined, {
+        account_types: {
+          type: 'text',
+        },
+      });
+      return handler.execute().then(() => {
+        const resolvedRules = handler.getResolvedRules();
+        expect(resolvedRules.account_types.array).toBeTruthy();
+      });
+    });
+
+    it(`should default array option to false if not set and field name is not pluralized`, function() {
+      const handler = new Handler({}, undefined, {
+        account_type: {
+          type: 'text',
+        },
+      });
+      return handler.execute().then(() => {
+        const resolvedRules = handler.getResolvedRules();
+        expect(resolvedRules.account_type.array).toBeFalsy();
       });
     });
   });
@@ -477,7 +499,6 @@ describe('Handler Module', function() {
         employmentTypes: {
           type: 'choice',
           filters: {
-            toArray: true,
             toNumeric: true,
           },
           options: {
@@ -536,13 +557,20 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should drop field value, overriding it with empty string if field has required if condition, but ended up not being required`, async function() {
+    it(`should drop field value, deleting the value if it is a file value or overriding it with empty string if otherwise,
+      if field has requiredIf condition, but ended up not being required`, async function() {
       const data = {
         isCurrentWork: 'true',
+        isJobSeeker: 'false',
         endMonth: '10',
       };
-      const rules: Rules<'isCurrentWork' | 'endMonth'> = {
+      const files = {
+        cv: createFile(),
+      };
+      const rules: Rules<'isCurrentWork' | 'isJobSeeker' | 'endMonth' | 'cv'> = {
         isCurrentWork: 'checkbox',
+
+        isJobSeeker: 'checkbox',
 
         endMonth: {
           requiredIf: {
@@ -550,9 +578,17 @@ describe('Handler Module', function() {
             field: 'isCurrentWork',
           },
         },
+
+        cv: {
+          type: 'document',
+          requiredIf: {
+            if: 'checked',
+            field: 'isJobSeeker',
+          },
+        },
       };
 
-      const handler = new Handler(data, undefined, rules);
+      const handler = new Handler(data, files, rules);
       await handler.execute();
 
       expect(handler.data.endMonth).toEqual(null);
@@ -583,67 +619,64 @@ describe('Handler Module', function() {
     });
   });
 
-  describe(`overrideIf resolution`, function() {
-    it(`should resolve the overrideIf rule, overriding field value if condition is met`, function() {
+  describe('Array option', function() {
+    it(`should convert values to array if array option is true`, async function() {
       const data = {
-        subscribe: 'false',
-        email: 'someone@example.com',
+        languages: 'en',
+        favouriteSports: '',
       };
 
-      const rules: Rules<'subscribe' | 'email'> = {
-        subscribe: 'checkbox',
+      const files = {
+        cvs: createFile(),
+      };
 
-        email: {
-          type: 'email',
-          requiredIf: {
-            if: 'checked',
-            field: 'subscribe',
-          },
-          overrideIf: {
-            if: 'notChecked',
-            field: 'subscribe',
-            with: '',
-          },
+      const rules: Rules<'languages' | 'favouriteSports' | 'cvs' | 'musics'> = {
+        languages: 'text',
+        favouriteSports: {
+          required: false,
+        },
+        cvs: {
+          type: 'document',
+        },
+        musics: {
+          type: 'video',
+          required: false,
         },
       };
 
-      const handler = new Handler(data, undefined, rules);
-      return handler.execute().then(() => {
-        const resolvedRules = handler.getResolvedRules();
-        expect(resolvedRules.email.required).toBeFalsy();
-        expect(handler.data.email).toEqual(null);
-      });
+      const handler = new Handler(data, files, rules);
+      await handler.execute();
+
+      expect(handler.data.languages).toEqual(['en']);
+      expect(handler.data.favouriteSports).toEqual([]);
+      expect(handler.data.cvs).toEqual(
+        Object.keys(files.cvs).reduce((result, key) => {
+          result[key] = makeArray(files.cvs[key]);
+          return result;
+        }, {})
+      );
     });
 
-    it(`should resolve the overrideIf rule, retaining field value if condition is not met`, function() {
+    it(`should flag as error if a non array field recieves array values`, async function() {
       const data = {
-        subscribe: 'true',
-        email: 'someone@example.com',
+        language: ['en'],
       };
 
-      const rules: Rules<'subscribe' | 'email'> = {
-        subscribe: 'checkbox',
+      const files = {
+        cv: createFileCollection(),
+      };
 
-        email: {
-          type: 'email',
-          requiredIf: {
-            if: 'checked',
-            field: 'subscribe',
-          },
-          overrideIf: {
-            if: 'notChecked',
-            field: 'subscribe',
-            with: '',
-          },
+      const rules: Rules<'language' | 'cv'> = {
+        language: 'text',
+        cv: {
+          type: 'document',
         },
       };
 
-      const handler = new Handler(data, undefined, rules);
-      return handler.execute().then(() => {
-        const resolvedRules = handler.getResolvedRules();
-        expect(resolvedRules.email.required).toBeTruthy();
-        expect(handler.data.email).toEqual('someone@example.com');
-      });
+      const handler = new Handler(data, files, rules);
+      await handler.execute();
+
+      expect(handler.succeeds()).toBeFalsy();
     });
   });
 
@@ -877,7 +910,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should transform values to upper case if the toUpper filter option is explicitly set to true`, function() {
+    it(`should transform values to upper case if the uppercase filter option is explicitly set to true`, function() {
       const names = ['jack', 'jane', 'janet', 'julius'];
 
       const data: DataSource = {
@@ -887,7 +920,7 @@ describe('Handler Module', function() {
       const rules: Rules<'names'> = {
         names: {
           filters: {
-            toUpper: true,
+            uppercase: true,
           },
         },
       };
@@ -898,7 +931,7 @@ describe('Handler Module', function() {
       });
     });
 
-    it(`should transform values to lowercase case if the toLower filter option is explicitly set to true`, function() {
+    it(`should transform values to lowercase case if the lowercase filter option is explicitly set to true`, function() {
       const names = ['jack', 'jane', 'janet', 'julius'];
 
       const data: DataSource = {
@@ -908,7 +941,7 @@ describe('Handler Module', function() {
       const rules: Rules<'names'> = {
         names: {
           filters: {
-            toLower: true,
+            lowercase: true,
           },
         },
       };
@@ -936,9 +969,83 @@ describe('Handler Module', function() {
 
       const handler = new Handler(data, undefined, rules);
       return handler.execute(true).then(() => {
-        expect(handler.data.names).toEqual(
-          names.map(name => name.charAt(0).toUpperCase() + name.substring(1).toLowerCase())
-        );
+        expect(handler.data.names).toEqual(['Jack', 'Jane', 'Janet', 'Julius']);
+      });
+    });
+
+    it(`should titleize values if the titleize filter option is explicitly set to true, or if field type is title`, function() {
+      const data: DataSource = {
+        name: 'react js',
+      };
+
+      const rules: Rules<'name'> = {
+        name: {
+          filters: {
+            titleize: true,
+          },
+        },
+      };
+
+      const handler = new Handler(data, undefined, rules);
+      return handler.execute(true).then(() => {
+        expect(handler.data.name).toEqual('React Js');
+      });
+    });
+
+    it(`should pluralize values if the pluralize filter option is explicitly set to true`, function() {
+      const data: DataSource = {
+        name: 'shoe',
+      };
+
+      const rules: Rules<'name'> = {
+        name: {
+          filters: {
+            pluralize: true,
+          },
+        },
+      };
+
+      const handler = new Handler(data, undefined, rules);
+      return handler.execute(true).then(() => {
+        expect(handler.data.name).toEqual('shoes');
+      });
+    });
+
+    it(`should singularize values if the singularize filter option is explicitly set to true`, function() {
+      const data: DataSource = {
+        name: 'wives',
+      };
+
+      const rules: Rules<'name'> = {
+        name: {
+          filters: {
+            singularize: true,
+          },
+        },
+      };
+
+      const handler = new Handler(data, undefined, rules);
+      return handler.execute(true).then(() => {
+        expect(handler.data.name).toEqual('wife');
+      });
+    });
+
+    it(`should ordinalize values if the ordinalize filter option is explicitly set to true`, function() {
+      const data: DataSource = {
+        name: '1',
+      };
+
+      const rules: Rules<'name'> = {
+        name: {
+          filters: {
+            ordinalize: true,
+          },
+        },
+      };
+
+      const handler = new Handler(data, undefined, rules);
+      return handler.execute(true).then(() => {
+        expect(handler.data.name).toEqual('1st');
       });
     });
 
@@ -1054,36 +1161,6 @@ describe('Handler Module', function() {
         expect(handler.data.text).toEqual('ABCD');
       });
     });
-
-    it(`should convert value to array if toArray filter option is set to true`, function() {
-      const callback = jest.fn(value => value.toUpperCase());
-
-      const data: DataSource = {
-        text: 'abcd',
-      };
-
-      const rules: Rules<'text' | 'file'> = {
-        text: {
-          filters: {
-            toArray: true,
-          },
-        },
-        file: {
-          type: 'document',
-          filters: {
-            toArray: true,
-          },
-        },
-      };
-
-      const file = createFile();
-
-      const handler = new Handler(data, { file }, rules);
-      return handler.execute(true).then(() => {
-        expect(handler.data.text).toEqual(['abcd']);
-        expect((handler.data.file as FileEntryCollection).name).toEqual([file.name]);
-      });
-    });
   });
 
   describe('Missing fields', function() {
@@ -1168,7 +1245,9 @@ describe('Handler Module', function() {
           defaultValue: createFile(),
         },
         cv: 'document',
-        cvs: 'document',
+        cvs: {
+          type: 'document',
+        },
       };
 
       const handler = new Handler(data, files, rules);

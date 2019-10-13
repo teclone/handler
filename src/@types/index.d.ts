@@ -82,6 +82,7 @@ export type DataType =
   | 'checkbox'
   | 'boolean'
   | 'text'
+  | 'title'
   | 'email'
   | 'url'
   | 'phoneNumber'
@@ -125,32 +126,24 @@ export type RequiredIf<F extends string> =
       drop?: boolean;
     };
 
-export type OverrideIf<F extends string> =
-  | {
-      if: 'checked' | 'notChecked';
-      field: F;
-      with: RawData;
-    }
-  | {
-      if: 'equals' | 'notEquals' | 'in' | 'notIn';
-      field: F;
-      value: string | boolean | number;
-      with: RawData;
-    };
-
 export type FilterCallback = (value: string) => string | number | boolean;
 
 export interface Filters {
   decode?: boolean;
-  toArray?: boolean;
   stripTags?: boolean;
   stripTagsIgnore?: string | string[];
   minimize?: boolean;
   trim?: boolean;
   toNumeric?: boolean;
-  toUpper?: boolean;
-  toLower?: boolean;
+  uppercase?: boolean;
+  lowercase?: boolean;
   capitalize?: boolean;
+  camelize?: boolean;
+  titleize?: boolean;
+  ordinalize?: boolean;
+  pluralize?: boolean;
+  singularize?: boolean;
+
   callback?: FilterCallback;
 }
 
@@ -212,13 +205,13 @@ export interface ResolvedRule<F extends string> {
 
   required: boolean;
 
+  array: boolean;
+
   hint: string;
 
-  defaultValue: RawData | undefined;
+  defaultValue: RawData | FileEntry | FileEntryCollection;
 
   requiredIf?: RequiredIf<F>;
-
-  overrideIf?: OverrideIf<F>;
 
   options: Options<F>;
 

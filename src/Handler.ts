@@ -16,7 +16,6 @@ import {
   CallbackDBCheck,
   ModelDBCheck,
   DBCheckType,
-  OverrideIf,
   Data,
 } from './@types';
 import { DB_MODELS } from './Constants';
@@ -51,6 +50,7 @@ import Model from './Model';
 import { parsePhoneNumberFromString, PhoneNumber, CountryCode } from 'libphonenumber-js';
 import { PhoneNumberOptions } from './@types/rules/TextRules';
 import { Files, FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
+import { titleize, pluralize, singularize, ordinalize, capitalize } from 'inflection';
 
 const globalConfig = {
   dbModel: DB_MODELS.NOSQL,
@@ -111,6 +111,9 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
   private dataTypeToMethod: { [P in DataType]: string } = {
     text: 'validateText',
+
+    title: 'validateText',
+
     date: 'validateDate',
 
     //integer validation methods
@@ -199,22 +202,21 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   }
 
   /**
-   * turns the file into a file collection
-   * @param file
+   * return empty file collection
    */
-  private makeFileCollection(file: FileEntry | FileEntryCollection): FileEntryCollection {
-    return Object.keys(file).reduce(
-      (result, key) => {
-        result[key] = makeArray(file[key]);
-        return result;
-      },
-      {} as FileEntryCollection
-    );
+  private createEmptyFileEntryCollection(): FileEntryCollection {
+    return {
+      name: [],
+      key: [],
+      path: [],
+      size: [],
+      type: [],
+    };
   }
 
   /**
-   * turns the file into a file collection
-   * @param file
+   * picks out a fileEntry out of the collection
+   * @param fileCollection
    */
   private makeFileEntry(fileCollection: FileEntryCollection, index: number): FileEntry {
     return Object.keys(fileCollection).reduce(
@@ -224,6 +226,24 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       },
       {} as FileEntry
     );
+  }
+
+  /**
+   * turns the file into a file collection
+   * @param file
+   */
+  private makeFileCollection(file: RawData | FileEntry | FileEntryCollection | undefined): FileEntryCollection {
+    if (isObject<FileEntry | FileEntryCollection>(file)) {
+      return Object.keys(file).reduce(
+        (result, key) => {
+          result[key] = makeArray(file[key]);
+          return result;
+        },
+        {} as FileEntryCollection
+      );
+    } else {
+      return this.createEmptyFileEntryCollection();
+    }
   }
 
   /**
@@ -357,33 +377,53 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   }
 
   /**
+   * flag error if certain data values are multiple when the field does not accept multiple values
+   */
+  private checkArrays() {
+    const rules = this.resolvedRules;
+    for (const field of Object.keys(this.resolvedRules)) {
+      const rules = this.resolvedRules[field] as ResolvedRule<F>;
+      const data = this.data[field];
+
+      const isFileField = this.isFileField(field);
+      if (!rules.array) {
+        if (
+          (isFileField && isObject<FileEntry | FileEntryCollection>(data) && isArray(data.key)) ||
+          (!isFileField && isArray(data))
+        ) {
+          this.setError(field, '{_this} does not accept multiple values');
+        }
+      }
+    }
+    return this.succeeds();
+  }
+
+  /**
    * retrieves fields' data
    */
   private getFields(fields: string[]) {
     fields.forEach(field => {
-      const filters = this.resolvedRules[field].filters as Filters;
+      const rules = this.resolvedRules[field] as ResolvedRule<F>;
       const isFileField = this.isFileField(field);
       const fieldIsMissing = this.fieldIsMissing(field);
 
-      const defaultValue = this.resolvedRules[field].defaultValue || '';
+      const filesSource = this.filesSource as FilesSource;
+      const dataSource = this.dataSource as DataSource;
 
-      let value: DataValue = isFileField
-        ? (this.filesSource as FilesSource)[field]
-        : (this.dataSource as DataSource)[field];
+      let value: RawData | FileEntryCollection | FileEntry | undefined = isFileField
+        ? filesSource[field]
+        : dataSource[field];
 
       if (fieldIsMissing) {
-        value = defaultValue;
+        value = rules.defaultValue;
       }
 
-      // convert value to array
-      if (filters.toArray && value !== '') {
-        if (isFileField && typeof (value as FileEntry | FileEntryCollection).name === 'string') {
-          value = this.makeFileCollection(value as FileEntry);
-        } else if (!isFileField && !isArray<DataValue>(value)) {
-          value = [value] as string[];
-        }
+      if (rules.array) {
+        value = isFileField
+          ? this.makeFileCollection(value)
+          : (makeArray(value as string).filter(value => value !== '') as RawData);
       }
-      this.data[field] = this.filterValue(value, this.resolvedRules[field].type, filters);
+      this.data[field] = this.filterValue(value, field);
     });
   }
 
@@ -392,10 +432,12 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   private fieldIsMissing(field: string) {
     const isFileField = this.isFileField(field);
+    const filesSource = this.filesSource as FilesSource;
+    const dataSource = this.dataSource as DataSource;
 
     if (isFileField) {
-      return isUndefined((this.filesSource as FilesSource)[field]);
-    } else if (isUndefined((this.dataSource as DataSource)[field])) {
+      return isUndefined(filesSource[field]);
+    } else if (isUndefined(dataSource[field])) {
       return true;
     }
 
@@ -403,8 +445,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     if (isString(value)) {
       return value === '';
     } else {
-      value = value.filter(current => current !== '');
-      (this.dataSource as DataSource)[field] = value;
+      dataSource[field] = value = value.filter(current => current !== '');
       return value.length === 0;
     }
   }
@@ -419,6 +460,173 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       }
     });
     return this.succeeds();
+  }
+
+  /**
+   * strips html tags from the given value
+   */
+  private stripTags(value: string, stripTagsIgnore: string | string[]) {
+    if (isString(stripTagsIgnore)) {
+      stripTagsIgnore = stripTagsIgnore.split(/[,\s>]/);
+    }
+    stripTagsIgnore = stripTagsIgnore.map(tag => tag.toLowerCase().replace(/[/<>]/g, '')).filter(tag => tag !== '');
+
+    const matchName = '[_a-z][-\\w]*';
+    const regex = new RegExp(
+      //capture tagName
+      '<\\s*\\/?(' +
+        matchName +
+        ')' +
+        //followed by zero or more attributes, with the attribute value optional
+        '(?:\\s+' +
+        matchName +
+        '(?:=(?:"[^"]*"|\'[^\']*\'))?)*' +
+        //then ends with zero or more spaces followed by the right angle bracket
+        '\\s*>',
+      'i'
+    );
+
+    return replaceCallback(
+      regex,
+      matches => {
+        if (stripTagsIgnore.includes(matches[1].toLowerCase())) {
+          return matches[0];
+        } else {
+          return '';
+        }
+      },
+      value
+    );
+  }
+
+  /**
+   * runs defined filters on the given value and returns the result
+   */
+  private filterValue(value: RawData | FileEntry | FileEntryCollection, field: string): DataValue {
+    const resolvedRules = this.resolvedRules;
+    const type = resolvedRules[field].type as DataType;
+    const filters = resolvedRules[field].filters as Filters;
+
+    /**
+     * performs the filter
+     * @param value the current value
+     */
+    const performFilter = (value: string) => {
+      let result: string | number | boolean = value;
+
+      if (type === 'checkbox' || type === 'boolean') {
+        return !this.valueIsFalsy(value);
+      }
+
+      //decode value
+      if (keyNotSetOrTrue('decode', filters)) {
+        result = decodeURIComponent(result);
+      }
+
+      //strip tags before doing any trim operations
+      if (keyNotSetOrTrue('stripTags', filters)) {
+        result = this.stripTags(result, pickValue('stripTagsIgnore', filters, []));
+      }
+
+      //minimize data by triming and removing empty lines, suitable when handling
+      //computer proprams such as html, xml, json, etc
+      if (filters.minimize) {
+        result = result
+          .split(/\r\n|\r|\n/)
+          .map(value => value.trim())
+          .filter(value => !/^\s*$/.test(value))
+          .join(' ');
+      }
+
+      // trim value
+      if (keyNotSetOrTrue('trim', filters)) {
+        result = result.trim();
+      }
+
+      // title
+      if (filters.titleize || type == 'title') {
+        result = titleize(result);
+      }
+      // upper case
+      else if (filters.uppercase) {
+        result = (result as string).toUpperCase();
+      }
+      //lower case
+      else if (filters.lowercase) {
+        result = (result as string).toLowerCase();
+      }
+      //capitalize
+      else if (filters.capitalize) {
+        result = capitalize(result);
+      }
+
+      if (filters.pluralize) {
+        result = pluralize(result);
+      }
+
+      if (filters.singularize) {
+        result = singularize(result);
+      }
+
+      if (filters.ordinalize) {
+        result = ordinalize(result);
+      }
+
+      //cast to float
+      if (filters.toNumeric) {
+        result = isNumeric(result) ? parseFloat(result) : 0;
+      }
+
+      switch (type) {
+        case 'email':
+          result = replace(/[^-\w!#$%&'*+/=?^`{|}~.@]/, '', result as string);
+          break;
+
+        case 'url':
+          result = replace(/[^-\w!#$%&'*+/=?^`:?{|}()~.@]/, '', result as string);
+          break;
+
+        case 'int':
+        case 'nInt':
+        case 'pInt':
+          if (isNumeric(result)) {
+            result = parseInt((result as any) as string);
+          }
+          break;
+
+        case 'number':
+        case 'nNumber':
+        case 'pNumber':
+        case 'money':
+          if (isNumeric(result)) {
+            result = parseFloat((result as any) as string);
+          }
+          break;
+      }
+
+      //run callback on the value if given
+      if (filters.callback) {
+        result = filters.callback(result.toString());
+      }
+
+      return result;
+    };
+
+    if (value === '') {
+      return null;
+    }
+
+    if (isObject<FileEntry | FileEntryCollection>(value)) {
+      const name = value.name;
+      value.name = (isArray(name) ? name.map(current => performFilter(current)) : performFilter(name)) as string;
+      return value;
+    } else {
+      if (isArray(value)) {
+        return uniqueArray(value as string[]).map(current => performFilter(current.toString())) as DataValue;
+      } else {
+        return performFilter(value.toString());
+      }
+    }
   }
 
   /**
@@ -491,9 +699,9 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    * extracts required fields and optional fields.
    * @param rules
    */
-  private categorizeRules(rules: ResolvedRules<F>) {
-    Object.keys(rules).forEach(field => {
-      const rule = rules[field];
+  private categorizeRules() {
+    Object.keys(this.resolvedRules).forEach(field => {
+      const rule = this.resolvedRules[field];
       if (rule.required) {
         this.requiredFields.push(field);
       } else {
@@ -502,19 +710,22 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     });
   }
 
-  private filterRules(rules: ResolvedRules<F>, requredFields: string | string[]): ResolvedRules<F> {
-    requredFields = makeArray(requredFields);
-
-    return Object.keys(rules).reduce(
+  /**
+   * filter rules to be validated.
+   * @param requiredFields
+   */
+  private filterRules(requiredFields: string | string[]) {
+    requiredFields = makeArray(requiredFields);
+    this.resolvedRules = Object.keys(this.resolvedRules).reduce(
       (result, field) => {
-        const rule = rules[field];
-        const isFileDataType = this.isFileDataType(rule.type);
+        const rule = this.resolvedRules[field];
+        const isFileField = this.isFileField(field);
 
-        if (requredFields.includes(field)) {
+        if (requiredFields.includes(field)) {
           result[field] = rule;
-        } else if (isFileDataType && !isUndefined((this.filesSource as FilesSource)[field])) {
+        } else if (isFileField && !isUndefined((this.filesSource as FilesSource)[field])) {
           result[field] = rule;
-        } else if (!isFileDataType && !isUndefined((this.dataSource as DataSource)[field])) {
+        } else if (!isFileField && !isUndefined((this.dataSource as DataSource)[field])) {
           result[field] = rule;
         }
         return result;
@@ -524,259 +735,61 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   }
 
   /**
-   * strips html tags from the given value
-   */
-  private stripTags(value: string, stripTagsIgnore: string | string[]) {
-    if (isString(stripTagsIgnore)) {
-      stripTagsIgnore = stripTagsIgnore.split(/[,\s>]/);
-    }
-    stripTagsIgnore = stripTagsIgnore.map(tag => tag.toLowerCase().replace(/[/<>]/g, '')).filter(tag => tag !== '');
-
-    const matchName = '[_a-z][-\\w]*';
-    const regex = new RegExp(
-      //capture tagName
-      '<\\s*\\/?(' +
-        matchName +
-        ')' +
-        //followed by zero or more attributes, with the attribute value optional
-        '(?:\\s+' +
-        matchName +
-        '(?:=(?:"[^"]*"|\'[^\']*\'))?)*' +
-        //then ends with zero or more spaces followed by the right angle bracket
-        '\\s*>',
-      'i'
-    );
-
-    return replaceCallback(
-      regex,
-      matches => {
-        if (stripTagsIgnore.includes(matches[1].toLowerCase())) {
-          return matches[0];
-        } else {
-          return '';
-        }
-      },
-      value
-    );
-  }
-
-  /**
-   * runs defined filters on the given value and returns the result
-   */
-  private filterValue(value: DataValue, type: DataType, filters: Filters): DataValue {
-    const isFileDataType = this.isFileDataType(type);
-
-    const performFilter = (value: string) => {
-      let result: string | number | boolean = value;
-
-      if (type === 'checkbox' || type === 'boolean') {
-        return !this.valueIsFalsy(value);
-      }
-
-      //decode value
-      if (keyNotSetOrTrue('decode', filters)) {
-        result = decodeURIComponent(result);
-      }
-
-      //strip tags before doing any trim operations
-      if (keyNotSetOrTrue('stripTags', filters)) {
-        result = this.stripTags(result, pickValue('stripTagsIgnore', filters, []));
-      }
-
-      //minimize data by triming and removing empty lines, suitable when handling
-      //computer proprams such as html, xml, json, etc
-      if (filters.minimize) {
-        result = result
-          .split(/\r\n|\r|\n/)
-          .map(value => value.trim())
-          .filter(value => !/^\s*$/.test(value))
-          .join(' ');
-      }
-
-      // trim value
-      if (keyNotSetOrTrue('trim', filters)) {
-        result = result.trim();
-      }
-
-      //cast to float
-      if (filters.toNumeric) {
-        result = isNumeric(result) ? parseFloat(result) : 0;
-      }
-
-      //upper case
-      if (filters.toUpper) {
-        result = (result as string).toUpperCase();
-      }
-      //lower case
-      else if (filters.toLower) {
-        result = (result as string).toLowerCase();
-      }
-
-      //capitalize
-      else if (filters.capitalize) {
-        result = (result as string).charAt(0).toUpperCase() + (result as string).substring(1).toLowerCase();
-      }
-
-      switch (type) {
-        case 'email':
-          result = replace(/[^-\w!#$%&'*+/=?^`{|}~.@]/, '', result as string);
-          break;
-
-        case 'url':
-          result = replace(/[^-\w!#$%&'*+/=?^`:?{|}()~.@]/, '', result as string);
-          break;
-
-        case 'int':
-        case 'nInt':
-        case 'pInt':
-          if (isNumeric(result)) {
-            result = parseInt((result as any) as string);
-          }
-          break;
-
-        case 'number':
-        case 'nNumber':
-        case 'pNumber':
-        case 'money':
-          if (isNumeric(result)) {
-            result = parseFloat((result as any) as string);
-          }
-          break;
-      }
-
-      //run callback on the value if given
-      if (filters.callback) {
-        result = filters.callback(result.toString());
-      }
-
-      return result;
-    };
-
-    if (value === '' || value === null) {
-      return filters.toArray
-        ? isFileDataType
-          ? {
-              size: [],
-              key: [],
-              path: [],
-              name: [],
-              type: [],
-            }
-          : []
-        : null;
-    }
-
-    if (isObject<FileEntry | FileEntryCollection>(value)) {
-      const name = value.name;
-      value.name = (isArray(name) ? name.map(current => performFilter(current)) : performFilter(name)) as string;
-      return value;
-    } else {
-      if (isArray<DataValue>(value)) {
-        return uniqueArray(value as string[]).map(current => performFilter(current.toString())) as DataValue;
-      } else {
-        return performFilter(value.toString());
-      }
-    }
-  }
-
-  /**
    * performs the conditional if resolution
    * @param conditionalIf
    */
-  private resolveConditionalIf(conditionalIf: RequiredIf<F> | OverrideIf<F>): boolean {
+  private resolveConditionalIf(conditionalIf: RequiredIf<F>): boolean {
     const targetField = conditionalIf.field;
-    const targetFieldRule = this.resolvedRules[targetField];
-
     let status = false;
+
+    const filteredValue = this.filterValue(pickValue(targetField, this.dataSource as DataSource, ''), targetField);
     switch (conditionalIf.if) {
       case 'checked':
-        status = !!this.filterValue(
-          pickValue(targetField, this.dataSource as DataSource, ''),
-          targetFieldRule.type,
-          targetFieldRule.filters
-        );
+        status = !!filteredValue;
         break;
 
       case 'notChecked':
-        status = !this.filterValue(
-          pickValue(targetField, this.dataSource as DataSource, ''),
-          targetFieldRule.type,
-          targetFieldRule.filters
-        );
+        status = !filteredValue;
         break;
 
       case 'equals':
-        status =
-          this.filterValue(
-            pickValue(targetField, this.dataSource as DataSource, ''),
-            targetFieldRule.type,
-            targetFieldRule.filters
-          ) === conditionalIf.value;
+        status = filteredValue === conditionalIf.value;
         break;
 
       case 'notEquals':
-        status =
-          this.filterValue(
-            pickValue(targetField, this.dataSource as DataSource, ''),
-            targetFieldRule.type,
-            targetFieldRule.filters
-          ) !== conditionalIf.value;
+        status = filteredValue !== conditionalIf.value;
         break;
 
       case 'in':
-        status = makeArray<DataValue>(
-          this.filterValue(
-            pickValue(targetField, this.dataSource as DataSource, ''),
-            targetFieldRule.type,
-            targetFieldRule.filters
-          )
-        ).includes(conditionalIf.value);
+        status = makeArray<DataValue>(filteredValue).includes(conditionalIf.value);
         break;
+
       case 'notIn':
-        status = !makeArray<DataValue>(
-          this.filterValue(
-            pickValue(targetField, this.dataSource as DataSource, ''),
-            targetFieldRule.type,
-            targetFieldRule.filters
-          )
-        ).includes(conditionalIf.value);
+        status = !makeArray<DataValue>(filteredValue).includes(conditionalIf.value);
         break;
     }
     return status;
   }
 
   /**
-   * resolves all overrideIf conditional rule
-   */
-  private resolveOverrideIf(rules: ResolvedRules<F>): ResolvedRules<F> {
-    for (const [field, rule] of Object.entries<ResolvedRule<F>>(rules)) {
-      const overrideIf = rule.overrideIf;
-      const requiredIf = rule.requiredIf;
-
-      if (isObject<OverrideIf<F>>(overrideIf)) {
-        if (this.resolveConditionalIf(overrideIf)) {
-          (this.dataSource as DataSource)[field] = overrideIf.with;
-        }
-      } else if (isObject<RequiredIf<F>>(requiredIf) && requiredIf.drop !== false) {
-        if (!this.resolveConditionalIf(requiredIf)) {
-          (this.dataSource as DataSource)[field] = '';
-        }
-      }
-    }
-    return rules;
-  }
-
-  /**
    * resolves all requiredIf conditional rule
    */
-  private resolveRequiredIf(rules: ResolvedRules<F>): ResolvedRules<F> {
-    for (const [, rule] of Object.entries<ResolvedRule<F>>(rules)) {
+  private resolveRequiredIf() {
+    for (const [field, rule] of Object.entries<ResolvedRule<F>>(this.resolvedRules)) {
       const requiredIf = rule.requiredIf;
       if (isObject<RequiredIf<F>>(requiredIf)) {
-        rule.required = this.resolveConditionalIf(requiredIf);
+        rule.required = false;
+        if (this.resolveConditionalIf(requiredIf)) {
+          rule.required = true;
+        } else if (requiredIf.drop !== false) {
+          if (this.isFileField(field)) {
+            delete (this.filesSource as FilesSource)[field];
+          } else {
+            (this.dataSource as DataSource)[field] = '';
+          }
+        }
       }
     }
-    return rules;
   }
 
   /**
@@ -790,10 +803,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     const result: ResolvedRule<F> = {
       type: pickValue('type', rule, 'text'),
       required: pickValue('required', rule, true),
-      defaultValue: pickValue('defaultValue', rule, undefined),
+      array: pickValue('array', rule, pluralize(field) === field),
+      defaultValue: pickValue('defaultValue', rule, ''),
       hint: pickValue('hint', rule, `${field} is required`),
       requiredIf: pickValue('requiredIf', rule, undefined),
-      overrideIf: pickValue('overrideIf', rule, undefined),
       options: pickObject('options', rule),
       filters: pickObject('filters', rule),
       checks: makeArray(rule.checks as DBCheck[]),
@@ -809,7 +822,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       result.options.shouldMatch.target = `{${result.options.shouldMatch.target}}` as F;
     }
 
-    if (result.type === 'checkbox' || typeof result.defaultValue !== 'undefined') {
+    if (result.type === 'checkbox' || typeof rule.defaultValue !== 'undefined') {
       result.required = false;
     }
 
@@ -836,9 +849,11 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   /**
    * resolves the given rules
    */
-  private resolveRules(rules: Rules<F>): ResolvedRules<F> {
+  private resolveRules() {
+    const rules = this.rules as Rules<F>;
     const fields = Object.keys(rules);
-    const result = fields.reduce(
+
+    this.resolvedRules = fields.reduce(
       (result, field) => {
         const rule = rules[field];
         result[field] = this.resolveRule(field, rule);
@@ -849,10 +864,9 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     );
 
     //if there is a file field, and the user did not set the files object, throw
-    if (isNull(this.filesSource) && fields.some(field => this.isFileDataType(result[field].type))) {
+    if (isNull(this.filesSource) && fields.some(field => this.isFileField(field))) {
       throw new FilesSourceNotSetException();
     }
-    return result;
   }
 
   /**
@@ -885,11 +899,10 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     };
 
     if (dataSource) {
-      const resolvedDataSource = Object.keys(dataSource).reduce((result, key) => {
+      this.dataSource = Object.keys(dataSource).reduce((result, key) => {
         result[key] = resolveData(dataSource[key]);
         return result;
       }, {});
-      this.dataSource = resolvedDataSource;
     }
     return this;
   }
@@ -989,41 +1002,43 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   async execute(validateOnDemand: boolean = false, requiredFields: string[] | string = []): Promise<boolean> {
     this.shouldExecute();
     this.executed = true;
-    this.dataSource = copy({}, this.dataSource as DataSource, this.addedFields);
 
-    this.resolvedRules = this.resolveRules(this.rules as Rules<F>);
-    this.resolvedRules = this.resolveRequiredIf(this.resolvedRules);
-    this.resolveOverrideIf(this.resolvedRules);
+    // copy fields
+    this.dataSource = copy({}, this.dataSource as DataSource, this.addedFields);
+    this.filesSource = this.filesSource ? copy({}, this.filesSource) : this.filesSource;
+
+    this.resolveRules();
+    this.resolveRequiredIf();
 
     if (validateOnDemand) {
-      this.resolvedRules = this.filterRules(this.resolvedRules, requiredFields);
+      this.filterRules(requiredFields);
     }
-    this.categorizeRules(this.resolvedRules);
+    this.categorizeRules();
 
     //resolve hints
     this.resolveOptions('hint');
-    if (!this.checkMissingFields()) {
-      return false;
-    }
+    if (this.checkMissingFields()) {
+      this.getFields(this.requiredFields);
+      this.getFields(this.optionalFields);
 
-    this.getFields(this.requiredFields);
-    this.getFields(this.optionalFields);
+      if (this.checkArrays()) {
+        //resolve options.
+        this.resolveOptions('options');
+        this.resolveOptions('checks');
 
-    //resolve options.
-    this.resolveOptions('options');
-    this.resolveOptions('checks');
+        await this.validateFields(this.requiredFields, true);
+        await this.validateFields(this.optionalFields, false);
 
-    await this.validateFields(this.requiredFields, true);
-    await this.validateFields(this.optionalFields, false);
+        if (this.succeeds()) {
+          this.dbChecker.setDBModel(this.dbModel).setDBCaseStyle(this.dbCaseStyle);
+          await this.validateDBChecks(this.requiredFields, true);
+          await this.validateDBChecks(this.optionalFields, false);
+        }
 
-    if (this.succeeds()) {
-      this.dbChecker.setDBModel(this.dbModel).setDBCaseStyle(this.dbCaseStyle);
-      await this.validateDBChecks(this.requiredFields, true);
-      await this.validateDBChecks(this.optionalFields, false);
-    }
-
-    if (this.succeeds()) {
-      await this.runPostProcesses();
+        if (this.succeeds()) {
+          await this.runPostProcesses();
+        }
+      }
     }
 
     return this.succeeds();
