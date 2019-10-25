@@ -44,10 +44,14 @@ describe('Handler Module', function() {
 
   describe('static setDBCaseStyle(dbModel: number)', function() {
     it(`should set the global database model case style to use for all created instances`, function() {
-      expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+      expect(handler.getDBCaseStyle()).toEqual(
+        Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE,
+      );
       Handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
       handler = new Handler();
-      expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+      expect(handler.getDBCaseStyle()).toEqual(
+        Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE,
+      );
 
       Handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
     });
@@ -62,11 +66,15 @@ describe('Handler Module', function() {
     });
 
     it(`should use a custom validator if given`, function() {
-      expect(new Handler({}, {}, {}, new CustomValidator())).toBeInstanceOf(Handler);
+      expect(new Handler({}, {}, {}, new CustomValidator())).toBeInstanceOf(
+        Handler,
+      );
     });
 
     it(`should use a custom db checker if given`, function() {
-      expect(new Handler({}, {}, {}, new CustomValidator(), new CustomDBChecker())).toBeInstanceOf(Handler);
+      expect(
+        new Handler({}, {}, {}, new CustomValidator(), new CustomDBChecker()),
+      ).toBeInstanceOf(Handler);
     });
   });
 
@@ -103,7 +111,9 @@ describe('Handler Module', function() {
 
   describe(`#setError(field: string, errorMessage: string | false): this`, function() {
     it(`should set the given error message for the given field name, returning the this object`, function() {
-      expect(handler.setError('first-name', 'first name is not given')).toEqual(handler);
+      expect(handler.setError('first-name', 'first name is not given')).toEqual(
+        handler,
+      );
     });
 
     it(`should default error message to 'error occured' if passed in value is false`, function() {
@@ -123,9 +133,13 @@ describe('Handler Module', function() {
 
   describe('#setDBCaseStyle(dbModel: number)', function() {
     it(`should override the instance database model case style to use`, function() {
-      expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
+      expect(handler.getDBCaseStyle()).toEqual(
+        Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE,
+      );
       handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
-      expect(handler.getDBCaseStyle()).toEqual(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
+      expect(handler.getDBCaseStyle()).toEqual(
+        Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE,
+      );
     });
   });
 
@@ -218,7 +232,9 @@ describe('Handler Module', function() {
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.password2.options.shouldMatch as any).target).toEqual('{password1}');
+        expect(
+          (resolvedRules.password2.options.shouldMatch as any).target,
+        ).toEqual('{password1}');
       });
     });
 
@@ -236,7 +252,9 @@ describe('Handler Module', function() {
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.password2.options.shouldMatch as any).target).toEqual('{password1}');
+        expect(
+          (resolvedRules.password2.options.shouldMatch as any).target,
+        ).toEqual('{password1}');
       });
     });
 
@@ -307,7 +325,9 @@ describe('Handler Module', function() {
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.date as DateRule<'date'>).options.gt).toEqual(new CustomDate() + '');
+        expect((resolvedRules.date as DateRule<'date'>).options.gt).toEqual(
+          new CustomDate() + '',
+        );
       });
     });
 
@@ -326,7 +346,9 @@ describe('Handler Module', function() {
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.year as NumberRule<'year'>).options.gt).toEqual(new CustomDate().getFullYear() + '');
+        expect((resolvedRules.year as NumberRule<'year'>).options.gt).toEqual(
+          new CustomDate().getFullYear() + '',
+        );
       });
     });
 
@@ -345,9 +367,10 @@ describe('Handler Module', function() {
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect(Number.parseInt((resolvedRules.time as NumberRule<'time'>).options.gt as string)).toBeLessThanOrEqual(
-          new CustomDate().getTime() * 1000
-        );
+        expect(
+          Number.parseInt((resolvedRules.time as NumberRule<'time'>).options
+            .gt as string),
+        ).toBeLessThanOrEqual(new CustomDate().getTime() * 1000);
       });
     });
 
@@ -373,7 +396,9 @@ describe('Handler Module', function() {
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
-        expect((resolvedRules.time as NumberRule<'time' | 'country'>).options.gt).toEqual(2000);
+        expect(
+          (resolvedRules.time as NumberRule<'time' | 'country'>).options.gt,
+        ).toEqual(2000);
       });
     });
   });
@@ -557,6 +582,66 @@ describe('Handler Module', function() {
       });
     });
 
+    it(`should resolve the requiredIf valueIn rule, making field required if condition is met`, function() {
+      const data = {
+        jobType: 'full_time',
+      };
+      const rules: Rules<'jobType' | 'salary'> = {
+        jobType: {
+          type: 'choice',
+          options: {
+            choices: ['full_time', 'internship', 'contract'],
+          },
+        },
+
+        /** tell us your salary demand if you choose full time employment type or internship */
+        salary: {
+          type: 'money',
+          requiredIf: {
+            if: 'valueIn',
+            field: 'jobType',
+            values: ['full_time', 'internship'],
+          },
+        },
+      };
+
+      const handler = new Handler(data, undefined, rules);
+      return handler.execute().then(() => {
+        const resolvedRules = handler.getResolvedRules();
+        expect(resolvedRules.salary.required).toBeTruthy();
+      });
+    });
+
+    it(`should resolve the requiredIf valueNotIn rule, making field required if condition is met`, function() {
+      const data = {
+        jobType: 'contract',
+      };
+      const rules: Rules<'jobType' | 'contractingRate'> = {
+        jobType: {
+          type: 'choice',
+          options: {
+            choices: ['full_time', 'internship', 'contract'],
+          },
+        },
+
+        /** tell us your salary demand if you did not choose full time employment type or internship */
+        contractingRate: {
+          type: 'money',
+          requiredIf: {
+            if: 'valueNotIn',
+            field: 'jobType',
+            values: ['full_time', 'internship'],
+          },
+        },
+      };
+
+      const handler = new Handler(data, undefined, rules);
+      return handler.execute().then(() => {
+        const resolvedRules = handler.getResolvedRules();
+        expect(resolvedRules.contractingRate.required).toBeTruthy();
+      });
+    });
+
     it(`should drop field value, deleting the value if it is a file value or overriding it with empty string if otherwise,
       if field has requiredIf condition, but ended up not being required`, async function() {
       const data = {
@@ -567,7 +652,9 @@ describe('Handler Module', function() {
       const files = {
         cv: createFile(),
       };
-      const rules: Rules<'isCurrentWork' | 'isJobSeeker' | 'endMonth' | 'cv'> = {
+      const rules: Rules<
+        'isCurrentWork' | 'isJobSeeker' | 'endMonth' | 'cv'
+      > = {
         isCurrentWork: 'checkbox',
 
         isJobSeeker: 'checkbox',
@@ -653,7 +740,7 @@ describe('Handler Module', function() {
         Object.keys(files.cvs).reduce((result, key) => {
           result[key] = makeArray(files.cvs[key]);
           return result;
-        }, {})
+        }, {}),
       );
     });
 
@@ -691,7 +778,9 @@ describe('Handler Module', function() {
         email: 'example.com',
       };
 
-      const rules: Rules<'firstName' | 'lastName' | 'email' | 'dateOfBirth' | 'cv'> = {
+      const rules: Rules<
+        'firstName' | 'lastName' | 'email' | 'dateOfBirth' | 'cv'
+      > = {
         firstName: 'text',
         lastName: 'text',
         email: 'email',
@@ -852,7 +941,9 @@ describe('Handler Module', function() {
 
       const handler = new Handler(data, undefined, rules);
       return handler.execute(true).then(() => {
-        expect(handler.data.text1).toStrictEqual(`This text enters new line which starts here`);
+        expect(handler.data.text1).toStrictEqual(
+          `This text enters new line which starts here`,
+        );
       });
     });
 
@@ -927,7 +1018,9 @@ describe('Handler Module', function() {
 
       const handler = new Handler(data, undefined, rules);
       return handler.execute(true).then(() => {
-        expect(handler.data.names).toEqual(names.map(name => name.toUpperCase()));
+        expect(handler.data.names).toEqual(
+          names.map(name => name.toUpperCase()),
+        );
       });
     });
 
@@ -1201,7 +1294,9 @@ describe('Handler Module', function() {
 
       const files: FilesSource = {};
 
-      const rules: Rules<'languages' | 'firstName' | 'image' | 'phoneNumber'> = {
+      const rules: Rules<
+        'languages' | 'firstName' | 'image' | 'phoneNumber'
+      > = {
         languages: 'text',
         phoneNumber: 'phoneNumber',
         firstName: {
@@ -1375,7 +1470,9 @@ describe('Handler Module', function() {
             postCompute: jest.fn((value: DataValue) => value),
           },
           email: {
-            postCompute: jest.fn((value: DataValue) => Promise.resolve(value.toString().toUpperCase())),
+            postCompute: jest.fn((value: DataValue) =>
+              Promise.resolve(value.toString().toUpperCase()),
+            ),
           },
         };
         const handler = new Handler(dataSource, {}, rules);

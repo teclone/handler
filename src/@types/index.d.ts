@@ -125,6 +125,15 @@ export type RequiredIf<F extends string> =
        * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
        */
       drop?: boolean;
+    }
+  | {
+      if: 'valueIn' | 'valueNotIn';
+      field: F;
+      values: Array<string | boolean | number>;
+      /**
+       * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
+       */
+      drop?: boolean;
     };
 
 export type FilterCallback = (value: string) => string | number | boolean;
@@ -167,7 +176,11 @@ export interface ModelDBCheck {
 }
 export interface CallbackDBCheck {
   if: DBCheckType;
-  callback: (fieldName: string, fieldValue: DataValue, fieldIndex: number) => Promise<boolean>;
+  callback: (
+    fieldName: string,
+    fieldValue: DataValue,
+    fieldIndex: number,
+  ) => Promise<boolean>;
   err?: string;
 }
 export type DBCheck = CallbackDBCheck | ModelDBCheck;
@@ -227,7 +240,7 @@ export interface ResolvedRule<F extends string> {
   postCompute?: <N extends Handler<F> = Handler<F>>(
     value: DataValue,
     data: Data<F>,
-    handler: N
+    handler: N,
   ) => Promise<DataValue> | DataValue;
 
   /**
@@ -237,7 +250,7 @@ export interface ResolvedRule<F extends string> {
   postValidate?: <N extends Handler<F> = Handler<F>>(
     value: DataValue,
     data: Data<F>,
-    handler: N
+    handler: N,
   ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 }
 
