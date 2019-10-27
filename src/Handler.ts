@@ -130,6 +130,8 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
     name: 'validateText',
 
+    objectId: 'validateObjectId',
+
     date: 'validateDate',
 
     //integer validation methods

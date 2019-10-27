@@ -84,6 +84,7 @@ export type DataType =
   | 'text'
   | 'title'
   | 'name'
+  | 'objectId'
   | 'email'
   | 'url'
   | 'phoneNumber'
