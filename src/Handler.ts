@@ -16,7 +16,7 @@ import {
   CallbackDBCheck,
   ModelDBCheck,
   DBCheckType,
-  Data,
+  Data
 } from './@types';
 import { DB_MODELS } from './Constants';
 import StateException from './Exceptions/StateException';
@@ -37,7 +37,7 @@ import {
   isNull,
   isTypeOf,
   isCallable,
-  uniqueArray,
+  uniqueArray
 } from '@forensic-js/utils';
 import FilesSourceNotSetException from './Exceptions/FilesSourceNotSetException';
 import { replaceCallback, replace } from '@forensic-js/regex';
@@ -50,25 +50,25 @@ import Model from './Model';
 import {
   parsePhoneNumberFromString,
   PhoneNumber,
-  CountryCode,
+  CountryCode
 } from 'libphonenumber-js';
 import { PhoneNumberOptions } from './@types/rules/TextRules';
 import {
   Files,
   FileEntry,
-  FileEntryCollection,
+  FileEntryCollection
 } from 'r-server/lib/typings/@types';
 import {
   titleize,
   pluralize,
   singularize,
   ordinalize,
-  capitalize,
+  capitalize
 } from 'inflection';
 
 const globalConfig = {
   dbModel: DB_MODELS.NOSQL,
-  dbCaseStyle: CASE_STYLES.CAMEL_CASE,
+  dbCaseStyle: CASE_STYLES.CAMEL_CASE
 };
 
 export default class Handler<F extends string = string, Exports = Data<F>> {
@@ -167,7 +167,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     password: 'validatePassword',
 
     //phone number validation
-    phoneNumber: 'validatePhoneNumber',
+    phoneNumber: 'validatePhoneNumber'
   };
 
   private DBCheckTypesToMethod: { [P in DBCheckType]: string } = {
@@ -175,7 +175,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     exists: 'checkIfExists',
 
     //check if not exists method map
-    notExists: 'checkIfNotExists',
+    notExists: 'checkIfNotExists'
   };
 
   private customData: { [p: string]: any } = {};
@@ -189,7 +189,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     filesSource?: FilesSource,
     rules?: Rules<F>,
     validator?: Validator<F>,
-    dbChecker?: DBChecker<F>,
+    dbChecker?: DBChecker<F>
   ) {
     this.setDataSource(dataSource)
       .setFilesSource(filesSource)
@@ -218,7 +218,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       'video',
       'media',
       'document',
-      'archive',
+      'archive'
     ].includes(dataType);
   }
 
@@ -238,7 +238,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       key: [],
       path: [],
       size: [],
-      type: [],
+      type: []
     };
   }
 
@@ -248,14 +248,14 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   private makeFileEntry(
     fileCollection: FileEntryCollection,
-    index: number,
+    index: number
   ): FileEntry {
     return Object.keys(fileCollection).reduce(
       (result, key) => {
         result[key] = fileCollection[key][index];
         return result;
       },
-      {} as FileEntry,
+      {} as FileEntry
     );
   }
 
@@ -264,7 +264,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    * @param file
    */
   private makeFileCollection(
-    file: RawData | FileEntry | FileEntryCollection | undefined,
+    file: RawData | FileEntry | FileEntryCollection | undefined
   ): FileEntryCollection {
     if (isObject<FileEntry | FileEntryCollection>(file)) {
       return Object.keys(file).reduce(
@@ -272,7 +272,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
           result[key] = makeArray(file[key]);
           return result;
         },
-        {} as FileEntryCollection,
+        {} as FileEntryCollection
       );
     } else {
       return this.createEmptyFileEntryCollection();
@@ -289,14 +289,14 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         this.data[field] = await rule.postCompute(
           this.data[field],
           this.data,
-          this,
+          this
         );
       }
       if (isCallable(rule.postValidate)) {
         const result = await rule.postValidate(
           this.data[field],
           this.data,
-          this,
+          this
         );
         if (result !== true) {
           this.setError(field, result);
@@ -309,28 +309,30 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    * runs db check
    */
   private async runDBCheck(
+    type: DataType,
     required: boolean,
     field: string,
     value: DataValue,
     checks: DBCheck[],
-    index: number,
+    index: number
   ) {
     for (const check of checks) {
       if (isTypeOf<CallbackDBCheck>('callback', check)) {
         if (await check.callback(field, value, index)) {
           return this.setError(
             field,
-            pickValue('err', check, 'condition not satisfied'),
+            pickValue('err', check, 'condition not satisfied')
           );
         }
       } else {
         const method = this.DBCheckTypesToMethod[check.if];
         await this.dbChecker[method](
+          type,
           required,
           field,
           value,
           check as ModelDBCheck,
-          index,
+          index
         );
         if (this.dbChecker.fails()) {
           return false;
@@ -348,7 +350,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   private async validateDBChecks(fields: string[], required: boolean) {
     for (const field of fields) {
-      const { checks } = this.resolvedRules[field];
+      const { checks, type } = this.resolvedRules[field] as ResolvedRule<F>;
       if (checks.length > 0) {
         const values = makeArray<DataValue>(this.data[field]);
 
@@ -357,11 +359,12 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         while (++i < len) {
           const value = values[i];
           await this.runDBCheck(
+            type,
             required,
             field,
             value === null ? '' : value.toString(),
             checks,
-            i,
+            i
           );
         }
       }
@@ -377,7 +380,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     type: DataType,
     value: string | FileEntry,
     options: Options<F>,
-    index: number,
+    index: number
   ) {
     const validator = this.validator;
     const method = this.dataTypeToMethod[type];
@@ -426,7 +429,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
               type,
               value,
               options,
-              i,
+              i
             ))
           ) {
             break;
@@ -446,7 +449,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
               type,
               value === null ? '' : value.toString(),
               options,
-              i,
+              i
             ))
           ) {
             break;
@@ -506,7 +509,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         value = isFileField
           ? this.makeFileCollection(value)
           : (makeArray(value as string).filter(
-              value => value !== '',
+              value => value !== ''
             ) as RawData);
       }
       this.data[field] = this.filterValue(value, field);
@@ -571,7 +574,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         '(?:=(?:"[^"]*"|\'[^\']*\'))?)*' +
         //then ends with zero or more spaces followed by the right angle bracket
         '\\s*>',
-      'i',
+      'i'
     );
 
     return replaceCallback(
@@ -583,7 +586,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
           return '';
         }
       },
-      value,
+      value
     );
   }
 
@@ -592,7 +595,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   private filterValue(
     value: RawData | FileEntry | FileEntryCollection,
-    field: string,
+    field: string
   ): DataValue {
     const resolvedRules = this.resolvedRules;
     const type = resolvedRules[field].type as DataType;
@@ -618,7 +621,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       if (keyNotSetOrTrue('stripTags', filters)) {
         result = this.stripTags(
           result,
-          pickValue('stripTagsIgnore', filters, []),
+          pickValue('stripTagsIgnore', filters, [])
         );
       }
 
@@ -680,7 +683,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
           result = replace(
             /[^-\w!#$%&'*+/=?^`:?{|}()~.@]/,
             '',
-            result as string,
+            result as string
           );
           break;
 
@@ -723,7 +726,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     } else {
       if (isArray(value)) {
         return uniqueArray(value as string[]).map(current =>
-          performFilter(current.toString()),
+          performFilter(current.toString())
         ) as DataValue;
       } else {
         return performFilter(value.toString());
@@ -763,7 +766,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
           }
           return result.toString();
         },
-        value,
+        value
       );
     };
 
@@ -838,7 +841,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
         }
         return result;
       },
-      {} as ResolvedRules<F>,
+      {} as ResolvedRules<F>
     );
   }
 
@@ -852,7 +855,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
     const filteredValue = this.filterValue(
       pickValue(targetField, this.dataSource as DataSource, ''),
-      targetField,
+      targetField
     );
     switch (conditionalIf.if) {
       case 'checked':
@@ -873,13 +876,13 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
       case 'in':
         status = makeArray<DataValue>(filteredValue).includes(
-          conditionalIf.value,
+          conditionalIf.value
         );
         break;
 
       case 'notIn':
         status = !makeArray<DataValue>(filteredValue).includes(
-          conditionalIf.value,
+          conditionalIf.value
         );
         break;
 
@@ -899,7 +902,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   private resolveRequiredIf() {
     for (const [field, rule] of Object.entries<ResolvedRule<F>>(
-      this.resolvedRules,
+      this.resolvedRules
     )) {
       const requiredIf = rule.requiredIf;
       if (isObject<RequiredIf<F>>(requiredIf)) {
@@ -932,7 +935,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       array: pickValue(
         'array',
         rule,
-        pluralize(field) === field && type !== 'boolean' && type !== 'checkbox',
+        pluralize(field) === field && type !== 'boolean' && type !== 'checkbox'
       ),
       defaultValue: pickValue('defaultValue', rule, ''),
       hint: pickValue('hint', rule, `${field} is required`),
@@ -941,7 +944,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       filters: pickObject('filters', rule),
       checks: makeArray(rule.checks as DBCheck[]),
       postCompute: pickValue('postCompute', rule, undefined),
-      postValidate: pickValue('postValidate', rule, undefined),
+      postValidate: pickValue('postValidate', rule, undefined)
     };
 
     //enclose the target field
@@ -968,7 +971,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
           value,
           options.country
             ? (options.country.substring(0, 2).toUpperCase() as CountryCode)
-            : undefined,
+            : undefined
         ) as PhoneNumber).number;
 
         if (postCompute) {
@@ -995,7 +998,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
 
         return result;
       },
-      {} as ResolvedRules<F>,
+      {} as ResolvedRules<F>
     );
 
     //if there is a file field, and the user did not set the files object, throw
@@ -1139,7 +1142,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
    */
   async execute(
     validateOnDemand: boolean = false,
-    requiredFields: string[] | string = [],
+    requiredFields: string[] | string = []
   ): Promise<boolean> {
     this.shouldExecute();
     this.executed = true;

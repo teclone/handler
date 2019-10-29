@@ -1,5 +1,5 @@
 import Common from './Common';
-import { DataValue, ModelDBCheck } from './@types';
+import { DataValue, ModelDBCheck, ResolvedRules, DataType } from './@types';
 import { DB_MODELS } from './Constants';
 import { pickValue, applyCase } from '@forensic-js/utils';
 
@@ -22,7 +22,14 @@ export default class DBChecker<F extends string = string> extends Common<F> {
   /**
    * resets the db checker, and checks if the check call should proceed
    */
-  protected setup(required: boolean, field: string, value: DataValue, check: ModelDBCheck, index: number) {
+  protected setup(
+    type: DataType,
+    required: boolean,
+    field: string,
+    value: DataValue,
+    check: ModelDBCheck,
+    index: number
+  ) {
     this.reset(field, check, index);
 
     if (value === '' && !required) {
@@ -32,8 +39,16 @@ export default class DBChecker<F extends string = string> extends Common<F> {
       if (check.query) {
         this.query = check.query;
       } else {
+        let givenField = check.field;
+        if (
+          typeof givenField === 'undefined' &&
+          this.dbModel === DB_MODELS.NOSQL &&
+          type === 'objectId'
+        ) {
+          givenField = '_id';
+        }
         this.query = {
-          [applyCase(check.field || field, this.dbCaseStyle)]: value,
+          [givenField || applyCase(field, this.dbCaseStyle)]: value
         };
       }
     }
@@ -63,17 +78,28 @@ export default class DBChecker<F extends string = string> extends Common<F> {
   /**
    * checks if database field value exists, setting error if it does
    *
+   * @param type field data type
    * @param required boolean indicating if field is required
    * @param field current field under check
    * @param value current field value under check
    * @param check check options
    * @param index current field value index under check
    */
-  async checkIfExists(required: boolean, field: string, value: string, check: ModelDBCheck, index: number) {
-    if (this.setup(required, field, value, check, index)) {
+  async checkIfExists(
+    type: DataType,
+    required: boolean,
+    field: string,
+    value: string,
+    check: ModelDBCheck,
+    index: number
+  ) {
+    if (this.setup(type, required, field, value, check, index)) {
       const count = await this.execute(check.model, this.query);
       if (count > 0) {
-        this.setError(pickValue('err', check, '{_this}:{this} already exists'), value);
+        this.setError(
+          pickValue('err', check, '{_this}:{this} already exists'),
+          value
+        );
       }
     }
     return this.succeeds();
@@ -82,17 +108,28 @@ export default class DBChecker<F extends string = string> extends Common<F> {
   /**
    * checks if database field value does not exist, setting error if it does not
    *
+   * @param type field data type
    * @param required boolean indicating if field is required
    * @param field current field under check
    * @param value current field value under check
    * @param check check options
    * @param index current field value index under check
    */
-  async checkIfNotExists(required: boolean, field: string, value: string, check: ModelDBCheck, index: number) {
-    if (this.setup(required, field, value, check, index)) {
+  async checkIfNotExists(
+    type: DataType,
+    required: boolean,
+    field: string,
+    value: string,
+    check: ModelDBCheck,
+    index: number
+  ) {
+    if (this.setup(type, required, field, value, check, index)) {
       const count = await this.execute(check.model, this.query);
       if (count === 0) {
-        this.setError(pickValue('err', check, '{_this}:{this} does not exist'), value);
+        this.setError(
+          pickValue('err', check, '{_this}:{this} does not exist'),
+          value
+        );
       }
     }
     return this.succeeds();
