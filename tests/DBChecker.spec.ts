@@ -140,7 +140,6 @@ describe('DBChecker', function() {
     });
 
     it(`should default the field parameter to _id if field type is objectId and query is not set nor  is field`, function() {
-      console.log(noSqlDocumentId);
       return dbChecker
         .checkIfExists(
           'objectId',

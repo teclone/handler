@@ -8,7 +8,7 @@ import {
   TextOptions,
   PhoneNumberRule,
   PhoneNumberOptions,
-  PasswordOptions,
+  PasswordOptions
 } from './rules/TextRules';
 import {
   IntegerRule,
@@ -18,7 +18,7 @@ import {
   NNumberRule,
   PNumberRule,
   DateRule,
-  NumberOptions,
+  NumberOptions
 } from './rules/NumberRules';
 import RangeRule, { RangeOptions } from './rules/RangeRule';
 import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
@@ -31,7 +31,7 @@ import {
   MediaFileRule,
   DocumentFileRule,
   ArchiveFileRule,
-  FileOptions,
+  FileOptions
 } from './rules/FilesRule';
 import Handler from '../Handler';
 import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
@@ -175,16 +175,17 @@ export interface ModelDBCheck {
   query?: object;
   err?: string;
 }
-export interface CallbackDBCheck {
+export interface CallbackDBCheck<F extends string> {
   if: DBCheckType;
   callback: (
-    fieldName: string,
-    fieldValue: DataValue,
-    fieldIndex: number,
-  ) => Promise<boolean>;
+    value: DataValue,
+    index: number,
+    data: Data<F>,
+    handler: Handler<F>
+  ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
   err?: string;
 }
-export type DBCheck = CallbackDBCheck | ModelDBCheck;
+export type DBCheck<F extends string> = CallbackDBCheck<F> | ModelDBCheck;
 
 export type Rule<F extends string> =
   | BooleanRule<F>
@@ -232,7 +233,7 @@ export interface ResolvedRule<F extends string> {
 
   filters: Filters;
 
-  checks: DBCheck[];
+  checks: DBCheck<F>[];
 
   /**
    * computes and return a new value for the field. it accepts two arguments
@@ -241,7 +242,7 @@ export interface ResolvedRule<F extends string> {
   postCompute?: <N extends Handler<F> = Handler<F>>(
     value: DataValue,
     data: Data<F>,
-    handler: N,
+    handler: N
   ) => Promise<DataValue> | DataValue;
 
   /**
@@ -251,7 +252,7 @@ export interface ResolvedRule<F extends string> {
   postValidate?: <N extends Handler<F> = Handler<F>>(
     value: DataValue,
     data: Data<F>,
-    handler: N,
+    handler: N
   ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 }
 

@@ -68,7 +68,7 @@ export default interface BaseRule<F extends string> {
   /**
    * defines a list of database integrity checks to perform on the field value(s)
    */
-  checks?: DBCheck | DBCheck[];
+  checks?: DBCheck<F> | DBCheck<F>[];
 
   /**
    * computes and return a new value for the field. it accepts two arguments

@@ -10,7 +10,7 @@ export default class Common<F extends string = string> {
 
   protected field: string = '';
 
-  protected options: Options<F> | DBCheck = {};
+  protected options: Options<F> | DBCheck<F> = {};
 
   protected index: number = 0;
 
@@ -23,7 +23,7 @@ export default class Common<F extends string = string> {
    * @param options validation options
    * @param index field value index
    */
-  reset(field: string, options: Options<F> | DBCheck, index: number): this {
+  reset(field: string, options: Options<F> | DBCheck<F>, index: number): this {
     this.field = field;
     this.options = options;
     this.index = index;
@@ -41,7 +41,9 @@ export default class Common<F extends string = string> {
     errorMessage = errorMessage === false ? 'error occured' : errorMessage;
 
     if (this.status === false) {
-      throw new StateException('cant set errors twice, did you forget to reset validator?');
+      throw new StateException(
+        'cant set errors twice, did you forget to reset validator?'
+      );
     }
     if (!isNumeric(value)) {
       value = `"${value}"`;

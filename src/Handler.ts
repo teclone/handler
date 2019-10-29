@@ -313,15 +313,23 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     required: boolean,
     field: string,
     value: DataValue,
-    checks: DBCheck[],
+    checks: DBCheck<F>[],
     index: number
   ) {
     for (const check of checks) {
-      if (isTypeOf<CallbackDBCheck>('callback', check)) {
-        if (await check.callback(field, value, index)) {
+      if (isTypeOf<CallbackDBCheck<F>>('callback', check)) {
+        const result = await check.callback(
+          value,
+          index,
+          this.data,
+          this as any
+        );
+        if (result !== true) {
           return this.setError(
             field,
-            pickValue('err', check, 'condition not satisfied')
+            typeof result === 'string'
+              ? result
+              : pickValue('err', check, 'condition not satisfied')
           );
         }
       } else {
@@ -942,7 +950,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
       requiredIf: pickValue('requiredIf', rule, undefined),
       options: pickObject('options', rule),
       filters: pickObject('filters', rule),
-      checks: makeArray(rule.checks as DBCheck[]),
+      checks: makeArray(rule.checks as DBCheck<F>[]),
       postCompute: pickValue('postCompute', rule, undefined),
       postValidate: pickValue('postValidate', rule, undefined)
     };

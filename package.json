@@ -5,6 +5,7 @@
   "main": "lib/Handler",
   "typings": "lib/typings/Handler",
   "scripts": {
+    "compile": "tsc",
     "commit": "git-cz",
     "test": "BABEL_ENV=test jest --runInBand",
     "watch-test": "BABEL_ENV=test jest --watch --runInBand",

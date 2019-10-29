@@ -14,7 +14,7 @@ import {
   noSqlConnect,
   noSqlPopulate,
   noSqlDepopulate,
-  noSqlDisconnect,
+  noSqlDisconnect
 } from './helpers';
 import DBChecker from '../src/DBChecker';
 import NoSqlUser from './helpers/nosql/models/User';
@@ -45,12 +45,12 @@ describe('Handler Module', function() {
   describe('static setDBCaseStyle(dbModel: number)', function() {
     it(`should set the global database model case style to use for all created instances`, function() {
       expect(handler.getDBCaseStyle()).toEqual(
-        Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE,
+        Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE
       );
       Handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
       handler = new Handler();
       expect(handler.getDBCaseStyle()).toEqual(
-        Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE,
+        Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE
       );
 
       Handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE);
@@ -67,13 +67,13 @@ describe('Handler Module', function() {
 
     it(`should use a custom validator if given`, function() {
       expect(new Handler({}, {}, {}, new CustomValidator())).toBeInstanceOf(
-        Handler,
+        Handler
       );
     });
 
     it(`should use a custom db checker if given`, function() {
       expect(
-        new Handler({}, {}, {}, new CustomValidator(), new CustomDBChecker()),
+        new Handler({}, {}, {}, new CustomValidator(), new CustomDBChecker())
       ).toBeInstanceOf(Handler);
     });
   });
@@ -112,7 +112,7 @@ describe('Handler Module', function() {
   describe(`#setError(field: string, errorMessage: string | false): this`, function() {
     it(`should set the given error message for the given field name, returning the this object`, function() {
       expect(handler.setError('first-name', 'first name is not given')).toEqual(
-        handler,
+        handler
       );
     });
 
@@ -134,11 +134,11 @@ describe('Handler Module', function() {
   describe('#setDBCaseStyle(dbModel: number)', function() {
     it(`should override the instance database model case style to use`, function() {
       expect(handler.getDBCaseStyle()).toEqual(
-        Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE,
+        Handler.DB_MODEL_CASE_STYLES.CAMEL_CASE
       );
       handler.setDBCaseStyle(Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE);
       expect(handler.getDBCaseStyle()).toEqual(
-        Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE,
+        Handler.DB_MODEL_CASE_STYLES.SNAKE_CASE
       );
     });
   });
@@ -158,7 +158,7 @@ describe('Handler Module', function() {
   describe(`#addFields(fields: {[field: string]: DataValue})`, function() {
     it(`should add the given fields to the data source and return this`, function() {
       const fields = {
-        name: 'Harrison',
+        name: 'Harrison'
       };
       expect(handler.addFields(fields)).toEqual(handler);
     });
@@ -198,7 +198,7 @@ describe('Handler Module', function() {
 
     it(`should throw error if a file field type is specified without supplying files source`, async function(done) {
       const handler = new Handler({}, undefined, {
-        imageFile: 'image',
+        imageFile: 'image'
       });
       try {
         await handler.execute();
@@ -212,7 +212,7 @@ describe('Handler Module', function() {
   describe(`rule type resolution`, function() {
     it(`should resolve rule type, puting the type inside an object if it is specified as string`, function() {
       const handler = new Handler({}, undefined, {
-        password: 'password',
+        password: 'password'
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
@@ -226,14 +226,14 @@ describe('Handler Module', function() {
         password2: {
           type: 'password',
           options: {
-            shouldMatch: 'password1',
-          },
-        },
+            shouldMatch: 'password1'
+          }
+        }
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect(
-          (resolvedRules.password2.options.shouldMatch as any).target,
+          (resolvedRules.password2.options.shouldMatch as any).target
         ).toEqual('{password1}');
       });
     });
@@ -245,15 +245,15 @@ describe('Handler Module', function() {
           type: 'password',
           options: {
             shouldMatch: {
-              target: 'password1',
-            },
-          },
-        },
+              target: 'password1'
+            }
+          }
+        }
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect(
-          (resolvedRules.password2.options.shouldMatch as any).target,
+          (resolvedRules.password2.options.shouldMatch as any).target
         ).toEqual('{password1}');
       });
     });
@@ -261,8 +261,8 @@ describe('Handler Module', function() {
     it(`should set checkbox rule type as optional`, function() {
       const handler = new Handler({}, undefined, {
         termsAndCondition: {
-          type: 'checkbox',
-        },
+          type: 'checkbox'
+        }
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
@@ -273,8 +273,8 @@ describe('Handler Module', function() {
     it(`should default array option to true if not set and field name is pluralized`, function() {
       const handler = new Handler({}, undefined, {
         account_types: {
-          type: 'text',
-        },
+          type: 'text'
+        }
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
@@ -285,8 +285,8 @@ describe('Handler Module', function() {
     it(`should default array option to false if not set and field name is not pluralized`, function() {
       const handler = new Handler({}, undefined, {
         account_type: {
-          type: 'text',
-        },
+          type: 'text'
+        }
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
@@ -300,8 +300,8 @@ describe('Handler Module', function() {
       const handler = new Handler({}, undefined, {
         password: {
           type: 'password',
-          hint: '{_this} is required',
-        },
+          hint: '{_this} is required'
+        }
       });
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
@@ -311,65 +311,65 @@ describe('Handler Module', function() {
 
     it(`should resolve rules, replacing every occurence of {current_date} with current date string`, function() {
       const data = {
-        date: '2018-01-01',
+        date: '2018-01-01'
       };
       const rules: Rules<'date'> = {
         date: {
           type: 'date',
           hint: '{_this} is required',
           options: {
-            gt: '{current_date}',
-          },
-        },
+            gt: '{current_date}'
+          }
+        }
       };
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect((resolvedRules.date as DateRule<'date'>).options.gt).toEqual(
-          new CustomDate() + '',
+          new CustomDate() + ''
         );
       });
     });
 
     it(`should resolve rules, replacing every occurence of {current_year} with current year string`, function() {
       const data = {
-        year: '2018',
+        year: '2018'
       };
       const rules: Rules<'year'> = {
         year: {
           type: 'int',
           options: {
-            gt: '{current_year}',
-          },
-        },
+            gt: '{current_year}'
+          }
+        }
       };
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect((resolvedRules.year as NumberRule<'year'>).options.gt).toEqual(
-          new CustomDate().getFullYear() + '',
+          new CustomDate().getFullYear() + ''
         );
       });
     });
 
     it(`should resolve rules, replacing every occurence of {current_time} with current timestamp string`, function() {
       const data = {
-        time: '201810101001',
+        time: '201810101001'
       };
       const rules: Rules<'time'> = {
         time: {
           type: 'int',
           options: {
-            gt: '{current_time}',
-          },
-        },
+            gt: '{current_time}'
+          }
+        }
       };
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect(
           Number.parseInt((resolvedRules.time as NumberRule<'time'>).options
-            .gt as string),
+            .gt as string)
         ).toBeLessThanOrEqual(new CustomDate().getTime() * 1000);
       });
     });
@@ -377,27 +377,27 @@ describe('Handler Module', function() {
     it(`should resolve rules, leaving values with no relevant placeholders untouched`, function() {
       const data = {
         time: '201810101001',
-        country: 'Ng',
+        country: 'Ng'
       };
       const rules: Rules<'time' | 'country'> = {
         time: {
           type: 'int',
           options: {
-            gt: 2000,
-          },
+            gt: 2000
+          }
         },
         country: {
           type: 'choice',
           options: {
-            choices: ['Ng', 'Fi', 'Pl'],
-          },
-        },
+            choices: ['Ng', 'Fi', 'Pl']
+          }
+        }
       };
       const handler = new Handler(data, null, rules);
       return handler.execute().then(() => {
         const resolvedRules = handler.getResolvedRules();
         expect(
-          (resolvedRules.time as NumberRule<'time' | 'country'>).options.gt,
+          (resolvedRules.time as NumberRule<'time' | 'country'>).options.gt
         ).toEqual(2000);
       });
     });
@@ -409,7 +409,7 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf notChecked rule, making field required if condition is met`, function() {
       const data = {
-        isCurrentWork: 'false',
+        isCurrentWork: 'false'
       };
 
       const rules: Rules<'isCurrentWork' | 'startMonth'> = {
@@ -418,13 +418,13 @@ describe('Handler Module', function() {
         startMonth: {
           type: 'choice',
           options: {
-            choices: months,
+            choices: months
           },
           requiredIf: {
             if: 'notChecked',
-            field: 'isCurrentWork',
-          },
-        },
+            field: 'isCurrentWork'
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -436,7 +436,7 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf checked rule, making field required if condition is met`, function() {
       const data = {
-        subscribe: 'true',
+        subscribe: 'true'
       };
       const rules: Rules<'subscribe' | 'email'> = {
         subscribe: 'checkbox',
@@ -445,9 +445,9 @@ describe('Handler Module', function() {
           type: 'email',
           requiredIf: {
             if: 'checked',
-            field: 'subscribe',
-          },
-        },
+            field: 'subscribe'
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -459,14 +459,14 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf equals rule, making field required if condition is met`, function() {
       const data = {
-        country: 'ng',
+        country: 'ng'
       };
       const rules: Rules<'country' | 'salary'> = {
         country: {
           type: 'choice',
           options: {
-            choices: countries,
-          },
+            choices: countries
+          }
         },
 
         /** tell us your salary demand if you are a nigerian */
@@ -475,9 +475,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'equals',
             field: 'country',
-            value: 'ng',
-          },
-        },
+            value: 'ng'
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -489,14 +489,14 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf notEquals rule, making field required if condition is met`, function() {
       const data = {
-        country: 'pl',
+        country: 'pl'
       };
       const rules: Rules<'country' | 'salary'> = {
         country: {
           type: 'choice',
           options: {
-            choices: countries,
-          },
+            choices: countries
+          }
         },
         /** tell us your salary demand if you are not a nigerian */
         salary: {
@@ -504,9 +504,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'notEquals',
             field: 'country',
-            value: 'ng',
-          },
-        },
+            value: 'ng'
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -518,17 +518,17 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf in rule, making field required if condition is met`, function() {
       const data = {
-        employmentTypes: ['1', '2', '3'],
+        employmentTypes: ['1', '2', '3']
       };
       const rules: Rules<'employmentTypes' | 'salary'> = {
         employmentTypes: {
           type: 'choice',
           filters: {
-            toNumeric: true,
+            toNumeric: true
           },
           options: {
-            choices: [1, 2, 3],
-          },
+            choices: [1, 2, 3]
+          }
         },
 
         /** tell us your salary demand if you are you choose full time employment type */
@@ -537,9 +537,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'in',
             field: 'employmentTypes',
-            value: 1,
-          },
-        },
+            value: 1
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -551,17 +551,17 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf notIn rule, making field not required if condition is met`, function() {
       const data = {
-        employmentTypes: ['1', '3'],
+        employmentTypes: ['1', '3']
       };
       const rules: Rules<'employmentTypes' | 'salary'> = {
         employmentTypes: {
           type: 'choice',
           filters: {
-            toNumeric: true,
+            toNumeric: true
           },
           options: {
-            choices: [1, 2, 3],
-          },
+            choices: [1, 2, 3]
+          }
         },
 
         /** tell us your salary demand if you did not select contract work as your employment type */
@@ -570,9 +570,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'notIn',
             field: 'employmentTypes',
-            value: 2,
-          },
-        },
+            value: 2
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -584,14 +584,14 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf valueIn rule, making field required if condition is met`, function() {
       const data = {
-        jobType: 'full_time',
+        jobType: 'full_time'
       };
       const rules: Rules<'jobType' | 'salary'> = {
         jobType: {
           type: 'choice',
           options: {
-            choices: ['full_time', 'internship', 'contract'],
-          },
+            choices: ['full_time', 'internship', 'contract']
+          }
         },
 
         /** tell us your salary demand if you choose full time employment type or internship */
@@ -600,9 +600,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'valueIn',
             field: 'jobType',
-            values: ['full_time', 'internship'],
-          },
-        },
+            values: ['full_time', 'internship']
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -614,14 +614,14 @@ describe('Handler Module', function() {
 
     it(`should resolve the requiredIf valueNotIn rule, making field required if condition is met`, function() {
       const data = {
-        jobType: 'contract',
+        jobType: 'contract'
       };
       const rules: Rules<'jobType' | 'contractingRate'> = {
         jobType: {
           type: 'choice',
           options: {
-            choices: ['full_time', 'internship', 'contract'],
-          },
+            choices: ['full_time', 'internship', 'contract']
+          }
         },
 
         /** tell us your salary demand if you did not choose full time employment type or internship */
@@ -630,9 +630,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'valueNotIn',
             field: 'jobType',
-            values: ['full_time', 'internship'],
-          },
-        },
+            values: ['full_time', 'internship']
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -647,10 +647,10 @@ describe('Handler Module', function() {
       const data = {
         isCurrentWork: 'true',
         isJobSeeker: 'false',
-        endMonth: '10',
+        endMonth: '10'
       };
       const files = {
-        cv: createFile(),
+        cv: createFile()
       };
       const rules: Rules<
         'isCurrentWork' | 'isJobSeeker' | 'endMonth' | 'cv'
@@ -662,17 +662,17 @@ describe('Handler Module', function() {
         endMonth: {
           requiredIf: {
             if: 'notChecked',
-            field: 'isCurrentWork',
-          },
+            field: 'isCurrentWork'
+          }
         },
 
         cv: {
           type: 'document',
           requiredIf: {
             if: 'checked',
-            field: 'isJobSeeker',
-          },
-        },
+            field: 'isJobSeeker'
+          }
+        }
       };
 
       const handler = new Handler(data, files, rules);
@@ -684,7 +684,7 @@ describe('Handler Module', function() {
     it(`should not drop field value, if drop option is explicitly set as false`, async function() {
       const data = {
         isCurrentWork: 'true',
-        endMonth: '10',
+        endMonth: '10'
       };
       const rules: Rules<'isCurrentWork' | 'endMonth'> = {
         isCurrentWork: 'checkbox',
@@ -694,9 +694,9 @@ describe('Handler Module', function() {
           requiredIf: {
             if: 'notChecked',
             field: 'isCurrentWork',
-            drop: false,
-          },
-        },
+            drop: false
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -710,25 +710,25 @@ describe('Handler Module', function() {
     it(`should convert values to array if array option is true`, async function() {
       const data = {
         languages: 'en',
-        favouriteSports: '',
+        favouriteSports: ''
       };
 
       const files = {
-        cvs: createFile(),
+        cvs: createFile()
       };
 
       const rules: Rules<'languages' | 'favouriteSports' | 'cvs' | 'musics'> = {
         languages: 'text',
         favouriteSports: {
-          required: false,
+          required: false
         },
         cvs: {
-          type: 'document',
+          type: 'document'
         },
         musics: {
           type: 'video',
-          required: false,
-        },
+          required: false
+        }
       };
 
       const handler = new Handler(data, files, rules);
@@ -740,24 +740,24 @@ describe('Handler Module', function() {
         Object.keys(files.cvs).reduce((result, key) => {
           result[key] = makeArray(files.cvs[key]);
           return result;
-        }, {}),
+        }, {})
       );
     });
 
     it(`should flag as error if a non array field recieves array values`, async function() {
       const data = {
-        language: ['en'],
+        language: ['en']
       };
 
       const files = {
-        cv: createFileCollection(),
+        cv: createFileCollection()
       };
 
       const rules: Rules<'language' | 'cv'> = {
         language: 'text',
         cv: {
-          type: 'document',
-        },
+          type: 'document'
+        }
       };
 
       const handler = new Handler(data, files, rules);
@@ -770,12 +770,12 @@ describe('Handler Module', function() {
   describe(`Validate OnDemand Rule Filteration`, function() {
     it(`should filter rules, validating only fields that are sent, whose rules where defined`, function() {
       const files: FilesSource = {
-        cv: createFile(),
+        cv: createFile()
       };
 
       const data: DataSource = {
         firstName: 'Harrison',
-        email: 'example.com',
+        email: 'example.com'
       };
 
       const rules: Rules<
@@ -785,7 +785,7 @@ describe('Handler Module', function() {
         lastName: 'text',
         email: 'email',
         dateOfBirth: 'date',
-        cv: 'document',
+        cv: 'document'
       };
 
       const handler = new Handler(data, files, rules);
@@ -801,11 +801,11 @@ describe('Handler Module', function() {
         firstName: 'text',
         lastName: 'text',
         email: 'email',
-        dateOfBirth: 'date',
+        dateOfBirth: 'date'
       };
 
       const data: DataSource = {
-        email: 'example.com',
+        email: 'example.com'
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -822,11 +822,11 @@ describe('Handler Module', function() {
     it(`should cast data values to boolean if rule type is either checkbox or boolean`, function() {
       const data: DataSource = {
         subscribe: 'false',
-        'roles.isAdmin': '1',
+        'roles.isAdmin': '1'
       };
       const rules: Rules<'subscribe' | 'roles.isAdmin'> = {
         subscribe: 'checkbox',
-        'roles.isAdmin': 'boolean',
+        'roles.isAdmin': 'boolean'
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -843,21 +843,21 @@ describe('Handler Module', function() {
       const data: DataSource = {
         name1: encodedName,
         name2: encodedName,
-        name3: encodedName,
+        name3: encodedName
       };
 
       const rules: Rules<'name1' | 'name2' | 'name3'> = {
         name1: 'text',
         name2: {
           filters: {
-            decode: true,
-          },
+            decode: true
+          }
         },
         name3: {
           filters: {
-            decode: false,
-          },
-        },
+            decode: false
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -875,21 +875,21 @@ describe('Handler Module', function() {
       const data: DataSource = {
         text1: text,
         text2: text,
-        text3: text,
+        text3: text
       };
 
       const rules: Rules<'text1' | 'text2' | 'text3'> = {
         text1: 'text',
         text2: {
           filters: {
-            stripTags: true,
-          },
+            stripTags: true
+          }
         },
         text3: {
           filters: {
-            stripTags: false,
-          },
-        },
+            stripTags: false
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -905,16 +905,16 @@ describe('Handler Module', function() {
       const text = `<p><i>${name}</i><br></p>`;
 
       const data: DataSource = {
-        text1: text,
+        text1: text
       };
 
       const rules: Rules<'text1'> = {
         text1: {
           filters: {
             stripTags: true,
-            stripTagsIgnore: 'p,<br>',
-          },
-        },
+            stripTagsIgnore: 'p,<br>'
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -928,21 +928,21 @@ describe('Handler Module', function() {
             which starts here`;
 
       const data: DataSource = {
-        text1: text,
+        text1: text
       };
 
       const rules: Rules<'text1'> = {
         text1: {
           filters: {
-            minimize: true,
-          },
-        },
+            minimize: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
       return handler.execute(true).then(() => {
         expect(handler.data.text1).toStrictEqual(
-          `This text enters new line which starts here`,
+          `This text enters new line which starts here`
         );
       });
     });
@@ -952,16 +952,16 @@ describe('Handler Module', function() {
 
       const data: DataSource = {
         text1: text,
-        text2: text,
+        text2: text
       };
 
       const rules: Rules<'text1' | 'text2'> = {
         text1: 'text',
         text2: {
           filters: {
-            trim: false,
-          },
-        },
+            trim: false
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -978,20 +978,20 @@ describe('Handler Module', function() {
 
       const data: DataSource = {
         num1: numericText,
-        num2: nonNumericText,
+        num2: nonNumericText
       };
 
       const rules = {
         num1: {
           filters: {
-            toNumeric: true,
-          },
+            toNumeric: true
+          }
         },
         num2: {
           filters: {
-            toNumeric: true,
-          },
-        },
+            toNumeric: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1005,21 +1005,21 @@ describe('Handler Module', function() {
       const names = ['jack', 'jane', 'janet', 'julius'];
 
       const data: DataSource = {
-        names,
+        names
       };
 
       const rules: Rules<'names'> = {
         names: {
           filters: {
-            uppercase: true,
-          },
-        },
+            uppercase: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
       return handler.execute(true).then(() => {
         expect(handler.data.names).toEqual(
-          names.map(name => name.toUpperCase()),
+          names.map(name => name.toUpperCase())
         );
       });
     });
@@ -1028,15 +1028,15 @@ describe('Handler Module', function() {
       const names = ['jack', 'jane', 'janet', 'julius'];
 
       const data: DataSource = {
-        names: names.map(name => name.toUpperCase()),
+        names: names.map(name => name.toUpperCase())
       };
 
       const rules: Rules<'names'> = {
         names: {
           filters: {
-            lowercase: true,
-          },
-        },
+            lowercase: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1049,15 +1049,15 @@ describe('Handler Module', function() {
       const names = ['jack', 'jane', 'janet', 'julius'];
 
       const data: DataSource = {
-        names: names.map(name => name.toUpperCase()),
+        names: names.map(name => name.toUpperCase())
       };
 
       const rules: Rules<'names'> = {
         names: {
           filters: {
-            capitalize: true,
-          },
-        },
+            capitalize: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1068,15 +1068,15 @@ describe('Handler Module', function() {
 
     it(`should titleize values if the titleize filter option is explicitly set to true, or if field type is title`, function() {
       const data: DataSource = {
-        name: 'react js',
+        name: 'react js'
       };
 
       const rules: Rules<'name'> = {
         name: {
           filters: {
-            titleize: true,
-          },
-        },
+            titleize: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1087,15 +1087,15 @@ describe('Handler Module', function() {
 
     it(`should pluralize values if the pluralize filter option is explicitly set to true`, function() {
       const data: DataSource = {
-        name: 'shoe',
+        name: 'shoe'
       };
 
       const rules: Rules<'name'> = {
         name: {
           filters: {
-            pluralize: true,
-          },
-        },
+            pluralize: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1106,15 +1106,15 @@ describe('Handler Module', function() {
 
     it(`should singularize values if the singularize filter option is explicitly set to true`, function() {
       const data: DataSource = {
-        name: 'wives',
+        name: 'wives'
       };
 
       const rules: Rules<'name'> = {
         name: {
           filters: {
-            singularize: true,
-          },
-        },
+            singularize: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1125,15 +1125,15 @@ describe('Handler Module', function() {
 
     it(`should ordinalize values if the ordinalize filter option is explicitly set to true`, function() {
       const data: DataSource = {
-        name: '1',
+        name: '1'
       };
 
       const rules: Rules<'name'> = {
         name: {
           filters: {
-            ordinalize: true,
-          },
-        },
+            ordinalize: true
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1146,11 +1146,11 @@ describe('Handler Module', function() {
       const email = '(someone@example.com)';
 
       const data: DataSource = {
-        email,
+        email
       };
 
       const rules: Rules<'email'> = {
-        email: 'email',
+        email: 'email'
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1163,11 +1163,11 @@ describe('Handler Module', function() {
       const url = 'http://www.example<>.com';
 
       const data: DataSource = {
-        url,
+        url
       };
 
       const rules: Rules<'url'> = {
-        url: 'url',
+        url: 'url'
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1185,14 +1185,14 @@ describe('Handler Module', function() {
         num1: numericValue,
         num2: numericValue,
         num3: numericValue,
-        num4: nonNumericValue,
+        num4: nonNumericValue
       };
 
       const rules: Rules<'num1' | 'num2' | 'num3' | 'num4'> = {
         num1: 'int',
         num2: 'pInt',
         num3: 'nInt',
-        num4: 'int',
+        num4: 'int'
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1213,14 +1213,14 @@ describe('Handler Module', function() {
         num1: numericValue,
         num2: numericValue,
         num3: numericValue,
-        num4: nonNumericValue,
+        num4: nonNumericValue
       };
 
       const rules: Rules<'num1' | 'num2' | 'num3' | 'num4'> = {
         num1: 'number',
         num2: 'pNumber',
         num3: 'nNumber',
-        num4: 'number',
+        num4: 'number'
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1237,15 +1237,15 @@ describe('Handler Module', function() {
       const callback = jest.fn(value => value.toUpperCase());
 
       const data: DataSource = {
-        text: 'abcd',
+        text: 'abcd'
       };
 
       const rules: Rules<'text'> = {
         text: {
           filters: {
-            callback,
-          },
-        },
+            callback
+          }
+        }
       };
 
       const handler = new Handler(data, undefined, rules);
@@ -1261,7 +1261,7 @@ describe('Handler Module', function() {
       const data = {
         languages: [],
         firstName: '',
-        email: 'someone@example.com',
+        email: 'someone@example.com'
       };
 
       const files: FilesSource = {};
@@ -1270,7 +1270,7 @@ describe('Handler Module', function() {
         languages: 'text',
         firstName: 'text',
         email: 'email',
-        image: 'image',
+        image: 'image'
       };
 
       const handler = new Handler(data, files, rules);
@@ -1289,7 +1289,7 @@ describe('Handler Module', function() {
       const data = {
         phoneNumber: '+2348132083437',
         languages: ['fr', 'en-US', 'en-UK'],
-        firstName: '',
+        firstName: ''
       };
 
       const files: FilesSource = {};
@@ -1300,12 +1300,12 @@ describe('Handler Module', function() {
         languages: 'text',
         phoneNumber: 'phoneNumber',
         firstName: {
-          required: false,
+          required: false
         },
         image: {
           type: 'image',
-          required: false,
-        },
+          required: false
+        }
       };
 
       const handler = new Handler(data, files, rules);
@@ -1320,29 +1320,29 @@ describe('Handler Module', function() {
         given`, function() {
       const data = {
         languages: [],
-        firstName: '',
+        firstName: ''
       };
 
       const files: FilesSource = {
         cv: createFile(),
-        cvs: createFileCollection(),
+        cvs: createFileCollection()
       };
 
       const rules: Rules<'languages' | 'firstName' | 'image' | 'cv' | 'cvs'> = {
         languages: {
-          defaultValue: ['english'],
+          defaultValue: ['english']
         },
         firstName: {
-          defaultValue: 'Mustermann',
+          defaultValue: 'Mustermann'
         },
         image: {
           type: 'document',
-          defaultValue: createFile(),
+          defaultValue: createFile()
         },
         cv: 'document',
         cvs: {
-          type: 'document',
-        },
+          type: 'document'
+        }
       };
 
       const handler = new Handler(data, files, rules);
@@ -1366,7 +1366,7 @@ describe('Handler Module', function() {
     it(`should carry out database checks on fields if all validations succeeds`, async function() {
       handler.setDataSource({
         firstName: 'Harrison',
-        email: 'someone30@example.com',
+        email: 'someone30@example.com'
       });
 
       handler.setRules({
@@ -1374,16 +1374,16 @@ describe('Handler Module', function() {
           checks: {
             if: 'exists',
             model: NoSqlUser,
-            err: '{this} already exists',
-          },
+            err: '{this} already exists'
+          }
         },
         email: {
           checks: {
             if: 'exists',
             model: NoSqlUser,
-            err: 'email address already exists',
-          },
-        },
+            err: 'email address already exists'
+          }
+        }
       });
 
       return handler.execute().then(status => {
@@ -1396,7 +1396,7 @@ describe('Handler Module', function() {
         in the field name, field value and field index`, async function() {
       handler.setDataSource({
         firstName: 'Harrison',
-        email: 'someone30@example.com',
+        email: 'someone30@example.com'
       });
 
       const callback = jest.fn(async () => true);
@@ -1404,15 +1404,15 @@ describe('Handler Module', function() {
         firstName: {
           checks: {
             if: 'exists',
-            callback,
-          },
+            callback
+          }
         },
         email: {
           checks: {
             if: 'exists',
-            callback: async () => false,
-          },
-        },
+            callback: async () => false
+          }
+        }
       });
 
       return handler.execute().then(status => {
@@ -1428,21 +1428,21 @@ describe('Handler Module', function() {
             second parameter. It should validate as true if the async callback resolves to true`, function() {
         const dataSource: DataSource = {
           firstName: 'Harrison',
-          email: 'someone@example.com',
+          email: 'someone@example.com'
         };
         const rules: Rules<'firstName' | 'email'> = {
           firstName: {
             postValidate: jest.fn((value, data) => {
               return Promise.resolve(value === data.email ? true : 'error');
-            }),
+            })
           },
           email: {
             type: 'email',
 
             postValidate: jest.fn((value, data) => {
               return Promise.resolve(value === data.email ? true : 'error');
-            }),
-          },
+            })
+          }
         };
         const handler = new Handler(dataSource, {}, rules);
         return handler.execute().then(() => {
@@ -1458,22 +1458,22 @@ describe('Handler Module', function() {
         const dataSource: DataSource = {
           phoneNumber: '08132083437',
           firstName: 'Harrison',
-          email: 'someone@example.com',
+          email: 'someone@example.com'
         };
         const rules: Rules<'firstName' | 'email' | 'phoneNumber'> = {
           firstName: 'text',
           phoneNumber: {
             type: 'phoneNumber',
             options: {
-              country: 'ng',
+              country: 'ng'
             },
-            postCompute: jest.fn((value: DataValue) => value),
+            postCompute: jest.fn((value: DataValue) => value)
           },
           email: {
             postCompute: jest.fn((value: DataValue) =>
-              Promise.resolve(value.toString().toUpperCase()),
-            ),
-          },
+              Promise.resolve(value.toString().toUpperCase())
+            )
+          }
         };
         const handler = new Handler(dataSource, {}, rules);
         return handler.execute().then(() => {
