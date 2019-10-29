@@ -45,7 +45,7 @@
     "rollup-plugin-uglify": "6.0.2",
     "semantic-release": "^15.13.24",
     "semantic-release-cli": "5.2.1",
-    "sequelize": "5.8.7",
+    "sequelize": "5.15.1",
     "typescript": "3.3.3333"
   },
   "config": {
