@@ -1417,7 +1417,7 @@ describe('Handler Module', function() {
 
       return handler.execute().then(status => {
         expect(status).toBeFalsy();
-        expect(handler.errors.firstName).toEqual('condition not satisfied');
+        expect(handler.errors.email).toEqual('condition not satisfied');
       });
     });
   });
