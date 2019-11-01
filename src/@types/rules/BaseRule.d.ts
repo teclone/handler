@@ -1,7 +1,26 @@
-import { DataValue, RequiredIf, Filters, DBCheck, DataType, Data } from '..';
+import { DataValue, RequiredIf, Filters, DataType, Data } from '..';
 import Handler from '../../Handler';
 
 export type SuccessOrErrorMessage = boolean | string;
+
+export type DBCheckType = 'exists' | 'notExists';
+
+export interface ModelDBCheck {
+  if: DBCheckType;
+  model: object;
+  field?: string;
+  query?: object;
+  err?: string;
+}
+
+export type DBCheckCallback<F extends string> = (
+  value: DataValue,
+  index: number,
+  data: Data<F>,
+  handler: Handler<F>
+) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
+
+export type DBCheck<F extends string> = DBCheckCallback<F> | ModelDBCheck;
 
 export interface ShouldMatchObject<F extends string> {
   /**

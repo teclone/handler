@@ -2,14 +2,14 @@ import { expandProperty, applyCase } from '@forensic-js/utils';
 import Handler from './Handler';
 import { Data } from './@types';
 
-export default class Model<F extends string = string, Exports = Data<F>> {
+export default class Model<F extends string = string> {
   private handler: Handler<F>;
 
   private fieldsToSkip: string[] = [];
 
   private fieldsToRename: { [old: string]: string } = {};
 
-  constructor(handler: Handler<F, Exports>) {
+  constructor(handler: Handler<F>) {
     this.handler = handler;
   }
 
@@ -37,7 +37,9 @@ export default class Model<F extends string = string, Exports = Data<F>> {
    * @param fields object of field old name to new name value pairs
    */
   renameFields(fields: { [oldName: string]: string }) {
-    Object.keys(fields).forEach(oldName => (this.fieldsToRename[oldName] = fields[oldName]));
+    Object.keys(fields).forEach(
+      oldName => (this.fieldsToRename[oldName] = fields[oldName])
+    );
     return this;
   }
 
@@ -46,7 +48,10 @@ export default class Model<F extends string = string, Exports = Data<F>> {
    * @param target model to export data to
    * @param expandProperties boolean indicating if properties should be expanding
    */
-  export<T extends object>(target: T = {} as T, expandProperties: boolean = true): T & Exports {
+  export<T extends object>(
+    target: T = {} as T,
+    expandProperties: boolean = true
+  ): T & Data<F> {
     const { handler, fieldsToSkip, fieldsToRename } = this;
     Object.keys(handler.data).forEach(field => {
       if (!fieldsToSkip.includes(field)) {
@@ -54,12 +59,18 @@ export default class Model<F extends string = string, Exports = Data<F>> {
         const value = handler.data[field];
 
         if (expandProperties) {
-          expandProperty(target, newName, value, undefined, handler.getDBCaseStyle());
+          expandProperty(
+            target,
+            newName,
+            value,
+            undefined,
+            handler.getDBCaseStyle()
+          );
         } else {
           target[applyCase(newName, handler.getDBCaseStyle())] = value;
         }
       }
     });
-    return target as T & Exports;
+    return target as T & Data<F>;
   }
 }

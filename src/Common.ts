@@ -1,7 +1,8 @@
-import { ErrorBag, DBCheck, Options } from './@types';
+import { ErrorBag, Options } from './@types';
 import { isNumeric } from '@forensic-js/utils';
 import { replaceCallback } from '@forensic-js/regex';
 import StateException from './Exceptions/StateException';
+import { DBCheck } from './@types/rules/BaseRule';
 
 export default class Common<F extends string = string> {
   protected errors: ErrorBag<F> = {} as ErrorBag<F>;

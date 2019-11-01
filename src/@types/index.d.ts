@@ -22,7 +22,11 @@ import {
 } from './rules/NumberRules';
 import RangeRule, { RangeOptions } from './rules/RangeRule';
 import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
-import BaseRule, { BaseOptions, SuccessOrErrorMessage } from './rules/BaseRule';
+import BaseRule, {
+  BaseOptions,
+  SuccessOrErrorMessage,
+  DBCheck
+} from './rules/BaseRule';
 import {
   FileRule,
   ImageFileRule,
@@ -107,8 +111,6 @@ export type DataType =
   | 'document'
   | 'archive';
 
-export type DBCheckType = 'exists' | 'notExists';
-
 export type RequiredIf<F extends string> =
   | {
       if: 'checked' | 'notChecked';
@@ -167,25 +169,6 @@ export type Options<F extends string> =
   | FileOptions<F>
   | PhoneNumberOptions<F>
   | PasswordOptions<F>;
-
-export interface ModelDBCheck {
-  if: DBCheckType;
-  model: object;
-  field?: string;
-  query?: object;
-  err?: string;
-}
-export interface CallbackDBCheck<F extends string> {
-  if: DBCheckType;
-  callback: (
-    value: DataValue,
-    index: number,
-    data: Data<F>,
-    handler: Handler<F>
-  ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
-  err?: string;
-}
-export type DBCheck<F extends string> = CallbackDBCheck<F> | ModelDBCheck;
 
 export type Rule<F extends string> =
   | BooleanRule<F>

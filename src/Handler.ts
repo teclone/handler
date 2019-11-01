@@ -12,10 +12,6 @@ import {
   Options,
   ErrorBag,
   RequiredIf,
-  DBCheck,
-  CallbackDBCheck,
-  ModelDBCheck,
-  DBCheckType,
   Data
 } from './@types';
 import { DB_MODELS } from './Constants';
@@ -65,13 +61,14 @@ import {
   ordinalize,
   capitalize
 } from 'inflection';
+import { DBCheckType, DBCheck, ModelDBCheck } from './@types/rules/BaseRule';
 
 const globalConfig = {
   dbModel: DB_MODELS.NOSQL,
   dbCaseStyle: CASE_STYLES.CAMEL_CASE
 };
 
-export default class Handler<F extends string = string, Exports = Data<F>> {
+export default class Handler<F extends string = string> {
   /**
    * supported database models
    */
@@ -317,13 +314,8 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
     index: number
   ) {
     for (const check of checks) {
-      if (isTypeOf<CallbackDBCheck<F>>('callback', check)) {
-        const result = await check.callback(
-          value,
-          index,
-          this.data,
-          this as any
-        );
+      if (isCallable(check)) {
+        const result = await check(value, index, this.data, this);
         if (result !== true) {
           return this.setError(
             field,
@@ -339,7 +331,7 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
           required,
           field,
           value,
-          check as ModelDBCheck,
+          check,
           index
         );
         if (this.dbChecker.fails()) {
@@ -1239,8 +1231,8 @@ export default class Handler<F extends string = string, Exports = Data<F>> {
   /**
    * creates and returns a model instance, that can be exported
    */
-  model(): Model<F, Exports> {
-    return new Model<F, Exports>(this);
+  model(): Model<F> {
+    return new Model<F>(this);
   }
 
   /**

@@ -1402,16 +1402,10 @@ describe('Handler Module', function() {
       const callback = jest.fn(async () => true);
       handler.setRules({
         firstName: {
-          checks: {
-            if: 'exists',
-            callback
-          }
+          checks: callback
         },
         email: {
-          checks: {
-            if: 'exists',
-            callback: async () => false
-          }
+          checks: async () => false
         }
       });
 
