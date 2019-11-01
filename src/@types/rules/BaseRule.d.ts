@@ -13,14 +13,16 @@ export interface ModelDBCheck {
   err?: string;
 }
 
-export type DBCheckCallback<F extends string> = (
-  value: DataValue,
-  index: number,
-  data: Data<F>,
-  handler: Handler<F>
-) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
+// export type DBCheckCallback<F extends string, N extends Handler<F>> = (
+//   value: DataValue,
+//   index: number,
+//   data: Data<F>,
+//   handler: N
+// ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 
-export type DBCheck<F extends string> = DBCheckCallback<F> | ModelDBCheck;
+// export type DBCheck<F extends string, N extends Handler<F>> =
+//   | DBCheckCallback<F, N>
+//   | ModelDBCheck;
 
 export interface ShouldMatchObject<F extends string> {
   /**
@@ -87,7 +89,23 @@ export default interface BaseRule<F extends string> {
   /**
    * defines a list of database integrity checks to perform on the field value(s)
    */
-  checks?: DBCheck<F> | DBCheck<F>[];
+  checks?:
+    | (<N extends Handler<F> = Handler<F>>(
+        value: DataValue,
+        index: number,
+        data: Data<F>,
+        handler: N
+      ) => Promise<DataValue> | DataValue)
+    | ModelDBCheck
+    | Array<
+        | (<N extends Handler<F> = Handler<F>>(
+            value: DataValue,
+            index: number,
+            data: Data<F>,
+            handler: N
+          ) => Promise<DataValue> | DataValue)
+        | ModelDBCheck
+      >;
 
   /**
    * computes and return a new value for the field. it accepts two arguments

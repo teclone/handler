@@ -2,7 +2,7 @@ import { ErrorBag, Options } from './@types';
 import { isNumeric } from '@forensic-js/utils';
 import { replaceCallback } from '@forensic-js/regex';
 import StateException from './Exceptions/StateException';
-import { DBCheck } from './@types/rules/BaseRule';
+import { ModelDBCheck } from './@types/rules/BaseRule';
 
 export default class Common<F extends string = string> {
   protected errors: ErrorBag<F> = {} as ErrorBag<F>;
@@ -11,7 +11,7 @@ export default class Common<F extends string = string> {
 
   protected field: string = '';
 
-  protected options: Options<F> | DBCheck<F> = {};
+  protected options: Options<F> | ModelDBCheck = {};
 
   protected index: number = 0;
 
@@ -24,7 +24,11 @@ export default class Common<F extends string = string> {
    * @param options validation options
    * @param index field value index
    */
-  reset(field: string, options: Options<F> | DBCheck<F>, index: number): this {
+  reset(
+    field: string,
+    options: Options<F> | ModelDBCheck,
+    index: number
+  ): this {
     this.field = field;
     this.options = options;
     this.index = index;

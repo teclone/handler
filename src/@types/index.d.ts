@@ -25,7 +25,7 @@ import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
 import BaseRule, {
   BaseOptions,
   SuccessOrErrorMessage,
-  DBCheck
+  ModelDBCheck
 } from './rules/BaseRule';
 import {
   FileRule,
@@ -216,7 +216,19 @@ export interface ResolvedRule<F extends string> {
 
   filters: Filters;
 
-  checks: DBCheck<F>[];
+  /**
+   * defines a list of database integrity checks to perform on the field value(s)
+   */
+  // note: this should be left as it to avoid typescript complaints
+  checks: Array<
+    | (<N extends Handler<F> = Handler<F>>(
+        value: DataValue,
+        index: number,
+        data: Data<F>,
+        handler: N
+      ) => Promise<DataValue> | DataValue)
+    | ModelDBCheck
+  >;
 
   /**
    * computes and return a new value for the field. it accepts two arguments

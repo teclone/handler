@@ -61,7 +61,7 @@ import {
   ordinalize,
   capitalize
 } from 'inflection';
-import { DBCheckType, DBCheck, ModelDBCheck } from './@types/rules/BaseRule';
+import { DBCheckType, ModelDBCheck } from './@types/rules/BaseRule';
 
 const globalConfig = {
   dbModel: DB_MODELS.NOSQL,
@@ -310,9 +310,10 @@ export default class Handler<F extends string = string> {
     required: boolean,
     field: string,
     value: DataValue,
-    checks: DBCheck<F>[],
+    rules: ResolvedRule<F>,
     index: number
   ) {
+    const { checks } = rules;
     for (const check of checks) {
       if (isCallable(check)) {
         const result = await check(value, index, this.data, this);
@@ -350,7 +351,9 @@ export default class Handler<F extends string = string> {
    */
   private async validateDBChecks(fields: string[], required: boolean) {
     for (const field of fields) {
-      const { checks, type } = this.resolvedRules[field] as ResolvedRule<F>;
+      const rules = this.resolvedRules[field] as ResolvedRule<F>;
+      const { checks, type } = rules;
+
       if (checks.length > 0) {
         const values = makeArray<DataValue>(this.data[field]);
 
@@ -363,7 +366,7 @@ export default class Handler<F extends string = string> {
             required,
             field,
             value === null ? '' : value.toString(),
-            checks,
+            rules,
             i
           );
         }
@@ -942,7 +945,7 @@ export default class Handler<F extends string = string> {
       requiredIf: pickValue('requiredIf', rule, undefined),
       options: pickObject('options', rule),
       filters: pickObject('filters', rule),
-      checks: makeArray(rule.checks as DBCheck<F>[]),
+      checks: rule.checks ? makeArray(rule.checks) : [],
       postCompute: pickValue('postCompute', rule, undefined),
       postValidate: pickValue('postValidate', rule, undefined)
     };
