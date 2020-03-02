@@ -2,6 +2,9 @@
   "name": "@teclone/handler",
   "version": "0.0.0-development",
   "description": "A module that sits independently between the controller and the model, performing request data validation, serialization and integrity checks",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "lib/Handler",
   "typings": "lib/Handler",
   "scripts": {
