@@ -1,10 +1,10 @@
 # Handler
 
-[![Build Status](https://travis-ci.org/harrison-ifeanyichukwu/forensic-handler.svg?branch=master)](https://travis-ci.org/harrison-ifeanyichukwu/forensic-handler)
-[![Coverage Status](https://coveralls.io/repos/github/harrison-ifeanyichukwu/forensic-handler/badge.svg?branch=master)](https://coveralls.io/github/harrison-ifeanyichukwu/forensic-handler?branch=master)
+[![Build Status](https://travis-ci.org/teclone/handler.svg?branch=master)](https://travis-ci.org/teclone/handler)
+[![Coverage Status](https://coveralls.io/repos/github/teclone/handler/badge.svg?branch=master)](https://coveralls.io/github/teclone/handler?branch=master)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![npm version](https://badge.fury.io/js/forensic-handler.svg)](https://badge.fury.io/js/forensic-handler)
-![npm](https://img.shields.io/npm/dt/forensic-handler.svg)
+[![npm version](https://badge.fury.io/js/%40teclone%2Fhandler.svg)](https://badge.fury.io/js/%40teclone%2Fhandler)
+![npm](https://img.shields.io/npm/dt/%40teclone%2Fhandler.svg)
 
 **Handler** is a **NodeJS** package that sits independently between the controller and the model, and asynchronously performs request data validation, serialization and database integrity checks. It has excellent error reporting with wide range of validation rules. It can be used with **relational and non-relational databases/ORMs**.
 
@@ -77,7 +77,7 @@ It is also extensible, customizable so that you can define more custom validatio
 **Install via npm**:
 
 ```bash
-npm install --save forensic-handler
+npm install --save handler
 ```
 
 ## Development & Testing
@@ -93,8 +93,8 @@ before working with development version of this project and running test, you ne
 **The Handler**:
 
 ```typescript
-import Server from 'r-server'; // import rserver
-import Handler from 'forensic-handler';
+import Server from '@teclone/r-server'; // import rserver
+import Handler from '@teclone/handler';
 import UserModel from './models/UserModel'; //import model
 import bcrypt from 'bcrypt';
 
@@ -145,7 +145,7 @@ app.post('/signup', async (req, res) => {
         status: 'failed',
         errors: handler.errors,
       },
-      400
+      400,
     );
   }
 });
@@ -582,8 +582,8 @@ const rules = {
 You can define an absolute path to move the file to using the **moveTo** option. The file will be moved to the given location, with a hashed name computed for it. The hashed name is stored in the data property keyed in by the field name.
 
 ```typescript
-import Server from 'r-server'; // import rserver
-import Handler from 'forensic-handler';
+import Server from '@teclone/r-server'; // import rserver
+import Handler from '@teclone/handler';
 import UserModel from './models/UserModel'; //import model
 import * as path from 'path';
 
@@ -714,7 +714,7 @@ const rules = {
 
 ## Dealing With Multi-Value Fields and Files
 
-The handler can process multi-value fields and file fields. The field values are stored inside arrays after processing. Checkout [RServer](https://github.com/harrison-ifeanyichukwu/r-server) for multi-field value and files handling.
+The handler can process multi-value fields and file fields. The field values are stored inside arrays after processing. Checkout [RServer](https://github.com/teclone/r-server) for multi-field value and files handling.
 
 ## Specifying Accepted File Extensions
 
@@ -844,8 +844,8 @@ When working in **NoSql** databases, there is always the need to expand data dur
 The `export` method of the **Model** module has this feature inbuilt. It will expand field data following the dot notation convention if the `expandProperties` argument is set as true (the default value).
 
 ```typescript
-import Server from 'r-server'; // import rserver
-import Handler from 'forensic-handler';
+import Server from '@teclone/r-server'; // import rserver
+import Handler from '@teclone/handler';
 import UserModel from './models/UserModel'; //import model
 import bcrypt from 'bcrypt';
 

@@ -8,11 +8,11 @@ import {
   sqlConnect,
   sqlPopulate,
   sqlDepopulate,
-  sqlDisconnect
+  sqlDisconnect,
 } from './helpers';
 import NoSqlUser from './helpers/nosql/models/User';
 import SqlUser from './helpers/sql/models/User';
-import { CASE_STYLES } from '@forensic-js/utils';
+import { CASE_STYLES } from '@teclone/utils';
 
 describe('DBChecker', function() {
   let dbChecker: DBChecker = null;
@@ -54,9 +54,7 @@ describe('DBChecker', function() {
 
   describe('#setDBCaseStyle(dbModelCaseStyle: number)', function() {
     it(`should set the database model case style in use and return this`, function() {
-      expect(dbChecker.setDBCaseStyle(CASE_STYLES.CAMEL_CASE)).toStrictEqual(
-        dbChecker
-      );
+      expect(dbChecker.setDBCaseStyle(CASE_STYLES.CAMEL_CASE)).toStrictEqual(dbChecker);
     });
   });
 
@@ -71,9 +69,9 @@ describe('DBChecker', function() {
           'someone@example.com',
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -92,10 +90,10 @@ describe('DBChecker', function() {
             if: 'exists',
             model: SqlUser,
             query: {
-              email: 'someone@example.com'
-            }
+              email: 'someone@example.com',
+            },
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -112,9 +110,9 @@ describe('DBChecker', function() {
           {
             if: 'exists',
             model: NoSqlUser,
-            field: 'email'
+            field: 'email',
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -130,9 +128,9 @@ describe('DBChecker', function() {
           'someone@example.com',
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -148,9 +146,9 @@ describe('DBChecker', function() {
           noSqlDocumentId,
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -166,9 +164,9 @@ describe('DBChecker', function() {
           'someone1@example.com',
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeTruthy();
@@ -185,9 +183,9 @@ describe('DBChecker', function() {
           'someone1@example.com',
           {
             if: 'exists',
-            model: SqlUser
+            model: SqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeTruthy();
@@ -203,9 +201,9 @@ describe('DBChecker', function() {
           '',
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeTruthy();
@@ -226,10 +224,10 @@ describe('DBChecker', function() {
             if: 'notExists',
             model: NoSqlUser,
             query: {
-              email: 'someone1@example.com'
-            }
+              email: 'someone1@example.com',
+            },
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -245,9 +243,9 @@ describe('DBChecker', function() {
           'someone@example.com',
           {
             if: 'notExists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeTruthy();
@@ -263,9 +261,9 @@ describe('DBChecker', function() {
           '',
           {
             if: 'notExists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeTruthy();
@@ -283,9 +281,9 @@ describe('DBChecker', function() {
           'Ifeanyichukwu',
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeFalsy();
@@ -302,9 +300,9 @@ describe('DBChecker', function() {
           'Ifeanyichukwu',
           {
             if: 'exists',
-            model: NoSqlUser
+            model: NoSqlUser,
           },
-          0
+          0,
         )
         .then(succeeds => {
           expect(succeeds).toBeTruthy();

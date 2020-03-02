@@ -13,7 +13,7 @@ import {
   isObject,
   isRegex,
   isCallable,
-} from '@forensic-js/utils';
+} from '@teclone/utils';
 import {
   DATE_FORMAT,
   URL_SCHEMES,
@@ -39,7 +39,7 @@ import * as path from 'path';
 import FileException from './Exceptions/FileException';
 import { parsePhoneNumber, CountryCode } from 'libphonenumber-js';
 import { SuccessOrErrorMessage } from './@types/rules/BaseRule';
-import { FileEntry } from 'r-server/lib/typings/@types';
+import { FileEntry } from '@teclone/r-server/lib/@types';
 
 export default class Validator<F extends string = string> extends Common<F> {
   private phoneNumberErrors = {
@@ -126,7 +126,10 @@ export default class Validator<F extends string = string> extends Common<F> {
   protected regexCheckAny(value: string, options: TextOptions<F>) {
     if (this.succeeds() && options.regexAny) {
       if (!options.regexAny.patterns.some(pattern => pattern.test(value))) {
-        this.setError(pickValue('err', options.regexAny, '{this} is not a valid {_this}'), value);
+        this.setError(
+          pickValue('err', options.regexAny, '{this} is not a valid {_this}'),
+          value,
+        );
       }
     }
     return this.succeeds();
@@ -208,7 +211,8 @@ export default class Validator<F extends string = string> extends Common<F> {
         constructedMessage = prefix + template + ' ' + value;
         break;
       case 'file':
-        constructedMessage = prefix + template + ' ' + convertToMemoryUnit(value as number);
+        constructedMessage =
+          prefix + template + ' ' + convertToMemoryUnit(value as number);
         break;
     }
 
@@ -387,7 +391,7 @@ export default class Validator<F extends string = string> extends Common<F> {
             pattern: new RegExp(
               '@[a-z0-9](?:[-a-z0-9]*[a-z0-9])?' + //match first label
               '(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*' + //followed by one or more labels
-              '(\\.[a-z]{2,4})$', //then must have a top level domain
+                '(\\.[a-z]{2,4})$', //then must have a top level domain
               'i',
             ),
             err,
@@ -447,7 +451,7 @@ export default class Validator<F extends string = string> extends Common<F> {
             '(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*' + // followed by one or more labels
             '(\\.[a-z]{2,4})' + //then must have a top level domain
             '(?:\\:\\d{1,4})?' + //match optional port number
-            '(?:[#/?][-\\w()/#~:.?+=&%@]*)?$', //match optional part, hash, query
+              '(?:[#/?][-\\w()/#~:.?+=&%@]*)?$', //match optional part, hash, query
             'i',
           ),
           err,
@@ -503,7 +507,14 @@ export default class Validator<F extends string = string> extends Common<F> {
         this.setError(this.phoneNumberErrors[ex.message], value);
       }
 
-      this.checkLimitingRules(value, value.length, options, 'character', undefined, 'Phone number');
+      this.checkLimitingRules(
+        value,
+        value.length,
+        options,
+        'character',
+        undefined,
+        'Phone number',
+      );
       this.checkRegexRules(value, options);
     }
 
@@ -557,7 +568,14 @@ export default class Validator<F extends string = string> extends Common<F> {
         this.checkRegexRules(value, internalOptions);
       }
 
-      this.checkLimitingRules(value, value.length, options, 'character', undefined, 'Password');
+      this.checkLimitingRules(
+        value,
+        value.length,
+        options,
+        'character',
+        undefined,
+        'Password',
+      );
       this.checkRegexRules(value, options);
     }
 
@@ -643,7 +661,10 @@ export default class Validator<F extends string = string> extends Common<F> {
       if (/^[+]?\d+$/.test(value)) {
         this.checkLimitingRules(value, parseInt(value), options, 'number');
       } else {
-        this.setError(pickValue('err', options, '{this} is not a valid positive integer'), value);
+        this.setError(
+          pickValue('err', options, '{this} is not a valid positive integer'),
+          value,
+        );
       }
     }
     return this.postValidate(value, options);
@@ -669,7 +690,10 @@ export default class Validator<F extends string = string> extends Common<F> {
       if (/^-\d+$/.test(value)) {
         this.checkLimitingRules(value, parseInt(value), options, 'number');
       } else {
-        this.setError(pickValue('err', options, '{this} is not a valid negative integer'), value);
+        this.setError(
+          pickValue('err', options, '{this} is not a valid negative integer'),
+          value,
+        );
       }
     }
     return this.postValidate(value, options);
@@ -721,7 +745,10 @@ export default class Validator<F extends string = string> extends Common<F> {
       if (/^(?:[+]?\d+(\.\d+)?|\.\d+)$/.test(value)) {
         this.checkLimitingRules(value, parseFloat(value), options, 'number');
       } else {
-        this.setError(pickValue('err', options, '{this} is not a valid positive number'), value);
+        this.setError(
+          pickValue('err', options, '{this} is not a valid positive number'),
+          value,
+        );
       }
     }
     return this.postValidate(value, options);
@@ -747,7 +774,10 @@ export default class Validator<F extends string = string> extends Common<F> {
       if (/^(?:[-]\d+(\.\d+)?|\.\d+)$/.test(value)) {
         this.checkLimitingRules(value, parseFloat(value), options, 'number');
       } else {
-        this.setError(pickValue('err', options, '{this} is not a valid negative number'), value);
+        this.setError(
+          pickValue('err', options, '{this} is not a valid negative number'),
+          value,
+        );
       }
     }
     return this.postValidate(value, options);
@@ -774,7 +804,10 @@ export default class Validator<F extends string = string> extends Common<F> {
       const exists = choices.some(current => current.toString() === value);
 
       if (!exists) {
-        this.setError(pickValue('err', options, '{this} is not an acceptable choice'), value);
+        this.setError(
+          pickValue('err', options, '{this} is not an acceptable choice'),
+          value,
+        );
       }
     }
     return this.postValidate(value, options);
@@ -851,7 +884,10 @@ export default class Validator<F extends string = string> extends Common<F> {
         );
       }
       if (category.length > 0 && !category.includes(fileType.mime.split('/')[0])) {
-        return this.setError(pickValue('err', options, `{this} is not ${label} file`), file.name);
+        return this.setError(
+          pickValue('err', options, `{this} is not ${label} file`),
+          file.name,
+        );
       }
       if (exts.length > 0 && !exts.includes(fileType.ext)) {
         return this.setError(

@@ -1,6 +1,6 @@
 import { ErrorBag, Options } from './@types';
-import { isNumeric } from '@forensic-js/utils';
-import { replaceCallback } from '@forensic-js/regex';
+import { isNumeric } from '@teclone/utils';
+import { replaceCallback } from '@teclone/regex';
 import StateException from './Exceptions/StateException';
 import { ModelDBCheck } from './@types/rules/BaseRule';
 
@@ -24,11 +24,7 @@ export default class Common<F extends string = string> {
    * @param options validation options
    * @param index field value index
    */
-  reset(
-    field: string,
-    options: Options<F> | ModelDBCheck,
-    index: number
-  ): this {
+  reset(field: string, options: Options<F> | ModelDBCheck, index: number): this {
     this.field = field;
     this.options = options;
     this.index = index;
@@ -47,7 +43,7 @@ export default class Common<F extends string = string> {
 
     if (this.status === false) {
       throw new StateException(
-        'cant set errors twice, did you forget to reset validator?'
+        'cant set errors twice, did you forget to reset validator?',
       );
     }
     if (!isNumeric(value)) {
@@ -70,7 +66,7 @@ export default class Common<F extends string = string> {
             return matches[0];
         }
       },
-      errorMessage
+      errorMessage,
     );
 
     return (this.status = false);

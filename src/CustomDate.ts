@@ -1,4 +1,4 @@
-import { padLeft, isString } from '@forensic-js/utils';
+import { padLeft, isString } from '@teclone/utils';
 import { DATE_FORMAT } from './Constants';
 
 export default class CustomDate extends Date {
@@ -13,7 +13,11 @@ export default class CustomDate extends Date {
    * @param month month parameter, default to first month
    * @param day day parameter, defaults to first day
    */
-  static isValid(yearOrDateString: number | string, month: number = 0, day: number = 1): CustomDate | false {
+  static isValid(
+    yearOrDateString: number | string,
+    month: number = 0,
+    day: number = 1,
+  ): CustomDate | false {
     let year: number = 0;
     if (isString(yearOrDateString) && !DATE_FORMAT.test(yearOrDateString)) {
       return false;
@@ -26,12 +30,16 @@ export default class CustomDate extends Date {
     }
 
     const d = new CustomDate(year, month, day);
-    const isValid = d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+    const isValid =
+      d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
 
     return isValid ? d : false;
   }
 
   toString(): string {
-    return `${this.getFullYear()}-${padLeft(this.getMonth() + 1, 2)}-${padLeft(this.getDate(), 2)}`;
+    return `${this.getFullYear()}-${padLeft(this.getMonth() + 1, 2)}-${padLeft(
+      this.getDate(),
+      2,
+    )}`;
   }
 }

@@ -8,7 +8,7 @@ import {
   TextOptions,
   PhoneNumberRule,
   PhoneNumberOptions,
-  PasswordOptions
+  PasswordOptions,
 } from './rules/TextRules';
 import {
   IntegerRule,
@@ -18,14 +18,14 @@ import {
   NNumberRule,
   PNumberRule,
   DateRule,
-  NumberOptions
+  NumberOptions,
 } from './rules/NumberRules';
 import RangeRule, { RangeOptions } from './rules/RangeRule';
 import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
 import BaseRule, {
   BaseOptions,
   SuccessOrErrorMessage,
-  ModelDBCheck
+  ModelDBCheck,
 } from './rules/BaseRule';
 import {
   FileRule,
@@ -35,10 +35,10 @@ import {
   MediaFileRule,
   DocumentFileRule,
   ArchiveFileRule,
-  FileOptions
+  FileOptions,
 } from './rules/FilesRule';
 import Handler from '../Handler';
-import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
+import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
 
 export type RawData = string | string[];
 
@@ -225,7 +225,7 @@ export interface ResolvedRule<F extends string> {
         value: DataValue,
         index: number,
         data: Data<F>,
-        handler: N
+        handler: N,
       ) => Promise<DataValue> | DataValue)
     | ModelDBCheck
   >;
@@ -237,7 +237,7 @@ export interface ResolvedRule<F extends string> {
   postCompute?: <N extends Handler<F> = Handler<F>>(
     value: DataValue,
     data: Data<F>,
-    handler: N
+    handler: N,
   ) => Promise<DataValue> | DataValue;
 
   /**
@@ -247,7 +247,7 @@ export interface ResolvedRule<F extends string> {
   postValidate?: <N extends Handler<F> = Handler<F>>(
     value: DataValue,
     data: Data<F>,
-    handler: N
+    handler: N,
   ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 }
 

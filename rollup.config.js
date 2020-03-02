@@ -1,28 +1,12 @@
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import babel from 'rollup-plugin-babel';
-import { uglify } from 'rollup-plugin-uglify';
-
-import rollupAll from 'rollup-all';
-
-const plugins = [
-  resolve({
-    extensions: ['.ts', '.js'],
-  }),
-  commonjs({
-    include: 'node_modules/**',
-  }),
-  babel({
-    exclude: 'node_modules/**',
-    extensions: ['.ts', '.js'],
-    runtimeHelpers: true,
-  }),
-];
-
-export default rollupAll.getExports(uglify(), plugins, {
-  entryFile: 'Handler.ts',
-  moduleName: 'ForensicHandler',
-  libConfig: {
-    enabled: true,
+const { config } = require('@teclone/rollup-all');
+module.exports = config({
+  config: {
+    assets: ['httpErrors/**'],
+    cjsConfig: {
+      outDir: './lib',
+    },
+    esmConfig: {
+      enabled: false,
+    },
   },
 });

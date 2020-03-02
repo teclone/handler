@@ -1,7 +1,7 @@
 import Common from './Common';
 import { DataValue, DataType } from './@types';
 import { DB_MODELS } from './Constants';
-import { pickValue, applyCase } from '@forensic-js/utils';
+import { pickValue, applyCase } from '@teclone/utils';
 import { ModelDBCheck } from './@types/rules/BaseRule';
 
 export default class DBChecker<F extends string = string> extends Common<F> {
@@ -29,7 +29,7 @@ export default class DBChecker<F extends string = string> extends Common<F> {
     field: string,
     value: DataValue,
     check: ModelDBCheck,
-    index: number
+    index: number,
   ) {
     this.reset(field, check, index);
 
@@ -49,7 +49,7 @@ export default class DBChecker<F extends string = string> extends Common<F> {
           givenField = '_id';
         }
         this.query = {
-          [givenField || applyCase(field, this.dbCaseStyle)]: value
+          [givenField || applyCase(field, this.dbCaseStyle)]: value,
         };
       }
     }
@@ -92,15 +92,12 @@ export default class DBChecker<F extends string = string> extends Common<F> {
     field: string,
     value: string,
     check: ModelDBCheck,
-    index: number
+    index: number,
   ) {
     if (this.setup(type, required, field, value, check, index)) {
       const count = await this.execute(check.model, this.query);
       if (count > 0) {
-        this.setError(
-          pickValue('err', check, '{_this}:{this} already exists'),
-          value
-        );
+        this.setError(pickValue('err', check, '{_this}:{this} already exists'), value);
       }
     }
     return this.succeeds();
@@ -122,15 +119,12 @@ export default class DBChecker<F extends string = string> extends Common<F> {
     field: string,
     value: string,
     check: ModelDBCheck,
-    index: number
+    index: number,
   ) {
     if (this.setup(type, required, field, value, check, index)) {
       const count = await this.execute(check.model, this.query);
       if (count === 0) {
-        this.setError(
-          pickValue('err', check, '{_this}:{this} does not exist'),
-          value
-        );
+        this.setError(pickValue('err', check, '{_this}:{this} does not exist'), value);
       }
     }
     return this.succeeds();

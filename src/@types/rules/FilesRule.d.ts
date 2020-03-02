@@ -2,12 +2,14 @@ import { NumberOptions } from './NumberRules';
 import BaseRule, { SuccessOrErrorMessage } from './BaseRule';
 import { Data } from '..';
 import Handler from '../../Handler';
-import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
+import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
 
 /**
  * @param file the file object
  */
-type MoveToCallback = (file: FileEntry) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
+type MoveToCallback = (
+  file: FileEntry,
+) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 
 export interface FileOptions<F extends string> extends NumberOptions<F> {
   /**

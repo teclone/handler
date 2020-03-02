@@ -1,4 +1,4 @@
-import { expandProperty, applyCase } from '@forensic-js/utils';
+import { expandProperty, applyCase } from '@teclone/utils';
 import Handler from './Handler';
 import { Data } from './@types';
 
@@ -38,7 +38,7 @@ export default class Model<F extends string = string> {
    */
   renameFields(fields: { [oldName: string]: string }) {
     Object.keys(fields).forEach(
-      oldName => (this.fieldsToRename[oldName] = fields[oldName])
+      oldName => (this.fieldsToRename[oldName] = fields[oldName]),
     );
     return this;
   }
@@ -50,7 +50,7 @@ export default class Model<F extends string = string> {
    */
   export<T extends object>(
     target: T = {} as T,
-    expandProperties: boolean = true
+    expandProperties: boolean = true,
   ): T & Data<F> {
     const { handler, fieldsToSkip, fieldsToRename } = this;
     Object.keys(handler.data).forEach(field => {
@@ -59,13 +59,7 @@ export default class Model<F extends string = string> {
         const value = handler.data[field];
 
         if (expandProperties) {
-          expandProperty(
-            target,
-            newName,
-            value,
-            undefined,
-            handler.getDBCaseStyle()
-          );
+          expandProperty(target, newName, value, undefined, handler.getDBCaseStyle());
         } else {
           target[applyCase(newName, handler.getDBCaseStyle())] = value;
         }

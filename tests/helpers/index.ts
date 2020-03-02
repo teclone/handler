@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import NoSqlUser from './nosql/models/User';
 import sequelize from './sql/sequelize';
 import SqlUser from './sql/models/User';
-import { FileEntry, FileEntryCollection } from 'r-server/lib/typings/@types';
+import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
 
 export const getFilesDirectory = () => {
   return path.resolve(__dirname, 'files');
@@ -23,7 +23,9 @@ export const createFile = (filename: string = 'test.pdf'): FileEntry => {
   };
 };
 
-export const createFileCollection = (filenames: string[] = ['test.pdf']): FileEntryCollection => {
+export const createFileCollection = (
+  filenames: string[] = ['test.pdf'],
+): FileEntryCollection => {
   const template: FileEntryCollection = {
     name: [],
     key: [],
