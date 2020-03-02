@@ -4,7 +4,7 @@ notifications:
   email: false
 node_js:
   - '10'
-  - '8'
+  - '12'
 services:
   - mongodb
   - mysql
@@ -15,7 +15,7 @@ script:
 jobs:
   include:
     - stage: release
-      node_js: '10'
+      node_js: '12'
       before_install:
         - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
       script:
