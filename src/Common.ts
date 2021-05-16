@@ -1,21 +1,21 @@
-import { ErrorBag, Options } from './@types';
+import { ErrorBag } from './@types';
 import { isNumeric } from '@teclone/utils';
 import { replaceCallback } from '@teclone/regex';
-import StateException from './Exceptions/StateException';
-import { ModelDBCheck } from './@types/rules/BaseRule';
+import { StateException } from './Exceptions/StateException';
+import { SingleDataValue } from './@types/rules/BaseRule';
 
-export default class Common<F extends string = string> {
+export class Common<F extends string = string> {
   protected errors: ErrorBag<F> = {} as ErrorBag<F>;
 
   private status: boolean = true;
 
   protected field: string = '';
 
-  protected options: Options<F> | ModelDBCheck = {};
+  // protected options: Options<F> | ModelDBCheck<F> = {};
 
   protected index: number = 0;
 
-  protected shouldProceed: boolean = true;
+  protected transformedValue: SingleDataValue;
 
   /**
    * resets the instance and makes it ready for the next validation process
@@ -24,13 +24,12 @@ export default class Common<F extends string = string> {
    * @param options validation options
    * @param index field value index
    */
-  reset(field: string, options: Options<F> | ModelDBCheck, index: number): this {
+  reset(field: string, value: SingleDataValue, index: number): this {
     this.field = field;
-    this.options = options;
     this.index = index;
-
-    this.shouldProceed = true;
     this.status = true;
+
+    this.transformedValue = value;
 
     return this;
   }
@@ -43,30 +42,31 @@ export default class Common<F extends string = string> {
 
     if (this.status === false) {
       throw new StateException(
-        'cant set errors twice, did you forget to reset validator?',
+        'cannot set errors twice, did you forget to reset?'
       );
     }
+
     if (!isNumeric(value)) {
       value = `"${value}"`;
     }
 
     this.errors[this.field] = replaceCallback(
       /\{([^}]+)\}/,
-      matches => {
+      (matches) => {
         switch (matches[1].toLowerCase()) {
-          case 'this':
+          case 'value':
             return value;
 
-          case '_this':
+          case 'name':
             return this.field;
 
-          case '_index':
+          case 'index':
             return (this.index + 1).toString();
           default:
             return matches[0];
         }
       },
-      errorMessage,
+      errorMessage
     );
 
     return (this.status = false);
@@ -99,5 +99,9 @@ export default class Common<F extends string = string> {
    */
   fails(): boolean {
     return !this.succeeds();
+  }
+
+  getTransformedValue() {
+    return this.transformedValue;
   }
 }

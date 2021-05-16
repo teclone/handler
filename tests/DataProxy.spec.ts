@@ -1,8 +1,8 @@
-import DataProxy from '../src/DataProxy';
+import { DataProxy } from '../src/DataProxy';
 
-describe('Data Proxy', function() {
-  describe('setter', function() {
-    it(`should set data value if set operation is carried out`, function() {
+describe('Data Proxy', function () {
+  describe('setter', function () {
+    it(`should set data value if set operation is carried out`, function () {
       const target: { [p: string]: any } = {};
       const proxy = new Proxy<typeof target>(target, DataProxy);
       proxy.name = 'Harrison';
@@ -11,8 +11,8 @@ describe('Data Proxy', function() {
     });
   });
 
-  describe('getter', function() {
-    it(`should return data value is a get operation is carried out`, function() {
+  describe('getter', function () {
+    it(`should return data value if a get operation is carried out`, function () {
       const target: { [p: string]: any } = {
         name: 'Harrison',
       };
@@ -22,8 +22,8 @@ describe('Data Proxy', function() {
     });
   });
 
-  describe('toJSON call', function() {
-    it(`should allow object to be stringified`, function() {
+  describe('toJSON call', function () {
+    it(`should allow object to be stringified`, function () {
       const target: { [p: string]: any } = {
         name: 'Harrison',
       };
@@ -32,14 +32,14 @@ describe('Data Proxy', function() {
     });
   });
 
-  describe('inspection call', function() {
-    it(`should allow object to be inspected on, like console logged`, function() {
+  describe('inspection call', function () {
+    it(`should allow object to be inspected on, like console logged`, function () {
       const target: { [p: string]: any } = {
         name: 'Harrison',
       };
       const proxy = new Proxy<typeof target>(target, DataProxy);
 
-      expect(function() {
+      expect(function () {
         console.log(proxy);
       }).not.toThrow();
     });

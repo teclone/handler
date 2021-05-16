@@ -1,9 +1,9 @@
-import Exception from '.';
+import { Exception } from '.';
 
 /**
  * state exception
  */
-export default class StateException extends Exception {
+export class StateException extends Exception {
   /**
    *@param {string} message - error message
    */

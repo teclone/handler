@@ -1,22 +1,15 @@
 import { Model, DataTypes } from 'sequelize';
-import sequelize from '../sequelize';
+import { sequelize } from '../sequelize';
 
-export default class User extends Model {}
+export class User extends Model {}
 
 User.init(
   {
-    firstName: {
-      type: DataTypes.STRING,
-    },
-    lastName: {
-      type: DataTypes.STRING,
-    },
-    email: {
-      type: DataTypes.STRING,
-    },
-    password: {
-      type: DataTypes.STRING,
-    },
+    firstName: DataTypes.STRING,
+
+    lastName: DataTypes.STRING,
+    email: DataTypes.STRING,
+    password: DataTypes.STRING,
   },
   {
     sequelize,

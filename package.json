@@ -5,8 +5,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/Handler",
-  "typings": "lib/Handler",
+  "main": "lib/index",
+  "typings": "lib/index",
   "scripts": {
     "compile": "tsc",
     "commit": "git-cz",
@@ -20,27 +20,35 @@
   "author": "Harrison Ifeanyichukwu <harrisonifeanyichukwu@gmail.com> (https://github.com/teclone)",
   "license": "MIT",
   "devDependencies": {
-    "@babel/core": "7.4.0",
-    "@babel/plugin-proposal-class-properties": "^7.4.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.4.0",
-    "@babel/preset-env": "7.4.0",
-    "@babel/preset-typescript": "7.3.3",
-    "@teclone/rollup-all": "1.10.8",
+    "@babel/core": "^7.14.2",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.14.2",
+    "@babel/preset-env": "^7.14.2",
+    "@babel/preset-typescript": "^7.13.0",
+    "@teclone/r-server": "^2.11.0",
+    "@teclone/regex": "^1.0.4",
+    "@teclone/rollup-all": "^1.14.3",
+    "@teclone/utils": "^2.23.7",
     "@types/bluebird": "3.5.27",
     "@types/jest": "24.0.11",
     "@types/node": "12.0.7",
     "@types/validator": "10.11.1",
     "@typescript-eslint/eslint-plugin": "1.6.0",
     "@typescript-eslint/parser": "1.6.0",
-    "babel-jest": "24.3.1",
+    "babel-jest": "^26.6.3",
     "commitizen": "3.0.7",
     "copy-dir": "0.4.0",
     "coveralls": "3.0.3",
     "cz-conventional-changelog": "2.1.0",
     "dotenv": "8.0.0",
-    "jest": "24.3.1",
-    "mongoose": "5.7.5",
+    "file-type": "^16.4.0",
+    "inflection": "^1.13.1",
+    "jest": "^26.6.3",
+    "libphonenumber-js": "^1.9.17",
+    "mongoose": "^5.12.9",
     "mysql2": "1.6.5",
+    "pg": "^8.6.0",
+    "pg-hstore": "^2.3.3",
     "rimraf": "2.6.2",
     "rollup": "0.66.6",
     "rollup-all": "1.6.16",
@@ -50,24 +58,29 @@
     "rollup-plugin-uglify": "6.0.2",
     "semantic-release": "^17.0.4",
     "semantic-release-cli": "5.2.1",
-    "sequelize": "5.15.1",
-    "typescript": "3.3.3333"
+    "sequelize": "^6.6.2",
+    "sqlite3": "^5.0.2",
+    "tedious": "^11.0.8",
+    "typescript": "^4.2.4"
   },
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
   },
+  "peerDependencies": {
+    "@teclone/regex": "^1.0.4",
+    "@teclone/utils": "^2.23.6",
+    "file-type": "^16.4.0",
+    "inflection": "^1.13.1",
+    "libphonenumber-js": "^1.9.17"
+  },
   "dependencies": {
     "@babel/plugin-transform-runtime": "7.4.3",
     "@babel/runtime": "7.4.3",
-    "@teclone/r-server": "2.10.3",
-    "@teclone/regex": "1.0.3",
-    "@teclone/utils": "2.14.4",
+    "@types/file-type": "^10.9.1",
     "@types/inflection": "1.5.28",
-    "file-type": "10.11.0",
-    "inflection": "1.12.0",
-    "libphonenumber-js": "1.7.24"
+    "@types/mongoose": "^5.10.5"
   },
   "repository": {
     "type": "git",

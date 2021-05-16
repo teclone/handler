@@ -1,11 +1,12 @@
-/** supported database models */
-export const DB_MODELS = {
-  NOSQL: 1,
-  RELATIONAL: 2,
+/** supported database types */
+export const DB_TYPES = {
+  NOSQL: 2,
+  RELATIONAL: 1,
 };
 
 /** supported date format */
-export const DATE_FORMAT = /^([0-9]{4})([-._:|/\s])?([0-9]{1,2})\2?([0-9]{1,2})$/;
+export const DATE_FORMAT =
+  /^([0-9]{4})([-._:|/\s])?([0-9]{1,2})\2?([0-9]{1,2})$/;
 
 /** supported url schemes */
 export const URL_SCHEMES = [

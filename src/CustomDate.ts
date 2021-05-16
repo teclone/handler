@@ -1,10 +1,14 @@
 import { padLeft, isString } from '@teclone/utils';
 import { DATE_FORMAT } from './Constants';
 
-export default class CustomDate extends Date {
+export class CustomDate extends Date {
   static isValid(date: string): CustomDate | false;
 
-  static isValid(year: number, month?: number, day?: number): CustomDate | false;
+  static isValid(
+    year: number,
+    month?: number,
+    day?: number
+  ): CustomDate | false;
 
   /**
    * returns a custom date object if the given date params are valid, else it returns false
@@ -16,12 +20,14 @@ export default class CustomDate extends Date {
   static isValid(
     yearOrDateString: number | string,
     month: number = 0,
-    day: number = 1,
+    day: number = 1
   ): CustomDate | false {
     let year: number = 0;
     if (isString(yearOrDateString) && !DATE_FORMAT.test(yearOrDateString)) {
       return false;
-    } else if (isString(yearOrDateString)) {
+    }
+
+    if (isString(yearOrDateString)) {
       year = parseInt(RegExp.$1);
       month = parseInt(RegExp.$3) - 1;
       day = parseInt(RegExp.$4);
@@ -39,7 +45,22 @@ export default class CustomDate extends Date {
   toString(): string {
     return `${this.getFullYear()}-${padLeft(this.getMonth() + 1, 2)}-${padLeft(
       this.getDate(),
-      2,
+      2
+    )}`;
+  }
+
+  currentTime() {
+    return this.getTime() * 1000;
+  }
+
+  currentYear() {
+    return this.getFullYear();
+  }
+
+  currentDate() {
+    return `${this.getFullYear()}-${padLeft(this.getMonth() + 1, 2)}-${padLeft(
+      this.getDate(),
+      2
     )}`;
   }
 }

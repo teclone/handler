@@ -2,8 +2,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import mongoose from 'mongoose';
 import NoSqlUser from './nosql/models/User';
-import sequelize from './sql/sequelize';
-import SqlUser from './sql/models/User';
+import { sequelize } from './sql/sequelize';
+import { User as SqlUser } from './sql/models/User';
 import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
 
 export const getFilesDirectory = () => {
@@ -24,7 +24,7 @@ export const createFile = (filename: string = 'test.pdf'): FileEntry => {
 };
 
 export const createFileCollection = (
-  filenames: string[] = ['test.pdf'],
+  filenames: string[] = ['test.pdf']
 ): FileEntryCollection => {
   const template: FileEntryCollection = {
     name: [],
@@ -47,10 +47,10 @@ export const createFileCollection = (
   }, template);
 };
 
-export const noSqlConnect = function() {
-  return new Promise(resolve => {
-    mongoose.connections[0].once('open', function() {
-      resolve();
+export const noSqlConnect = function () {
+  return new Promise((resolve) => {
+    mongoose.connections[0].once('open', function () {
+      resolve(true);
     });
     mongoose.connect('mongodb://localhost/test', {
       useNewUrlParser: true,
@@ -58,15 +58,15 @@ export const noSqlConnect = function() {
   });
 };
 
-export const noSqlDisconnect = function() {
-  return new Promise(resolve => {
-    mongoose.connections[0].close(function() {
-      resolve();
+export const noSqlDisconnect = function () {
+  return new Promise((resolve) => {
+    mongoose.connections[0].close(function () {
+      resolve(true);
     });
   });
 };
 
-export const noSqlPopulate = function() {
+export const noSqlPopulate = function () {
   return NoSqlUser.create({
     firstName: 'Harrison',
     lastName: 'Ifeanyichukwu',
@@ -75,19 +75,19 @@ export const noSqlPopulate = function() {
   });
 };
 
-export const noSqlDepopulate = function() {
+export const noSqlDepopulate = function () {
   return NoSqlUser.deleteMany({}).exec();
 };
 
-export const sqlConnect = function() {
+export const sqlConnect = function () {
   return sequelize.authenticate();
 };
 
-export const sqlDisconnect = function() {
+export const sqlDisconnect = function () {
   return sequelize.close();
 };
 
-export const sqlPopulate = async function() {
+export const sqlPopulate = async function () {
   return SqlUser.sync({ force: true }).then(() => {
     return SqlUser.create({
       firstName: 'Harrison',
@@ -98,6 +98,6 @@ export const sqlPopulate = async function() {
   });
 };
 
-export const sqlDepopulate = function() {
+export const sqlDepopulate = function () {
   return SqlUser.drop();
 };

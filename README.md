@@ -6,11 +6,11 @@
 [![npm version](https://badge.fury.io/js/%40teclone%2Fhandler.svg)](https://badge.fury.io/js/%40teclone%2Fhandler)
 ![npm](https://img.shields.io/npm/dt/%40teclone%2Fhandler.svg)
 
-**Handler** is a **NodeJS** package that sits independently between the controller and the model, and asynchronously performs request data validation, serialization and database integrity checks. It has excellent error reporting with wide range of validation rules. It can be used with **relational and non-relational databases/ORMs**.
+**Handler** is a **NodeJS** module that sits independently between the controller and the model, and asynchronously performs request data validation, serialization and database integrity checks. It has excellent error reporting with wide range of validation rules. It can be used with **relational and non-relational databases/ORMs**.
 
-All validation rules are defined in plain **JS** objects. **Handler** supports **Mongoose Models** by default when working with **non-relational** databases such as **MongoDB** and also supports **Sequelize Models** by default when working with **relational** databases such as **Postgres, Mysql, etc**.
+All validation rules are defined in plain **JS** objects. **Handler** supports **Mongoose Models** by default when working with **non-relational** databases such as **MongoDB** and supports **Sequelize Models** by default when working with **relational** databases such as **Postgres, Mysql, etc**.
 
-It is also extensible, customizable so that you can define more custom validation rules if there is need for it.
+It is extensible, customizable so that you can define more custom validation rules whenever needed.
 
 ## Table of Content
 
@@ -82,11 +82,7 @@ npm install --save handler
 
 ## Development & Testing
 
-before working with development version of this project and running test, you need to setup **mysql** database and connection credentials, and also **Mongodb**. create a `.env` file for setting up your mysql database credentials and add the following env settings:
-
-1. **DB_USER**, database user
-2. **DB_PSWD**, user database password
-3. **DB_NAME**, your test database name (likely **test**)
+before working with development version of this project and running test, you need to setup **mysql** database and connection credentials, and also **Mongodb**. create a `.env` file for setting up your relational database credentials using the `.env.example` file.
 
 ## Usage Example
 
@@ -101,26 +97,34 @@ import bcrypt from 'bcrypt';
 const app = Server.create(); // create server instance
 
 app.post('/signup', async (req, res) => {
-  const handler = new Handler(req.data, req.files, {
-    email: {
-      type: 'email',
-      checks: {
-        if: 'exists',
-        model: UserModel,
-        err: 'email address already exists',
+  const handler = new Handler<'email' | 'password1' | 'password2' | 'id'>(
+    req.data,
+    req.files,
+    {
+      email: {
+        type: 'email',
+        checks: {
+          that: `itDoesNotExist`,
+          model: UserModel,
+          err: 'email address already exist, login instead',
+        },
       },
-    },
-    password1: {
-      type: 'password',
-      postCompute: async function(password) {
-        return await bcrypt.hash(password, Number.parseInt(process.env.SALT_ROUNDS));
+      password1: {
+        type: 'password',
+        compute: async function (fieldName, value) {
+          return await bcrypt.hash(
+            value,
+            Number.parseInt(process.env.SALT_ROUNDS)
+          );
+        },
       },
-    },
-    password2: {
-      type: 'password',
-      shouldMatch: 'password1',
-    },
-  });
+
+      password2: {
+        type: 'password',
+        shouldMatch: 'password1',
+      },
+    }
+  );
 
   if (await handler.execute()) {
     const data = handler
@@ -145,7 +149,7 @@ app.post('/signup', async (req, res) => {
         status: 'failed',
         errors: handler.errors,
       },
-      400,
+      400
     );
   }
 });
@@ -157,39 +161,40 @@ app.listen(null, () => {
 
 ## Validation Rule Formats
 
-Validation rules are defined as JavaScript plain object keyed by the field names. Each field rule object can contain the following rule properties:
+Validation rules are defined as JavaScript plain objects keyed by their field names. Each field rule can contain the following properties:
 
 1. **type**: indicates the type of validation to carry out on the field. it defaults to **text**.
 
-2. **required**: indicates if the field is required. defaults to true.
+2. **required**: it is a boolean or conditional require object that indicates if the field is required. defaults to true.
 
-3. **defaultValue**: specifies the default value for a non required field. it defaults to empty string.
+3. **defaultValue**: specifies the default value for a non required field
 
-4. **filters**: defines filter rules to apply to the field value(s) prior to validations, such as case conversion, type casting, html tag stripping, etc.
+4. **filters**: defines filters to apply to the field value(s) prior to validations, such as case conversion, type casting, html tag removal, trimming, etc.
 
-5. **checks**: defines database integrity check or array of database integrity checks to run on the field value(s).
+5. **checks**: defines database integrity checks to run on the field value(s).
 
 6. **options**: defines extra validation options specifically for the field.
 
-7. **requiredIf**: defines a conditional clause, which if satisfied, makes the field required, else the field becomes optional.
-
-8. **overrideIf**: defines a conditional clause, which if satisfied, will override a field's raw data value, else the field value is retained.
-
-To reference a validation principal, the convention used is to enclose the principal field name in curly braces within a string . '{field-name}'. The module will find and resolve such, replacing it with the field value.
-
-There are certain placeholder formats that can be used to refrence certain values. This includes **`{this}`** which references the current field value under validation; **`{_this}`** references the current field name under validation while **`{_index}`** references the current field value index position (in the case of validating array of fields).
+There are certain placeholder formats that can be used to refrence certain values. This includes **`{value}`** which references the current field value under validation; **`{name}`** references the current field name under validation while **`{index}`** references the current field value index position (in the case of validating array of fields).
 
 Moreover, there is the **`{CURRENT_DATE}`**, **`{CURRENT_YEAR}`**, and **`{CURRENT_TIME}`** that references the current date, current year and current timestamp values respectively.
 
 **Example:**
 
 ```typescript
-const rules = {
+const rules: Rules<
+  | 'first-name'
+  | 'last-name'
+  | 'middle-name'
+  | 'favorite-colors'
+  | 'subscribe-newsletter'
+  | 'email'
+> = {
   //validate first name. should be at least 3 characters
   'first-name': {
     options: {
       min: 3,
-      minErr: '{_this} should be at least 3 charaters length',
+      minErr: '{name} should be at least 3 charaters length',
     },
   },
 
@@ -197,7 +202,7 @@ const rules = {
   'last-name': {
     options: {
       min: 3,
-      minErr: '{_this} should be at least 3 charaters length',
+      minErr: '{name} should be at least 3 charaters length',
     },
   },
 
@@ -206,7 +211,7 @@ const rules = {
     required: false,
     options: {
       min: 3,
-      minErr: '{_this} should be at least 3 charaters length',
+      minErr: '{name} should be at least 3 charaters length',
     },
   },
 
@@ -217,22 +222,22 @@ const rules = {
       //convert the colors to lowercase
       toLower: true,
       /** we can also supply a callback function*/
-      callback: value => value.toLowerCase(),
+      callback: (value) => value.toLowerCase(),
     },
     options: {
       choices: ['green', 'white', 'blue', 'red', 'violet', 'purple'],
-      err: 'color {_index} is not a valid color',
+      err: 'color number {index} is not a valid color', // or `{value} is not a valid color`,
     },
   },
 
-  // this is a checkbox type
+  // this is a checkbox type or boolean
   'subscribe-newsletter': 'checkbox',
 
   //email is required if user checks the subscribe checkbox,
   email: {
     type: 'email',
-    err: '{this} is not a valid email address',
-    requiredIf: {
+    err: '{value} is not a valid email address',
+    required: {
       if: 'checked',
       field: 'subscribe-newsletter',
     },
@@ -242,7 +247,7 @@ const rules = {
 
 ## Data Filters
 
-Filters are applied to the field values prior to validations. You can use filters to modify field values prior to validation. The available filters include:
+You can use filters to modify field values before validation. The available filters include:
 
 1. **decode**: determines if `decodeURIComponent()` method should be called on the field value. defaults to true
 
@@ -254,9 +259,9 @@ Filters are applied to the field values prior to validations. You can use filter
 
 5. **numeric**: determines if the field value(s) should be cast to float. if the value is not numeric, it is cast to 0. defaults to false.
 
-6. **toUpper**: determines if the field value(s) should be turned to uppercase. defaults to false
+6. **uppercase**: determines if the field value(s) should be turned to uppercase. defaults to false
 
-7. **toLower**: determines if the field value(s) should be turned to lowercase. defaults to false
+7. **lowercase**: determines if the field value(s) should be turned to lowercase. defaults to false
 
 8. **capitalize**: determines if the first character of each field value should be uppercased, while others are lowercased. defaults to false. eg, given field value of `lonDON`, it is converted to `London`.
 
@@ -265,10 +270,10 @@ Filters are applied to the field values prior to validations. You can use filter
 10. **callback**: a callback function to execute. The callback method accepts the field value, performs some modifications, and returns the result of the operations.
 
 ```typescript
-const rules = {
+const rules: Rules<'country' | 'comment' | 'description'> = {
     country: {
         filters: {
-            toLower: true //convert to lowercase
+            lowercase: true //convert to lowercase
         }
     },
     comment: {
@@ -320,15 +325,15 @@ const rules = {
 
 ### Regex Rule Validation
 
-It is quite easy to carry out different flavours of regex rule tests on field value(s). There are four kinds of regex rules. These include **regex**, **regexAny**, **regexAll**, and **regexNone** tests.
+It is quite easy to carry out different flavours of regex rule tests on field value(s). There are four kinds of regex rules. These include **regex**, **regexAny**, and **regexNone**.
 
-For **regex** test, it must match the test, otherwise it is flagged as error. For **regexAny**, at least one of the tests must match. For **regexAll**, all regex tests must match. For **regexNone**, none of the regex tests should match.
+**regex** test defines one or more regex patterns that the value must match, otherwise it is flagged as error. For **regexAny**, at least one of the tests must match. For **regexAll**, all regex tests must match. For **regexNone**, none of the regex tests should match.
 
 ```typescript
 const rules = {
   'first-name': {
     options: {
-      regexAll: [
+      regex: [
         //name must start with letter
         {
           pattern: /^[a-z]/i,
@@ -348,7 +353,7 @@ const rules = {
       regex: {
         //we expect two letter country code.
         pattern: /^[a-z]{2}$/,
-        err: '{this} is not a 2-letter country iso-code name',
+        err: '{value} is not a 2-letter country iso-code name',
       },
     },
   },
@@ -377,12 +382,13 @@ const rules = {
         //we dont accept white as a color
         {
           pattern: /^white$/i,
-          err: '{this} is not an acceptable color',
+          err: '{value} is not an acceptable color',
         },
+
         //we dont accept black either
         {
           pattern: /^black$/i,
-          err: '{this} is not an acceptable color',
+          err: '{value} is not an acceptable color',
         },
       ],
     },
@@ -399,14 +405,14 @@ const rules = {
   password1: 'password',
   password2: {
     type: 'password',
-    shouldMatch: 'password1',
+    shouldMatch: 'password1', // or {field: 'password1', err: 'passwords did not match, please try again'},
   },
 };
 ```
 
 ### Date Validation
 
-To validate dates, set the type property to _'date'_. You can specify [limiting rules](#limiting-rule-validation) that validates if the date is within a given limited range.
+To validate dates, set the type property to `date`. You can specify [limiting rules](#limiting-rule-validation) that validates if the date is within a given range.
 
 ```typescript
 const rules = {
@@ -426,49 +432,49 @@ To validate field as a range of values, set the type property to **range**. The 
 
 ```typescript
 const rules = {
-    day: {
-        type: 'range',
-        options: {
-            from: 1,
-            to: 31,
-        },
+  day: {
+    type: 'range',
+    options: {
+      from: 1,
+      to: 31,
     },
+  },
 
-    month: {
-        type: 'range',
-        options: {
-            from: 1,
-            to: 12,
-        },
+  month: {
+    type: 'range',
+    options: {
+      from: 1,
+      to: 12,
     },
+  },
 
-    year: {
-        type: 'range',
-        options: {
-            from: 1950,
-            to: '{CURRENT_YEAR}',
-        },
+  year: {
+    type: 'range',
+    options: {
+      from: 1950,
+      to: '{CURRENT_YEAR}',
     },
+  },
 
-    even-number: {
-        type: 'range',
-        options: {
-            from: 0,
-            to: 100,
-            step: 2,
-            err: '{this} is not a valid even number between 0-100'
-        },
+  even_number: {
+    type: 'range',
+    options: {
+      from: 0,
+      to: 100,
+      step: 2,
+      err: '{value} is not a valid even number between 0-100',
     },
+  },
 
-    even-alphabet: {
-        type: 'range',
-        options: {
-            from: 'A',
-            to: 'Z',
-            step: 2,
-            err: '{this} is not a valid even alphabet between A-Z'
-        },
-    }
+  even_alphabet: {
+    type: 'range',
+    options: {
+      from: 'A',
+      to: 'Z',
+      step: 2,
+      err: '{value} is not a valid even alphabet between A-Z',
+    },
+  },
 };
 ```
 
@@ -482,7 +488,7 @@ const rules = {
     type: 'choice',
     options: {
       choices: ['ng', 'gb', 'us', 'ca', 'de'], // array of country codes,
-      err: '{this} is not a valid country code',
+      err: '{value} is not a valid country code',
     },
   },
 };
@@ -516,7 +522,7 @@ const rules = {
 
 ### Phone Number Validation
 
-To validate phone numbers, set the type property to `number`. This project relies of [libphonenumber.js](https://www.npmjs.com/package/libphonenumber-js) for validating phone numbers
+To validate phone numbers, set the type property to `number`. The validation is performed using [libphonenumber.js](https://www.npmjs.com/package/libphonenumber-js) module.
 
 ```typescript
 const rules = {
@@ -526,11 +532,13 @@ const rules = {
           choices: ['us', 'ng', 'de', 'ca', .....],
       }
   },
+
   //we want the phone number to be a valid phone number for the selected country
   phoneNumber: {
     type: 'phone-number',
     options: {
-        country: '{country}'
+        country: '{country}',
+        format: 'INTERNATIONAL', // we want the number to be formatted with country code before we save it
     },
   },
 };
@@ -551,20 +559,18 @@ const rules = {
 
 Password validation is more like text validation except that some limiting rules and regex rules were added. The default implementation is that passwords must be at least 8 charaters long, and 26 characters max. It must contain at least two alphabets and at least two non-alphabets. You can disable this by setting the **preValidate** option to false.
 
-The current implementation looks like below
-
 ```typescript
 const rules = {
   password: {
     type: 'password',
-    preValidate: false,
+    preValidate: false, // disables default password rules
   },
 };
 ```
 
 ### File Validation
 
-The module can validate files, including the integrity of file mime types thanks to an external package (**file-type**). It offers wide flavours of file validation types such as **image**, **video**, **audio**, **document**, **archive** and finally the generic **file** validation type.
+The module can validate files, including the integrity of file mime types with the help of (**file-type**). It offers wide flavours of file validation types such as **image**, **video**, **audio**, **document**, **archive** and finally the generic **file** validation type.
 
 Use of file memory units are recognised such as **kb**, **mb**, **gb** and **tb**.
 
@@ -808,17 +814,12 @@ We can conditionally make a field required or not required using the `requiredIf
        //are paid a fixed $60,000 per annum
        salaryDemand: {
            type: 'money',
-           requireIf: {
-               condition: 'equals',
+           required: {
+
                field: 'country',
+               if: 'equals',
                value: 'ng',
            },
-           overrideIf: {
-               condition: 'notEquals',
-               field: 'country',
-               value: 'ng',
-               with: '60000'
-           }
        }
    };
    ```
@@ -887,7 +888,7 @@ app.post('/signup', async (req, res) => {
             options: {
                 regex: {
                     pattern: /^\d{6}$/,
-                    err: '{this} is not a valid zip code'
+                    err: '{value} is not a valid zip code'
                 }
             }
         }

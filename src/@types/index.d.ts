@@ -2,7 +2,6 @@ import CustomDate from '../CustomDate';
 import { BooleanRule, CheckboxRule } from './rules/BooleanRules';
 import {
   TextRule,
-  EmailRule,
   URLRule,
   PasswordRule,
   TextOptions,
@@ -10,33 +9,18 @@ import {
   PhoneNumberOptions,
   PasswordOptions,
 } from './rules/TextRules';
-import {
-  IntegerRule,
-  NIntegerRule,
-  PIntegerRule,
-  NumberRule,
-  NNumberRule,
-  PNumberRule,
-  DateRule,
-  NumberOptions,
-} from './rules/NumberRules';
+import { NumberRule, NumberOptions } from './rules/NumberRules';
 import RangeRule, { RangeOptions } from './rules/RangeRule';
 import ChoiceRule, { ChoiceOptions } from './rules/ChoiceRule';
 import BaseRule, {
   BaseOptions,
   SuccessOrErrorMessage,
   ModelDBCheck,
+  ComputeCallback,
+  ValidateCallback,
+  DBCheckCallback,
 } from './rules/BaseRule';
-import {
-  FileRule,
-  ImageFileRule,
-  AudioFileRule,
-  VideoFileRule,
-  MediaFileRule,
-  DocumentFileRule,
-  ArchiveFileRule,
-  FileOptions,
-} from './rules/FilesRule';
+import { FileRule, FileOptions } from './rules/FilesRule';
 import Handler from '../Handler';
 import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
 
@@ -111,48 +95,117 @@ export type DataType =
   | 'document'
   | 'archive';
 
+export interface BaseRequiredIfRule<F extends string> {
+  if:
+    | 'checked'
+    | 'notChecked'
+    | 'equals'
+    | 'notEquals'
+    | 'in'
+    | 'notIn'
+    | 'contains'
+    | 'notContains';
+
+  /**
+   * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
+   */
+  dropOnFail?: boolean;
+
+  /**
+   * the target field
+   */
+  field?: F;
+}
+
+export interface RequiredIfCheckRule<F extends string>
+  extends BaseRequiredIfRule<F> {
+  if: 'checked' | 'notChecked';
+}
+
+export interface RequiredIfEqualRule<F extends string>
+  extends BaseRequiredIfRule<F> {
+  if: 'equals' | 'notEquals';
+  value: string | boolean | number;
+}
+
+export interface RequiredIfInRule<F extends string>
+  extends BaseRequiredIfRule<F> {
+  if: 'in' | 'notIn';
+  list: Array<string | boolean | number>;
+}
+
+export interface RequiredIfContainRule<F extends string>
+  extends BaseRequiredIfRule<F> {
+  if: 'contains' | 'notContains';
+  value: string | boolean | number;
+}
+
 export type RequiredIf<F extends string> =
-  | {
-      if: 'checked' | 'notChecked';
-      field: F;
-      /**
-       * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
-       */
-      drop?: boolean;
-    }
-  | {
-      if: 'equals' | 'notEquals' | 'in' | 'notIn';
-      field: F;
-      value: string | boolean | number;
-      /**
-       * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
-       */
-      drop?: boolean;
-    }
-  | {
-      if: 'valueIn' | 'valueNotIn';
-      field: F;
-      values: Array<string | boolean | number>;
-      /**
-       * indicates if the fields value should be dropped if the field ends up not being required (needed), defaults to true
-       */
-      drop?: boolean;
-    };
+  | RequiredIfCheckRule<F>
+  | RequiredIfEqualRule<F>
+  | RequiredIfInRule<F>
+  | RequiredIfContainRule<F>;
 
 export type FilterCallback = (value: string) => string | number | boolean;
 
 export interface Filters {
+  /**
+   * if true, duplicate values will be removed from the field value if it is an array of items.
+   */
+  unique?: boolean;
+
+  /**
+   * indicates if value should be decoded
+   */
   decode?: boolean;
+
+  /**
+   * indicates if html tags should be stripped out
+   */
   stripTags?: boolean;
+
+  /**
+   * lists a number of html tags to ignore while stripping out tags
+   */
   stripTagsIgnore?: string | string[];
+
+  /**
+   *
+   */
   minimize?: boolean;
+
   trim?: boolean;
+
+  /**
+   * converts to number
+   */
   toNumeric?: boolean;
+
+  /**
+   * indicates if the whole values should be uppercase
+   */
   uppercase?: boolean;
+
+  /**
+   * indicates if value should be lowercased
+   */
   lowercase?: boolean;
+
+  /**
+   * indicates if value should be capitalized
+   */
   capitalize?: boolean;
+
+  /**
+   * indicates if value should be camel cased
+   */
   camelize?: boolean;
+
+  /**
+   * indicates if value should be titleized, titled string starts every key word with capital letter
+   */
   titleize?: boolean;
+
   ordinalize?: boolean;
   pluralize?: boolean;
   singularize?: boolean;
@@ -174,26 +227,13 @@ export type Rule<F extends string> =
   | BooleanRule<F>
   | CheckboxRule<F>
   | TextRule<F>
-  | EmailRule<F>
   | URLRule<F>
   | PasswordRule<F>
   | PhoneNumberRule<F>
-  | IntegerRule<F>
-  | NIntegerRule<F>
-  | PIntegerRule<F>
   | NumberRule<F>
-  | NNumberRule<F>
-  | PNumberRule<F>
-  | DateRule<F>
-  | RangeRule<F>
-  | ChoiceRule<F>
   | FileRule<F>
-  | ImageFileRule<F>
-  | AudioFileRule<F>
-  | VideoFileRule<F>
-  | MediaFileRule<F>
-  | DocumentFileRule<F>
-  | ArchiveFileRule<F>;
+  | ChoiceRule<F>
+  | RangeRule<F>;
 
 export type Rules<F extends string> = {
   [P in F]: DataType | Rule<F>;
@@ -204,13 +244,20 @@ export interface ResolvedRule<F extends string> {
 
   required: boolean;
 
-  array: boolean;
+  /**
+   * boolean indicating if the field value is array of items
+   */
+  isList: boolean;
 
+  /**
+   * missing field error message
+   */
   hint: string;
 
+  /**
+   * default value
+   */
   defaultValue: RawData | FileEntry | FileEntryCollection;
-
-  requiredIf?: RequiredIf<F>;
 
   options: Options<F>;
 
@@ -220,35 +267,20 @@ export interface ResolvedRule<F extends string> {
    * defines a list of database integrity checks to perform on the field value(s)
    */
   // note: this should be left as it to avoid typescript complaints
-  checks: Array<
-    | (<N extends Handler<F> = Handler<F>>(
-        value: DataValue,
-        index: number,
-        data: Data<F>,
-        handler: N,
-      ) => Promise<DataValue> | DataValue)
-    | ModelDBCheck
-  >;
+  checks: Array<DBCheckCallback<F> | ModelDBCheck>;
 
   /**
    * computes and return a new value for the field. it accepts two arguments
    * field value, and data object
+   *
+   * compute callback is called after all validations has been passed
    */
-  postCompute?: <N extends Handler<F> = Handler<F>>(
-    value: DataValue,
-    data: Data<F>,
-    handler: N,
-  ) => Promise<DataValue> | DataValue;
+  compute?: ComputeCallback<F>;
 
   /**
-   * runs a post validation process on the field. returns true if validation succeeds or returns
-   * error message if validation fails
+   * runs custom validation on the field. return true if validation succeeds or return false or error message if validation fails
    */
-  postValidate?: <N extends Handler<F> = Handler<F>>(
-    value: DataValue,
-    data: Data<F>,
-    handler: N,
-  ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
+  validate?: ValidateCallback<F>;
 }
 
 export type ResolvedRules<F extends string> = {

@@ -1,6 +1,6 @@
-import Exception from '.';
+import { Exception } from '.';
 
-export default class FieldDataNotFoundException extends Exception {
+export class FieldDataNotFoundException extends Exception {
   /**
    *@param {string} message - error message
    */

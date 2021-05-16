@@ -1,17 +1,13 @@
-import BaseRule from './BaseRule';
+import BaseRule, { ArrayLike } from './BaseRule';
 import { Regex } from '..';
 import { NumberOptions } from './NumberRules';
+import type { CountryCode, NumberFormat } from 'libphonenumber-js';
 
 export interface TextOptions<F extends string> extends NumberOptions<F> {
   /**
-   * defines regex pattern that field value(s) must match
+   * defines regex pattern or array of regex patterns that field value(s) must match
    */
-  regex?: Regex;
-
-  /**
-   * array of regex patterns that field value(s) must match
-   */
-  regexAll?: Regex[];
+  regex?: ArrayLike<Regex>;
 
   /**
    * defines array of regex patterns that field value(s) must match at least one of, to be
@@ -22,6 +18,7 @@ export interface TextOptions<F extends string> extends NumberOptions<F> {
      * array of regex patterns
      */
     patterns: RegExp[];
+
     /**
      * optional error message if field value(s) did not match at least one of the patterns
      */
@@ -31,7 +28,7 @@ export interface TextOptions<F extends string> extends NumberOptions<F> {
   /**
    * defines regex or array of regex patterns that the field value(s) must not match.
    */
-  regexNone?: Regex | Regex[];
+  regexNone?: ArrayLike<Regex>;
 }
 
 export interface URLOptions<F extends string> extends TextOptions<F> {
@@ -61,49 +58,45 @@ export interface PasswordOptions<F extends string> extends TextOptions<F> {
 
 export interface PhoneNumberOptions<F extends string> extends TextOptions<F> {
   /**
-   * if given, the phone number is validated against this country.
+   * indicates if the phone number should be formatted before saving
    */
-  country?: string;
+  format?: NumberFormat;
 
   /**
-   * boolean indicating if non-geographical numbers should not be accepted. defaults to true.
+   * if given, the phone number is validated against this country.
    */
-  enforceCountry?: boolean;
+  country?: CountryCode;
 }
 
-interface BaseTextRule<F extends string> extends BaseRule<F> {
+//text rules
+interface TextRule<F extends string> extends BaseRule<F> {
+  type?: 'text' | 'title' | 'name' | 'objectId' | 'email';
+
   /**
    * defines text related field type validation options, such as text, email, password and url
    */
   options?: TextOptions<F>;
 }
 
-//text rules
-interface TextRule<F extends string> extends BaseTextRule<F> {
-  type?: 'text' | 'title' | 'name' | 'objectId';
-}
-
-interface EmailRule<F extends string> extends BaseTextRule<F> {
-  type: 'email';
-}
-
-interface URLRule<F extends string> extends BaseTextRule<F> {
+interface URLRule<F extends string> extends BaseRule<F> {
   type: 'url';
+
   /**
    * defines url field type validation options
    */
   options?: URLOptions<F>;
 }
 
-interface PasswordRule<F extends string> extends BaseTextRule<F> {
+interface PasswordRule<F extends string> extends BaseRule<F> {
   type: 'password';
+
   /**
    * defines password field type validation options
    */
   options?: PasswordOptions<F>;
 }
 
-interface PhoneNumberRule<F extends string> extends BaseTextRule<F> {
+interface PhoneNumberRule<F extends string> extends BaseRule<F> {
   type: 'phoneNumber';
   /**
    * defines phoneNumber type validation options

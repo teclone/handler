@@ -9,6 +9,7 @@ export interface ChoiceOptions<F extends string> extends BaseOptions<F> {
 
 export default interface ChoiceRule<F extends string> extends BaseRule<F> {
   type: 'choice';
+
   /**
    * defines validation options to be used for choice field type validations
    */

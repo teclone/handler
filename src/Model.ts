@@ -1,11 +1,11 @@
 import { expandProperty, applyCase } from '@teclone/utils';
-import Handler from './Handler';
+import { Handler } from './Handler';
 import { Data } from './@types';
 
-export default class Model<F extends string = string> {
+export class Model<F extends string = string> {
   private handler: Handler<F>;
 
-  private fieldsToSkip: string[] = [];
+  private fieldsToSkip: { [p: string]: boolean } = {};
 
   private fieldsToRename: { [old: string]: string } = {};
 
@@ -17,8 +17,10 @@ export default class Model<F extends string = string> {
    * list of fields to skip when exporting data
    * @param fields comma separated list of fields to skip
    */
-  skipFields(...fields: string[]) {
-    fields.forEach(field => this.fieldsToSkip.push(field));
+  skipFields(...fields: F[]) {
+    for (const field of fields) {
+      this.fieldsToSkip[field] = true;
+    }
     return this;
   }
 
@@ -27,7 +29,7 @@ export default class Model<F extends string = string> {
    * @param oldName field old name
    * @param newName field new name
    */
-  renameField(oldName: string, newName: string) {
+  renameField(oldName: F, newName: F | string) {
     this.fieldsToRename[oldName] = newName;
     return this;
   }
@@ -36,10 +38,10 @@ export default class Model<F extends string = string> {
    * renames the given fields
    * @param fields object of field old name to new name value pairs
    */
-  renameFields(fields: { [oldName: string]: string }) {
-    Object.keys(fields).forEach(
-      oldName => (this.fieldsToRename[oldName] = fields[oldName]),
-    );
+  renameFields(fields: Partial<{ [oldName in F]: F | string }>) {
+    for (const oldName of Object.keys(fields)) {
+      this.renameField(oldName as F, fields[oldName]);
+    }
     return this;
   }
 
@@ -50,21 +52,30 @@ export default class Model<F extends string = string> {
    */
   export<T extends object>(
     target: T = {} as T,
-    expandProperties: boolean = true,
+    expandProperties: boolean = true
   ): T & Data<F> {
     const { handler, fieldsToSkip, fieldsToRename } = this;
-    Object.keys(handler.data).forEach(field => {
-      if (!fieldsToSkip.includes(field)) {
-        const newName = fieldsToRename[field] || field;
-        const value = handler.data[field];
 
-        if (expandProperties) {
-          expandProperty(target, newName, value, undefined, handler.getDBCaseStyle());
-        } else {
-          target[applyCase(newName, handler.getDBCaseStyle())] = value;
-        }
+    for (const field of Object.keys(handler.data)) {
+      if (typeof fieldsToSkip[field] !== 'undefined') {
+        continue;
       }
-    });
+
+      const value = handler.data[field];
+      const name = fieldsToRename[field] || field;
+
+      if (expandProperties) {
+        expandProperty(
+          target,
+          name,
+          value,
+          undefined,
+          handler.getDBCaseStyle()
+        );
+      } else {
+        target[applyCase(name, handler.getDBCaseStyle())] = value;
+      }
+    }
     return target as T & Data<F>;
   }
 }

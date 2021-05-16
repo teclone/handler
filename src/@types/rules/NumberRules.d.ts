@@ -38,39 +38,20 @@ export interface NumberOptions<F extends string> extends BaseOptions<F> {
   ltErr?: string;
 }
 
-interface BaseNumberRule<F extends string> extends BaseRule<F> {
+interface NumberRule<F extends string> extends BaseRule<F> {
+  type:
+    | 'int'
+    | 'nInt'
+    | 'pInt'
+    | 'number'
+    | 'money'
+    | 'nNumber'
+    | 'pNumber'
+    | 'date';
+
   /**
    * defines validation options to be used for number related field type validations
    * such as ints, numbers and dates
    */
   options?: NumberOptions<F>;
-}
-
-//number rules
-export interface IntegerRule<F extends string> extends BaseNumberRule<F> {
-  type: 'int';
-}
-
-export interface NIntegerRule<F extends string> extends BaseNumberRule<F> {
-  type: 'nInt';
-}
-
-export interface PIntegerRule<F extends string> extends BaseNumberRule<F> {
-  type: 'pInt';
-}
-
-export interface NumberRule<F extends string> extends BaseNumberRule<F> {
-  type: 'number' | 'money';
-}
-
-export interface NNumberRule<F extends string> extends BaseNumberRule<F> {
-  type: 'nNumber';
-}
-
-export interface PNumberRule<F extends string> extends BaseNumberRule<F> {
-  type: 'pNumber';
-}
-
-export interface DateRule<F extends string> extends BaseNumberRule<F> {
-  type: 'date';
 }

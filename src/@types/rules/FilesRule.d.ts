@@ -8,7 +8,7 @@ import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
  * @param file the file object
  */
 type MoveToCallback = (
-  file: FileEntry,
+  file: FileEntry
 ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
 
 export interface FileOptions<F extends string> extends NumberOptions<F> {
@@ -29,7 +29,9 @@ export interface FileOptions<F extends string> extends NumberOptions<F> {
   moveTo?: string | MoveToCallback;
 }
 
-export interface BaseFileRule<F extends string> extends BaseRule<F> {
+export interface FileRule<F extends string> extends BaseRule<F> {
+  type: 'file' | 'image' | 'audio' | 'video' | 'media' | 'document' | 'archive';
+
   /**
    * defines validation options to be used for file related field type validations
    * such as file, image, audio, video, media, archive, and document
@@ -37,33 +39,4 @@ export interface BaseFileRule<F extends string> extends BaseRule<F> {
   options?: FileOptions<F>;
 
   defaultValue?: FileEntry | FileEntryCollection;
-}
-
-//file rules
-export interface FileRule<F extends string> extends BaseFileRule<F> {
-  type: 'file';
-}
-
-export interface ImageFileRule<F extends string> extends BaseFileRule<F> {
-  type: 'image';
-}
-
-export interface AudioFileRule<F extends string> extends BaseFileRule<F> {
-  type: 'audio';
-}
-
-export interface VideoFileRule<F extends string> extends BaseFileRule<F> {
-  type: 'video';
-}
-
-export interface MediaFileRule<F extends string> extends BaseFileRule<F> {
-  type: 'media';
-}
-
-export interface DocumentFileRule<F extends string> extends BaseFileRule<F> {
-  type: 'document';
-}
-
-export interface ArchiveFileRule<F extends string> extends BaseFileRule<F> {
-  type: 'archive';
 }

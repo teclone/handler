@@ -1,28 +1,64 @@
+import { FileEntry, FileEntryCollection } from '@teclone/r-server/lib/@types';
 import { DataValue, RequiredIf, Filters, DataType, Data } from '..';
-import Handler from '../../Handler';
+import Handler, { Handler, Handler, Handler } from '../../Handler';
+
+export type DataValue =
+  | null
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | boolean[]
+  | FileEntry
+  | FileEntryCollection;
+
+export type SingleDataValue = string | number | boolean | FileEntry;
 
 export type SuccessOrErrorMessage = boolean | string;
 
-export type DBCheckType = 'exists' | 'notExists';
+export type DBCheckType = 'itExists' | 'itDoesNotExist';
 
-export interface ModelDBCheck {
-  if: DBCheckType;
+export type ArrayLike<T> = T | T[];
+
+export type DBCheckCallback<F extends string> = (
+  field: F,
+  value: SingleDataValue,
+  index: number,
+  handler: Handler<F>
+) => SuccessOrErrorMessage | Promise<SuccessOrErrorMessage>;
+
+export type ValidateCallback<F extends string> = (
+  field: F,
+  value: string | FileEntry,
+  index: number,
+  handler: Handler<F>
+) => SuccessOrErrorMessage;
+
+export type ComputeCallback<F extends string> = (
+  field: F,
+  value: DataValue,
+  handler: Handler<F>
+) => DataValue | Promise<DataValue>;
+
+export interface ModelDBCheck<F extends string> {
+  /**
+   * check that the condition is satisfied, if not satisfied, it is an error.
+   */
+  that: DBCheckType;
   model: object;
   field?: string;
-  query?: object;
+  query?:
+    | object
+    | ((
+        fieldType: DataType,
+        field: F,
+        value: SingleDataValue,
+        index: number,
+        handler: Handler<F>
+      ) => object);
   err?: string;
 }
-
-// export type DBCheckCallback<F extends string, N extends Handler<F>> = (
-//   value: DataValue,
-//   index: number,
-//   data: Data<F>,
-//   handler: N
-// ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
-
-// export type DBCheck<F extends string, N extends Handler<F>> =
-//   | DBCheckCallback<F, N>
-//   | ModelDBCheck;
 
 export interface ShouldMatchObject<F extends string> {
   /**
@@ -52,18 +88,18 @@ export default interface BaseRule<F extends string> {
   /**
    * field type. determines the kind of validations to perform on the field value(s)
    */
-  type?: DataType;
+  type: DataType;
 
   /**
-   * indicates if field is required
+   * indicates if field is required, or a condition which if satisifed, makes the field required
    */
-  required?: boolean;
+  required?: boolean | RequiredIf;
 
   /**
    * indicates if field value should be an array. by default, fields whose names are in plural forms are considered to accept multiple
    * values. if not specified as true, and field name is pluralized, array values are rejected
    */
-  array?: boolean;
+  isList?: boolean;
 
   /**
    * optional error message to use if field is required but is missing
@@ -76,12 +112,6 @@ export default interface BaseRule<F extends string> {
   defaultValue?: DataValue;
 
   /**
-   * defines a condition which if satisfied, makes the field required, otherwise, the field
-   * becomes optional
-   */
-  requiredIf?: RequiredIf<F>;
-
-  /**
    * defines a list of filteration operations to carry out on the field value(s)
    */
   filters?: Filters;
@@ -89,43 +119,20 @@ export default interface BaseRule<F extends string> {
   /**
    * defines a list of database integrity checks to perform on the field value(s)
    */
-  checks?:
-    | (<N extends Handler<F> = Handler<F>>(
-        value: DataValue,
-        index: number,
-        data: Data<F>,
-        handler: N
-      ) => Promise<DataValue> | DataValue)
-    | ModelDBCheck
-    | Array<
-        | (<N extends Handler<F> = Handler<F>>(
-            value: DataValue,
-            index: number,
-            data: Data<F>,
-            handler: N
-          ) => Promise<DataValue> | DataValue)
-        | ModelDBCheck
-      >;
+  checks?: ArrayLike<DBCheckCallback<F> | ModelDBCheck<F>>;
 
   /**
    * computes and return a new value for the field. it accepts two arguments
    * field value, and data object
+   *
+   * compute callback is called after all validations has been passed
    */
-  postCompute?: <N extends Handler<F> = Handler<F>>(
-    value: DataValue,
-    data: Data<F>,
-    handler: N
-  ) => Promise<DataValue> | DataValue;
+  compute?: ComputeCallback<F>;
 
   /**
-   * runs a post validation process on the field. returns true if validation succeeds or returns
-   * error message if validation fails
+   * runs custom validation on the field. return true if validation succeeds or return false or error message if validation fails
    */
-  postValidate?: <N extends Handler<F> = Handler<F>>(
-    value: DataValue,
-    data: Data<F>,
-    handler: N
-  ) => Promise<SuccessOrErrorMessage> | SuccessOrErrorMessage;
+  validate?: ValidateCallback;
 
   options?: BaseOptions<F>;
 }
